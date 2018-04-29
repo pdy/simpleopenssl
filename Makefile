@@ -44,7 +44,7 @@ clean:
 strip:
 	$(STRIP) $(DESTBIN)/*
 
-OBJS_UT := $(OBJ)/EcdsaUT.o $(OBJ)/EvpUT.o $(OBJ)/EcdsaKeyUT.o $(OBJ)/EvpKeyUT.o $(OBJ)/HashUT.o
+OBJS_UT := $(OBJ)/Asn1UT.o $(OBJ)/EcdsaUT.o $(OBJ)/EvpUT.o $(OBJ)/EcdsaKeyUT.o $(OBJ)/EvpKeyUT.o $(OBJ)/HashUT.o $(OBJ)/X509UT.o
 
 $(DESTBIN)/UnitTests: $(OBJS_UT)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST) $(LD_LIBS)
@@ -52,17 +52,3 @@ $(DESTBIN)/UnitTests: $(OBJS_UT)
 $(OBJ)/%.o: ./test/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $^
 
-$(OBJ)/EcdsaUT.o: ./test/EcdsaUT.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
-
-$(OBJ)/EcdsaKeyUT.o: ./test/EcdsaKeyUT.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
-
-$(OBJ)/EvpUT.o: ./test/EvpUT.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
-
-$(OBJ)/EvpKeyUT.o: ./test/EvpKeyUT.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
-
-$(OBJ)/HashUT.o: ./test/HashUT.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
