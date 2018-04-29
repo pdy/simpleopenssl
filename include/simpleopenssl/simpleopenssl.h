@@ -48,10 +48,14 @@
 #include <algorithm>
 #include <cstring>
 #include <ctime>
+#include <chrono>
 
 namespace so {
 
 using Bytes = std::vector<uint8_t>;
+
+#define SO_API static inline
+#define SO_LIB static
 
 namespace detail {
   template<typename T>
@@ -124,6 +128,8 @@ CUSTOM_DELETER_UNIQUE_POINTER(EVP_PKEY, EVP_PKEY_free);
 CUSTOM_DELETER_UNIQUE_POINTER(RSA, RSA_free);
 CUSTOM_DELETER_UNIQUE_POINTER(X509, X509_free);
 CUSTOM_DELETER_UNIQUE_POINTER(X509_CRL, X509_CRL_free);
+CUSTOM_DELETER_UNIQUE_POINTER(X509_NAME, X509_NAME_free);
+CUSTOM_DELETER_UNIQUE_POINTER(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 
 template<typename T>
 class Expected
@@ -195,12 +201,16 @@ private:
 
 };
 
-inline void init();
-inline void cleanUp();
+SO_API void init();
+SO_API void cleanUp();
+
+namespace asn1 {
+  SO_API Expected<std::time_t> time2StdTime(const ASN1_TIME &asn1Time);
+} // namepsace asn1
 
 namespace bignum {
-  inline Expected<Bytes> bn2Bytes(const BIGNUM &bn);
-  inline Expected<size_t> size(const BIGNUM &bn);
+  SO_API Expected<Bytes> bn2Bytes(const BIGNUM &bn);
+  SO_API Expected<size_t> size(const BIGNUM &bn);
 }
 
 namespace ecdsa {
@@ -237,39 +247,40 @@ namespace ecdsa {
     sect571r1 = NID_sect571r1
   };
 
-  inline Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
-  inline Expected<Curve> curveOf(const EC_KEY &key);
-  inline Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &key);
-  inline Expected<EC_KEY_uptr> generateKey(Curve curve);
-  inline Expected<EC_KEY_uptr> pem2PrivateKey(const std::string &pemPriv);
-  inline Expected<EC_KEY_uptr> pem2PublicKey(const std::string &pemPub);
-  inline Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key);
-  inline Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
+  SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
+  SO_API Expected<Curve> curveOf(const EC_KEY &key);
+  SO_API Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &key);
+  SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
+  SO_API Expected<EC_KEY_uptr> pem2PrivateKey(const std::string &pemPriv);
+  SO_API Expected<EC_KEY_uptr> pem2PublicKey(const std::string &pemPub);
+  SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key);
+  SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
 } // namespace ecdsa
 
 namespace evp {
-  inline Expected<EVP_PKEY_uptr> pem2PrivateKey(const std::string &pemPriv);
-  inline Expected<EVP_PKEY_uptr> pem2PublicKey(const std::string &pemPub);
-  inline Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
-  inline Expected<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
-  inline Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
-  inline Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
+  SO_API Expected<EVP_PKEY_uptr> pem2PrivateKey(const std::string &pemPriv);
+  SO_API Expected<EVP_PKEY_uptr> pem2PublicKey(const std::string &pemPub);
+  SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
+  SO_API Expected<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
+  SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
+  SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
 } // namepsace evp
 
 namespace hash {
-  inline Expected<Bytes> md4(const Bytes &data);
-  inline Expected<Bytes> md5(const Bytes &data);
-  inline Expected<Bytes> sha1(const Bytes &data);
-  inline Expected<Bytes> sha256(const Bytes &data);
-  inline Expected<Bytes> sha384(const Bytes &data);
-  inline Expected<Bytes> sha512(const Bytes &data);
+  SO_API Expected<Bytes> md4(const Bytes &data);
+  SO_API Expected<Bytes> md5(const Bytes &data);
+  SO_API Expected<Bytes> sha1(const Bytes &data);
+  SO_API Expected<Bytes> sha256(const Bytes &data);
+  SO_API Expected<Bytes> sha384(const Bytes &data);
+  SO_API Expected<Bytes> sha512(const Bytes &data);
 } // namespace hash
 
 namespace rand {
-  inline Expected<Bytes> bytes(unsigned short numOfBytes);
+  SO_API Expected<Bytes> bytes(unsigned short numOfBytes);
 } //namespace rand
 
 namespace x509 {
+  
   struct Info
   {
     std::string raw;
@@ -292,15 +303,13 @@ namespace x509 {
     std::time_t notAfter;
   };
 
-  inline Expected<Info> commonInfo(X509_NAME &name);
-  inline Expected<Info> issuer(const X509 &x509);
-  inline Expected<std::string> name2String(const X509_NAME &name);
-  inline Expected<std::string> nameEntry2String(const X509_NAME_ENTRY &nameEntry);
-  inline Expected<std::string> nameEntry2String(X509_NAME &name, int nid);
-  inline Expected<Bytes> serialNumber(X509 &x509);
-  inline Expected<Info> subject(const X509 &x509);
-  inline Expected<long> version(const X509 &x509);
-//  Expected<Validity> validity(const X509 &x509);
+  SO_API Expected<Info> issuer(const X509 &x509);
+  SO_API Expected<std::string> name2String(const X509_NAME &name);
+  SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
+  SO_API Expected<Bytes> serialNumber(X509 &x509);
+  SO_API Expected<Info> subject(const X509 &x509);
+  SO_API Expected<long> version(const X509 &x509);
+  SO_API Expected<Validity> validity(const X509 &x509);
 } // namespace x509
 
 
@@ -318,7 +327,7 @@ namespace detail {
   };
 
   template<typename T>
-  inline Expected<T> err(T &&val)
+  SO_LIB Expected<T> err(T &&val)
   {
     return Expected<T>(ERR_peek_error(), std::move(val));
   }
@@ -328,7 +337,7 @@ namespace detail {
     typename T,
     typename = typename std::enable_if<!detail::is_uptr<T>::value>::type
   >
-  inline Expected<T> err()
+  SO_LIB Expected<T> err()
   {
     return detail::err<T>({});
   }
@@ -339,26 +348,25 @@ namespace detail {
     typename U = T, // TODO: U is placeholder to avoid of reassining default template param, I should use some smarter solution
     typename = typename std::enable_if<detail::is_uptr<T>::value>::type
   >
-  inline Expected<T> err()
+  SO_LIB Expected<T> err()
   {
     auto tmp = make_unique<typename uptr_underlying_type<T>::type>(nullptr);
     return detail::err(std::move(tmp));
   }
 
   template<typename T>
-  inline Expected<T> err(unsigned long errCode)
+  SO_LIB Expected<T> err(unsigned long errCode)
   { 
     return Expected<T>(errCode);
   }
  
   template<typename T>
-  inline Expected<T> ok(T &&val)
+  SO_LIB Expected<T> ok(T &&val)
   {
     return Expected<T>(1, std::move(val));
   }
-
   
-  inline Expected<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
+  SO_LIB Expected<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
   {
     const auto error = [&] { return detail::err<Bytes>(); };
 
@@ -383,7 +391,7 @@ namespace detail {
     return detail::ok(std::move(signature));
   }
 
-  inline Expected<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
+  SO_LIB Expected<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
   {
     auto ctx = make_unique(EVP_MD_CTX_new());
     if (!ctx) return detail::err<bool>();
@@ -398,11 +406,76 @@ namespace detail {
    
     const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
     return result == 1 ? detail::ok(true) : result == 0 ? detail::ok(false) : detail::err<bool>();
-  } 
+  }
+  
+  SO_LIB Expected<std::string> nameEntry2String(X509_NAME &name, int nid)
+  {
+    // X509_NAME_get_text_by_NID() is considered legacy and with limitations, we'll
+    // use more safe option
+    // all returned pointers here are internal openssl
+    // pointers so they must not be freed
+    const int entriesCount = X509_NAME_entry_count(&name);
+    if(entriesCount < 0) return detail::err<std::string>();
+    if(entriesCount == 0) return detail::ok<std::string>("");
+
+    const int position = X509_NAME_get_index_by_NID(&name, nid, -1);
+    // if position == -2 then nid is invalid
+    if(position == -2) return detail::err<std::string>();
+    // item not found, it's not lib error, user should decide if value that is not there
+    // is an error or not
+    if(position == -1) return detail::ok<std::string>("");
+    
+    const X509_NAME_ENTRY *entry = X509_NAME_get_entry(&name, position);
+    // previously we found correct index, if we got nullptr here it
+    // means sth went wrong
+    if(!entry) return detail::err<std::string>();
+    
+    // internal pointer
+    const ASN1_STRING *asn1 = X509_NAME_ENTRY_get_data(entry);
+    const int asn1EstimatedStrLen = ASN1_STRING_length(asn1);
+    if(asn1EstimatedStrLen <= 0) return detail::ok<std::string>("");
+
+    const auto freeOpenssl = [](unsigned char *ptr) { OPENSSL_free(ptr); };
+    unsigned char *ptr; // we need to call OPENSSL_free on this
+    const int len = ASN1_STRING_to_UTF8(&ptr, asn1);
+    std::unique_ptr<unsigned char[], decltype(freeOpenssl)> strBuff(ptr, freeOpenssl);
+
+    std::string ret;
+    ret.reserve(len);
+    const auto staticCaster = [](unsigned char chr){ return static_cast<char>(chr); };
+    std::transform(strBuff.get(), strBuff.get() + len, std::back_inserter(ret), staticCaster);
+
+    return detail::ok(std::move(ret)); 
+  }
+
+  SO_LIB Expected<x509::Info> commonInfo(X509_NAME &name)
+  {
+    const auto error = [](long errCode){ return detail::err<x509::Info>(errCode); };
+    const auto raw = x509::name2String(name);
+    if(!raw) return error(raw.errorCode());
+    const auto commonName = nameEntry2String(name, NID_commonName);
+    if(!commonName) return error(commonName.errorCode());
+    const auto countryName = nameEntry2String(name, NID_countryName);
+    if(!countryName) return error(countryName.errorCode());
+    const auto organizationName = nameEntry2String(name, NID_organizationName);
+    if(!organizationName) return error(organizationName.errorCode());
+    const auto localityName = nameEntry2String(name, NID_localityName);
+    if(!localityName) return error(localityName.errorCode());
+    const auto stateOrProvinceName = nameEntry2String(name, NID_stateOrProvinceName);
+    if(!stateOrProvinceName) return error(stateOrProvinceName.errorCode());
+
+    return detail::ok<x509::Info>({
+        *raw,
+        *commonName,
+        *organizationName,
+        *localityName,
+        *stateOrProvinceName
+    });
+  }
 
 } //namespace detail
 
-inline void init()
+SO_API void init()
 {
   // Since openssl v.1.1.0 we no longer need to set
   // locking callback for multithreaded support
@@ -414,14 +487,29 @@ inline void init()
   ERR_load_crypto_strings();
 }
 
-inline void cleanUp()
+SO_API void cleanUp()
 {
   ERR_free_strings();
 }
 
+namespace asn1 { 
+  SO_API Expected<std::time_t> time2StdTime(const ASN1_TIME &asn1Time)
+  {
+    // TODO: If we're unlucky, we'll be off by whole second :/
+    // I should consider just straight string parsing here 
+    static_assert(sizeof(std::time_t) >= sizeof(int64_t), "std::time_t size too small, the dates may overflow");
+    static constexpr int64_t SECONDS_IN_A_DAY = 24 * 60 * 60;
+    using sysClock = std::chrono::system_clock;
+
+    int pday;
+    int psec;
+    if(1 != ASN1_TIME_diff(&pday, &psec, nullptr, &asn1Time)) return detail::err<std::time_t>(); 
+    return detail::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
+  } 
+} // namespace asn1
 
 namespace bignum {
-  inline Expected<Bytes> bn2Bytes(const BIGNUM &bn)
+  SO_API Expected<Bytes> bn2Bytes(const BIGNUM &bn)
   {
     const auto sz = size(bn); 
     if(!sz) return detail::err<Bytes>(sz.errorCode());
@@ -430,7 +518,7 @@ namespace bignum {
     return detail::ok(std::move(ret));
   }
 
-  inline Expected<size_t> size(const BIGNUM &bn)
+  SO_API Expected<size_t> size(const BIGNUM &bn)
   {
     const int bnlen = BN_num_bytes(&bn);
     if(bnlen < 0) return detail::err<size_t>();
@@ -439,7 +527,7 @@ namespace bignum {
 }// namespace bignum
 
 namespace ecdsa {
-  inline Expected<Curve> curveOf(const EC_KEY &key)
+  SO_API Expected<Curve> curveOf(const EC_KEY &key)
   {
     const EC_GROUP* group = EC_KEY_get0_group(&key);
     if(!group) return detail::err<Curve>();
@@ -448,14 +536,14 @@ namespace ecdsa {
     return detail::ok(static_cast<Curve>(nid)); 
   }
 
-  inline Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey)
+  SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey)
   {
     auto copy = make_unique(EC_KEY_dup(&ecKey));
     if(!copy) return detail::err<EC_KEY_uptr>();
     return detail::ok(std::move(copy));
   }
 
-  inline Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &ecKey)
+  SO_API Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &ecKey)
   {
     auto copy = make_unique(EC_KEY_dup(&ecKey));
     if(!copy) return detail::err<EVP_PKEY_uptr>();
@@ -471,7 +559,7 @@ namespace ecdsa {
   }
 
 
-  inline Expected<EC_KEY_uptr> pem2PublicKey(const std::string &pemPub)
+  SO_API Expected<EC_KEY_uptr> pem2PublicKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), pemPub.size()));
     if(!bio) return detail::err<EC_KEY_uptr>();
@@ -480,7 +568,7 @@ namespace ecdsa {
     return detail::ok(make_unique(rawKey));
   }
 
-  inline Expected<EC_KEY_uptr> pem2PrivateKey(const std::string &pemPriv)
+  SO_API Expected<EC_KEY_uptr> pem2PrivateKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), pemPriv.size()));
     if(!bio) return detail::err<EC_KEY_uptr>();
@@ -489,7 +577,7 @@ namespace ecdsa {
     return detail::ok(make_unique(rawKey));
   }
 
-  inline Expected<EC_KEY_uptr> generateKey(Curve curve)
+  SO_API Expected<EC_KEY_uptr> generateKey(Curve curve)
   {
     const int nidCurve = static_cast<int>(curve);
     auto key = make_unique(EC_KEY_new_by_curve_name(nidCurve));
@@ -498,7 +586,7 @@ namespace ecdsa {
     return detail::ok(std::move(key));
   }
 
-  inline Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key)
+  SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha256(message);
     if(!digest) return detail::err<Bytes>(digest.errorCode());
@@ -524,7 +612,7 @@ namespace ecdsa {
   }
 
 
-  inline Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha256(message);
     if(!digest) return detail::err<bool>(digest.errorCode());
@@ -545,7 +633,7 @@ namespace ecdsa {
 } //namespace ecdsa
 
 namespace evp {
-  inline Expected<EVP_PKEY_uptr> pem2PublicKey(const std::string &pemPub)
+  SO_API Expected<EVP_PKEY_uptr> pem2PublicKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), pemPub.size()));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
@@ -554,7 +642,7 @@ namespace evp {
     return detail::ok(make_unique(rawKey));
   }
 
-  inline Expected<EVP_PKEY_uptr> pem2PrivateKey(const std::string &pemPriv)
+  SO_API Expected<EVP_PKEY_uptr> pem2PrivateKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), pemPriv.size()));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
@@ -563,29 +651,29 @@ namespace evp {
     return detail::ok(make_unique(rawKey));
   }
 
-  inline Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
+  SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
   { 
     return detail::evpSign(message, EVP_sha1(), privateKey);
   }
 
-  inline Expected<Bytes> signSha256(const Bytes &message, EVP_PKEY &privateKey)
+  SO_API Expected<Bytes> signSha256(const Bytes &message, EVP_PKEY &privateKey)
   { 
     return detail::evpSign(message, EVP_sha256(), privateKey);
   }
 
-  inline Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
   {
     return detail::evpVerify(signature, message, EVP_sha1(), pubKey); 
   }
 
-  inline Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
   {
     return detail::evpVerify(signature, message, EVP_sha256(), pubKey); 
   }
 } //namespace evp
 
 namespace hash {
-  inline Expected<Bytes> md4(const Bytes &data)
+  SO_API Expected<Bytes> md4(const Bytes &data)
   {
     Bytes hash(MD4_DIGEST_LENGTH);
     MD4_CTX ctx;
@@ -595,7 +683,7 @@ namespace hash {
     return detail::ok(std::move(hash));
   }
 
-  inline Expected<Bytes> md5(const Bytes &data)
+  SO_API Expected<Bytes> md5(const Bytes &data)
   {
     Bytes hash(MD5_DIGEST_LENGTH);
     MD5_CTX ctx;
@@ -605,7 +693,7 @@ namespace hash {
     return detail::ok(std::move(hash));
   }
 
-  inline Expected<Bytes> sha1(const Bytes &data)
+  SO_API Expected<Bytes> sha1(const Bytes &data)
   {
     Bytes hash(SHA_DIGEST_LENGTH);
     SHA_CTX ctx;
@@ -615,7 +703,7 @@ namespace hash {
     return detail::ok(std::move(hash));
   }
 
-  inline Expected<Bytes> sha256(const Bytes &data)
+  SO_API Expected<Bytes> sha256(const Bytes &data)
   {
     Bytes hash(SHA256_DIGEST_LENGTH);
     SHA256_CTX ctx;
@@ -625,7 +713,7 @@ namespace hash {
     return detail::ok(std::move(hash));
   }
 
-  inline Expected<Bytes> sha384(const Bytes &data)
+  SO_API Expected<Bytes> sha384(const Bytes &data)
   {
     Bytes hash(SHA384_DIGEST_LENGTH);
     SHA512_CTX ctx;
@@ -635,7 +723,7 @@ namespace hash {
     return detail::ok(std::move(hash));
   }
 
-  inline Expected<Bytes> sha512(const Bytes &data)
+  SO_API Expected<Bytes> sha512(const Bytes &data)
   {
     Bytes hash(SHA512_DIGEST_LENGTH);
     SHA512_CTX ctx;
@@ -647,7 +735,7 @@ namespace hash {
 } // namespace hash
 
 namespace rand {
-  inline Expected<Bytes> bytes(unsigned short numOfBytes)
+  SO_API Expected<Bytes> bytes(unsigned short numOfBytes)
   {
     Bytes ret(static_cast<size_t>(numOfBytes));
     if(1 != RAND_bytes(ret.data(), static_cast<int>(numOfBytes))){
@@ -673,40 +761,15 @@ namespace x509 {
     return !(*this == other);
   }
 
-  inline Expected<Info> commonInfo(X509_NAME &name)
-  {
-    const auto error = [](long errCode){ return detail::err<Info>(errCode); };
-    const auto raw = name2String(name);
-    if(!raw) return error(raw.errorCode());
-    const auto commonName = nameEntry2String(name, NID_commonName);
-    if(!commonName) return error(commonName.errorCode());
-    const auto countryName = nameEntry2String(name, NID_countryName);
-    if(!countryName) return error(countryName.errorCode());
-    const auto organizationName = nameEntry2String(name, NID_organizationName);
-    if(!organizationName) return error(organizationName.errorCode());
-    const auto localityName = nameEntry2String(name, NID_localityName);
-    if(!localityName) return error(localityName.errorCode());
-    const auto stateOrProvinceName = nameEntry2String(name, NID_stateOrProvinceName);
-    if(!stateOrProvinceName) return error(stateOrProvinceName.errorCode());
-
-    return detail::ok<Info>({
-        *raw,
-        *commonName,
-        *organizationName,
-        *localityName,
-        *stateOrProvinceName
-    });
-  }
-
-  inline Expected<Info> issuer(const X509 &x509)
+  SO_API Expected<Info> issuer(const X509 &x509)
   {
     // this is internal ptr and must not be freed
     X509_NAME *issuer = X509_get_issuer_name(&x509);
     if(!issuer) return detail::err<Info>();
-    return commonInfo(*issuer); 
+    return detail::commonInfo(*issuer); 
   }
   
-  inline Expected<std::string> name2String(const X509_NAME &name)
+  SO_API Expected<std::string> name2String(const X509_NAME &name)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(0 > X509_NAME_print_ex(bio.get(), &name, 0, XN_FLAG_RFC2253))
@@ -719,48 +782,19 @@ namespace x509 {
     return detail::ok(std::string(dataStart, nameLength));
   }
 
-  inline Expected<std::string> nameEntry2String(const X509_NAME_ENTRY &nameEntry)
+  SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert)
   {
-    // internal pointer
-    ASN1_STRING *asn1 = X509_NAME_ENTRY_get_data(&nameEntry);
-    const int asn1EstimatedStrLen = ASN1_STRING_length(asn1);
-    if(asn1EstimatedStrLen <= 0) return detail::ok<std::string>("");
+    BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 
-    const auto freeOpenssl = [](unsigned char *ptr) { OPENSSL_free(ptr); };
-    unsigned char *ptr; // we need to call OPENSSL_free on this
-    const int len = ASN1_STRING_to_UTF8(&ptr, asn1);
-    std::unique_ptr<unsigned char[], decltype(freeOpenssl)> strBuff(ptr, freeOpenssl);
+    if(0 >= BIO_write(bio.get(), pemCert.c_str(), static_cast<int>(pemCert.length())))
+      return detail::err<X509_uptr>(); 
 
-    std::string ret;
-    ret.reserve(len);
-    const auto staticCaster = [](unsigned char chr){ return static_cast<char>(chr); };
-    std::transform(strBuff.get(), strBuff.get() + len, std::back_inserter(ret), staticCaster);
-
+    auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
+    if(!ret) return detail::err<X509_uptr>();
     return detail::ok(std::move(ret));
   }
 
-  inline Expected<std::string> nameEntry2String(X509_NAME &name, int nid)
-  {
-    // all returned pointers here are internal openssl
-    // pointers so they must not be freed
-    const int entriesCount = X509_NAME_entry_count(&name);
-    if(entriesCount < 0) return detail::err<std::string>();
-    if(entriesCount == 0) return detail::ok<std::string>("");
-
-    const int position = X509_NAME_get_index_by_NID(&name, nid, -1);
-    // item not found, it's not lib error, user should decide if value that is not there
-    // is an error or not
-    if(position == -1) return detail::ok<std::string>("");
-    
-    const X509_NAME_ENTRY *entry = X509_NAME_get_entry(&name, position);
-    // previously we found correct index, if we got nullptr here it
-    // means sth went wrong
-    if(!entry) return detail::err<std::string>();
-    
-    return nameEntry2String(*entry); 
-  }
-
-  inline Expected<Bytes> serialNumber(X509 &x509)
+  SO_API Expected<Bytes> serialNumber(X509 &x509)
   {
     // both internal pointers, must not be freed
     const ASN1_INTEGER *serialNumber = X509_get_serialNumber(&x509);
@@ -770,15 +804,28 @@ namespace x509 {
     return bignum::bn2Bytes(*bn);
   }
 
-  inline Expected<Info> subject(const X509 &x509)
+  SO_API Expected<Info> subject(const X509 &x509)
   {
     // this is internal ptr and must not be freed
     X509_NAME *subject = X509_get_subject_name(&x509);
     if(!subject) return detail::err<Info>();
-    return commonInfo(*subject); 
+    return detail::commonInfo(*subject); 
   }
 
-  inline Expected<long> version(const X509 &x509)
+  SO_API Expected<Validity> validity(const X509 &x509)
+  {
+    const auto notAfter = X509_get0_notAfter(&x509);
+    if(!notAfter) return detail::err<Validity>();
+    const auto notBefore = X509_get0_notBefore(&x509);
+    if(!notBefore) return detail::err<Validity>();
+    auto notBeforeTime = asn1::time2StdTime(*notBefore);
+    if(!notBeforeTime) return detail::err<Validity>(notBeforeTime.errorCode());
+    auto notAfterTime = asn1::time2StdTime(*notAfter);
+    if(!notAfterTime) return detail::err<Validity>(notAfterTime.errorCode());
+    return detail::ok(Validity{*notBeforeTime, *notAfterTime});
+  }
+
+  SO_API Expected<long> version(const X509 &x509)
   {
     // TODO: I prevented returning Expected<> to keep API
     // consistent, but I could just return long here....I don't know...
