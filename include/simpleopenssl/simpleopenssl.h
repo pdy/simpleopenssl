@@ -93,7 +93,7 @@ template<>                                                  \
 struct detail::is_uptr<detail::CustomDeleterUniquePtr<Type>> : std::true_type {};
 
 template<typename T, typename D = detail::CustomDeleter<T>>
-auto make_unique(T *ptr) -> std::unique_ptr<T, D>
+SO_API auto make_unique(T *ptr) -> std::unique_ptr<T, D>
 {
   return std::unique_ptr<T, D>(ptr);
 }
@@ -304,7 +304,6 @@ namespace x509 {
   };
 
   SO_API Expected<Info> issuer(const X509 &x509);
-  SO_API Expected<std::string> name2String(const X509_NAME &name);
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
   SO_API Expected<Bytes> serialNumber(X509 &x509);
   SO_API Expected<Info> subject(const X509 &x509);
@@ -448,10 +447,23 @@ namespace detail {
     return detail::ok(std::move(ret)); 
   }
 
+  SO_LIB Expected<std::string> name2String(const X509_NAME &name)
+  {
+    auto bio = make_unique(BIO_new(BIO_s_mem()));
+    if(0 > X509_NAME_print_ex(bio.get(), &name, 0, XN_FLAG_RFC2253))
+      return detail::err<std::string>();
+
+    char *dataStart;
+    const long nameLength = BIO_get_mem_data(bio.get(), &dataStart);
+    if(nameLength < 0) return detail::err<std::string>();
+    
+    return detail::ok(std::string(dataStart, nameLength));
+  }
+
   SO_LIB Expected<x509::Info> commonInfo(X509_NAME &name)
   {
     const auto error = [](long errCode){ return detail::err<x509::Info>(errCode); };
-    const auto raw = x509::name2String(name);
+    const auto raw = name2String(name);
     if(!raw) return error(raw.errorCode());
     const auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName) return error(commonName.errorCode());
@@ -467,11 +479,12 @@ namespace detail {
     return detail::ok<x509::Info>({
         *raw,
         *commonName,
+        *countryName,
         *organizationName,
         *localityName,
         *stateOrProvinceName
     });
-  }
+  } 
 
 } //namespace detail
 
@@ -480,11 +493,12 @@ SO_API void init()
   // Since openssl v.1.1.0 we no longer need to set
   // locking callback for multithreaded support
 
-  // for x509 mostly
+  // required for x509 for example
   OpenSSL_add_all_algorithms();
 
   // error more descriptive messages
   ERR_load_crypto_strings();
+  ERR_load_BIO_strings();
 }
 
 SO_API void cleanUp()
@@ -501,8 +515,7 @@ namespace asn1 {
     static constexpr int64_t SECONDS_IN_A_DAY = 24 * 60 * 60;
     using sysClock = std::chrono::system_clock;
 
-    int pday;
-    int psec;
+    int pday, psec;
     if(1 != ASN1_TIME_diff(&pday, &psec, nullptr, &asn1Time)) return detail::err<std::time_t>(); 
     return detail::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
   } 
@@ -769,19 +782,6 @@ namespace x509 {
     return detail::commonInfo(*issuer); 
   }
   
-  SO_API Expected<std::string> name2String(const X509_NAME &name)
-  {
-    auto bio = make_unique(BIO_new(BIO_s_mem()));
-    if(0 > X509_NAME_print_ex(bio.get(), &name, 0, XN_FLAG_RFC2253))
-      return detail::err<std::string>();
-
-    char *dataStart;
-    const long nameLength = BIO_get_mem_data(bio.get(), &dataStart);
-    if(nameLength < 0) return detail::err<std::string>();
-    
-    return detail::ok(std::string(dataStart, nameLength));
-  }
-
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
