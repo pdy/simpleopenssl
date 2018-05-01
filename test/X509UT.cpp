@@ -8,16 +8,8 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
-struct InitGuard
-{
-  InitGuard() { so::init(); }
-  ~InitGuard() { so::cleanUp(); }
-};
-
 TEST(X509UT, pemStringToX509ShouldFail)
 {
-  InitGuard init;
-
   // WHEN
   auto cert = x509::pem2X509(data::meaninglessInvalidPemCert);
   
@@ -27,11 +19,9 @@ TEST(X509UT, pemStringToX509ShouldFail)
 
 TEST(X509UT, pemStringToX509ShouldSuccess)
 {
-  InitGuard init;
-
   // WHEN
   auto cert = x509::pem2X509(data::meaninglessValidPemCert);
-  std::cout << cert.msg() << std::endl;  
+  
   // THEN
   EXPECT_TRUE(cert);
 }
@@ -55,6 +45,50 @@ TEST(X509UT, getIssuerOK)
   EXPECT_EQ("UK", (*actual).countryName);
   EXPECT_EQ("Unorganized", (*actual).organizationName);
   EXPECT_EQ("Joe Briggs", (*actual).commonName);
+  EXPECT_EQ("", (*actual).localityName);
+  EXPECT_EQ("", (*actual).stateOrProvinceName);
+}
+
+
+TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
+{
+  // GIVEN
+  auto maybeRootCert = x509::pem2X509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeRootCert);
+  auto rootCert = *maybeRootCert;
+  auto rootCertSubj = x509::subject(*rootCert);
+  ASSERT_TRUE(rootCertSubj);
+
+  auto cert = ::so::make_unique(X509_new());
+
+  // WHEN
+  const auto setResult = x509::setIssuer(*cert, *rootCert);
+  const auto getResult = x509::issuer(*cert);
+
+  // THEN
+  ASSERT_TRUE(setResult);
+  ASSERT_TRUE(getResult);
+  EXPECT_EQ(*rootCertSubj, *getResult); 
+}
+
+TEST(X509UT, setGetIssuerAPIIntegrityOK)
+{
+  // GIVEN
+  x509::Info info;
+  info.commonName = "Simple Joe";
+  info.countryName = "US";
+  info.stateOrProvinceName = "Utah";
+
+  auto cert = ::so::make_unique(X509_new());
+
+  // WHEN
+  const auto setResult = x509::setIssuer(*cert, info);
+  const auto getResult = x509::issuer(*cert);
+
+  // THEN
+  ASSERT_TRUE(setResult);
+  ASSERT_TRUE(getResult);
+  EXPECT_EQ(info, *getResult);
 }
 
 }}}

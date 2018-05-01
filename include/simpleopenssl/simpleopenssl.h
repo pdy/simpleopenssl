@@ -286,9 +286,9 @@ namespace x509 {
     std::string raw;
     std::string commonName;
     std::string countryName;
+    std::string localityName;
     std::string organizationName;
-    std::string locationName;
-    std::string stateName;
+    std::string stateOrProvinceName;
 
     inline bool operator ==(const Info &other) const;
     inline bool operator !=(const Info &other) const;
@@ -303,12 +303,15 @@ namespace x509 {
     std::time_t notAfter;
   };
 
-  SO_API Expected<Info> issuer(const X509 &x509);
+  SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
-  SO_API Expected<Bytes> serialNumber(X509 &x509);
-  SO_API Expected<Info> subject(const X509 &x509);
-  SO_API Expected<long> version(const X509 &x509);
-  SO_API Expected<Validity> validity(const X509 &x509);
+  SO_API Expected<Bytes> serialNumber(X509 &cert);
+  SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert);
+  SO_API Expected<bool> setIssuer(X509 &cert, const Info &commonInfo);
+  SO_API Expected<bool> setSubject(X509 &cert, const Info &commonInfo);
+  SO_API Expected<Info> subject(const X509 &cert);
+  SO_API Expected<long> version(const X509 &cert);
+  SO_API Expected<Validity> validity(const X509 &cert);
 } // namespace x509
 
 
@@ -344,7 +347,7 @@ namespace detail {
   template
   <
     typename T,
-    typename U = T, // TODO: U is placeholder to avoid of reassining default template param, I should use some smarter solution
+    typename U = T, // TODO: U is placeholder to avoid of 'reassining default template param' error, I should use some smarter solution
     typename = typename std::enable_if<detail::is_uptr<T>::value>::type
   >
   SO_LIB Expected<T> err()
@@ -441,8 +444,7 @@ namespace detail {
 
     std::string ret;
     ret.reserve(len);
-    const auto staticCaster = [](unsigned char chr){ return static_cast<char>(chr); };
-    std::transform(strBuff.get(), strBuff.get() + len, std::back_inserter(ret), staticCaster);
+    std::transform(strBuff.get(), strBuff.get() + len, std::back_inserter(ret), [](unsigned char chr){ return static_cast<char>(chr); });
 
     return detail::ok(std::move(ret)); 
   }
@@ -480,11 +482,30 @@ namespace detail {
         *raw,
         *commonName,
         *countryName,
-        *organizationName,
         *localityName,
+        *organizationName,
         *stateOrProvinceName
     });
-  } 
+  }
+
+  SO_LIB Expected<X509_NAME_uptr> info2X509Name(const x509::Info &info)
+  {
+    auto name = make_unique(X509_NAME_new()); 
+
+    const auto err = []{ return detail::err<X509_NAME_uptr>(); };
+    const auto append = [](X509_NAME *nm, int nid, const std::string &val) {
+      return val.empty() || X509_NAME_add_entry_by_NID(nm, nid, MBSTRING_ASC, reinterpret_cast<const unsigned char*>(val.c_str()), -1, -1, 0);
+    };
+
+    if(!name) return err();
+    if(!append(name.get(), NID_commonName, info.commonName)) return err();
+    if(!append(name.get(), NID_countryName, info.countryName)) return err();
+    if(!append(name.get(), NID_localityName, info.localityName)) return err();
+    if(!append(name.get(), NID_organizationName, info.organizationName)) return err();
+    if(!append(name.get(), NID_stateOrProvinceName, info.stateOrProvinceName)) return err();
+
+    return detail::ok(std::move(name));
+  }
 
 } //namespace detail
 
@@ -765,15 +786,15 @@ namespace x509 {
     return commonName == other.commonName &&
       countryName == other.countryName &&
       organizationName == other.organizationName &&
-      locationName == other.locationName &&
-      stateName == other.stateName;
+      localityName == other.localityName &&
+      stateOrProvinceName == other.stateOrProvinceName;
   }
 
   inline bool Info::operator !=(const Info &other) const
   {
     return !(*this == other);
   }
-
+  
   SO_API Expected<Info> issuer(const X509 &x509)
   {
     // this is internal ptr and must not be freed
@@ -802,6 +823,32 @@ namespace x509 {
     const BIGNUM *bn = ASN1_INTEGER_to_BN(serialNumber, nullptr);
     if(!bn) return detail::err<Bytes>();
     return bignum::bn2Bytes(*bn);
+  }
+
+  SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert)
+  {
+    X509_NAME *issuer = X509_get_subject_name(&rootCert);
+    if(!issuer) return detail::err(false);
+    if(1 != X509_set_issuer_name(&cert, issuer)) return detail::err(false);
+    return detail::ok(true);
+  }
+
+  SO_API Expected<bool> setIssuer(X509 &cert, const Info &info)
+  {
+    auto maybeIssuer = detail::info2X509Name(info);
+    if(!maybeIssuer) return detail::err(false);
+    auto issuer = *maybeIssuer;
+    if(1 != X509_set_issuer_name(&cert, issuer.get())) return detail::err(false); 
+    return detail::ok(true);
+  }
+
+  SO_API Expected<bool> setSubject(X509 &cert, const Info &info)
+  {
+    auto maybeSubject = detail::info2X509Name(info); 
+    if(!maybeSubject) return detail::err(false);
+    auto subject = *maybeSubject;
+    if(1 != X509_set_subject_name(&cert, subject.get())) return detail::err(false); 
+    return detail::ok(true);
   }
 
   SO_API Expected<Info> subject(const X509 &x509)
