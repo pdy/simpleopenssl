@@ -8,24 +8,6 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
-TEST(X509UT, pemStringToX509ShouldFail)
-{
-  // WHEN
-  auto cert = x509::pem2X509(data::meaninglessInvalidPemCert);
-  
-  // THEN
-  EXPECT_FALSE(cert);
-}
-
-TEST(X509UT, pemStringToX509ShouldSuccess)
-{
-  // WHEN
-  auto cert = x509::pem2X509(data::meaninglessValidPemCert);
-  
-  // THEN
-  EXPECT_TRUE(cert);
-}
-
 TEST(X509UT, getIssuerOK)
 {
   // GIVEN  
@@ -106,6 +88,26 @@ TEST(X509UT, setGetIssuerAPIIntegrityOK)
   // WHEN
   const auto setResult = x509::setIssuer(*cert, info);
   const auto getResult = x509::issuer(*cert);
+
+  // THEN
+  ASSERT_TRUE(setResult);
+  ASSERT_TRUE(getResult);
+  EXPECT_EQ(info, *getResult);
+}
+
+TEST(X509UT, setGetSubjectAPIIntegrityOK)
+{
+  // GIVEN
+  x509::Info info;
+  info.commonName = "Simple Joe";
+  info.countryName = "US";
+  info.stateOrProvinceName = "Utah";
+
+  auto cert = ::so::make_unique(X509_new());
+
+  // WHEN
+  const auto setResult = x509::setSubject(*cert, info);
+  const auto getResult = x509::subject(*cert);
 
   // THEN
   ASSERT_TRUE(setResult);
