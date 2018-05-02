@@ -115,4 +115,37 @@ TEST(X509UT, setGetSubjectAPIIntegrityOK)
   EXPECT_EQ(info, *getResult);
 }
 
+TEST(X509UT, getVersionOK)
+{
+  // GIVEN
+  const long expected = 3;
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+  ASSERT_TRUE(X509_set_version(cert.get(), expected - 1));
+
+  // WHEN
+  const auto actual = x509::version(*cert);
+
+  // THEN
+  ASSERT_TRUE(actual);
+  EXPECT_EQ(expected, *actual);
+}
+
+TEST(X509UT, getSetVersionApiIntegrityOK)
+{
+  // GIVEN
+  const long expected = 3;
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+
+  // WHEN
+  const auto setResult = x509::setVersion(*cert, expected);
+  const auto actual = x509::version(*cert);
+
+  // THEN
+  ASSERT_TRUE(setResult);
+  ASSERT_TRUE(actual);
+  EXPECT_EQ(expected, *actual);
+}
+
 }}}

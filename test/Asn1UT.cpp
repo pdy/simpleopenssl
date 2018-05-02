@@ -6,7 +6,7 @@
 
 namespace so { namespace ut { namespace asn1 {
 
-namespace asn1 = so::asn1;
+namespace asn1 = ::so::asn1;
 
 TEST(Asn1UT, asn1TimeToStdTimeSuccess)
 {

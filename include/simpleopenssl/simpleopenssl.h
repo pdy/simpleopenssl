@@ -296,8 +296,8 @@ namespace x509 {
 
   struct Validity
   {
-    bool operator ==(const Validity &other) const;
-    bool operator !=(const Validity &other) const;
+    inline bool operator ==(const Validity &other) const;
+    inline bool operator !=(const Validity &other) const;
 
     std::time_t notBefore;
     std::time_t notAfter;
@@ -305,13 +305,14 @@ namespace x509 {
 
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
-  SO_API Expected<Bytes> serialNumber(X509 &cert);
-  SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert);
-  SO_API Expected<bool> setIssuer(X509 &cert, const Info &commonInfo);
-  SO_API Expected<bool> setSubject(X509 &cert, const Info &commonInfo);
+  SO_API Expected<Bytes> serialNumber(X509 &cert); 
   SO_API Expected<Info> subject(const X509 &cert);
   SO_API Expected<long> version(const X509 &cert);
   SO_API Expected<Validity> validity(const X509 &cert);
+  SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert);
+  SO_API Expected<bool> setIssuer(X509 &cert, const Info &commonInfo);
+  SO_API Expected<bool> setSubject(X509 &cert, const Info &commonInfo);
+  SO_API Expected<bool> setVersion(X509 &cert, long version);
 } // namespace x509
 
 
@@ -794,7 +795,17 @@ namespace x509 {
   {
     return !(*this == other);
   }
+ 
+  inline bool Validity::operator==(const Validity &other) const
+  {
+    return notBefore == other.notBefore && notAfter == other.notAfter;
+  }
   
+  inline bool Validity::operator!=(const Validity &other) const
+  {
+    return !(*this == other);
+  }
+
   SO_API Expected<Info> issuer(const X509 &x509)
   {
     // this is internal ptr and must not be freed
@@ -851,6 +862,13 @@ namespace x509 {
     return detail::ok(true);
   }
 
+  SO_API Expected<bool> setVersion(X509 &cert, long version)
+  {
+    --version;
+    if(1 != X509_set_version(&cert, version)) return detail::err(false);
+    return detail::ok(true);
+  }
+
   SO_API Expected<Info> subject(const X509 &x509)
   {
     // this is internal ptr and must not be freed
@@ -874,7 +892,7 @@ namespace x509 {
 
   SO_API Expected<long> version(const X509 &x509)
   {
-    // TODO: I prevented returning Expected<> to keep API
+    // TODO: I kept returning Expected<> to keep API
     // consistent, but I could just return long here....I don't know...
     // Version is zero indexed, thus +1
     return detail::ok(X509_get_version(&x509) + 1);
