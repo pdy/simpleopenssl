@@ -175,4 +175,26 @@ TEST(X509UT, getValidityOK)
   EXPECT_EQ(expected, *validity);
 }
 
+TEST(X509UT, getSetValidityAPIIntegrityOK)
+{
+  // GIVEN
+  const long notAfterSeconds = 50000;
+  const long notBeforeSeconds = 0;
+  const auto now = std::chrono::system_clock::now();
+  const auto notAfter = std::chrono::system_clock::to_time_t(now + std::chrono::seconds(notAfterSeconds));
+  const auto notBefore = std::chrono::system_clock::to_time_t(now + std::chrono::seconds(notBeforeSeconds));
+  const ::so::x509::Validity expected {notAfter, notBefore};
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+
+  // WHEN
+  const auto setResult = x509::setValidity(*cert, expected);
+  const auto maybeValidity = x509::validity(*cert);
+
+  // THEN
+  EXPECT_TRUE(setResult);
+  ASSERT_TRUE(maybeValidity);
+  EXPECT_EQ(expected, *maybeValidity);
+}
+
 }}}
