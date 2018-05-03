@@ -148,4 +148,31 @@ TEST(X509UT, getSetVersionApiIntegrityOK)
   EXPECT_EQ(expected, *actual);
 }
 
+TEST(X509UT, getValidityOK)
+{
+  // GIVEN
+  const long notAfterSeconds = 50000;
+  const long notBeforeSeconds = 0;
+  const auto now = std::chrono::system_clock::now();
+  const auto notAfter = std::chrono::system_clock::to_time_t(now + std::chrono::seconds(notAfterSeconds));
+  const auto notBefore = std::chrono::system_clock::to_time_t(now + std::chrono::seconds(notBeforeSeconds));
+  ::so::ASN1_TIME_uptr notAfterTime = ::so::make_unique(ASN1_TIME_set(nullptr, notAfter));
+  ::so::ASN1_TIME_uptr notBeforeTime = ::so::make_unique(ASN1_TIME_set(nullptr, notBefore));
+  ASSERT_TRUE(notAfterTime);
+  ASSERT_TRUE(notBeforeTime);
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+  ASSERT_TRUE(X509_set1_notBefore(cert.get(), notBeforeTime.get()));
+  ASSERT_TRUE(X509_set1_notAfter(cert.get(), notAfterTime.get()));
+
+  const ::so::x509::Validity expected {notAfter, notBefore};
+
+  // WHEN
+  const auto validity = x509::validity(*cert);
+
+  // THEN
+  ASSERT_TRUE(validity);
+  EXPECT_EQ(expected, *validity);
+}
+
 }}}

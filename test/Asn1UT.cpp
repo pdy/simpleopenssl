@@ -8,7 +8,7 @@ namespace so { namespace ut { namespace asn1 {
 
 namespace asn1 = ::so::asn1;
 
-TEST(Asn1UT, asn1TimeToStdTimeSuccess)
+TEST(Asn1UT, asn1TimeToStdTimeOK)
 {
   // GIVEN
   auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
@@ -21,6 +21,22 @@ TEST(Asn1UT, asn1TimeToStdTimeSuccess)
   // THEN
   ASSERT_TRUE(actual);
   EXPECT_EQ(now, *actual);
+}
+
+TEST(Asn1UT, asn1ApiTimeConvertersIntegrityOK)
+{
+  // GIVEN
+  auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+
+  // WHEN
+  auto maybeAsn1Time = asn1::stdTime2Time(now);
+  ASSERT_TRUE(maybeAsn1Time);
+  auto asn1Time = *maybeAsn1Time;
+  const auto stdTime = asn1::time2StdTime(*asn1Time);
+  ASSERT_TRUE(stdTime);
+
+  // THEN
+  EXPECT_EQ(now, *stdTime);
 }
 
 }}} // namespace so { namespace ut { namespace asn1 {

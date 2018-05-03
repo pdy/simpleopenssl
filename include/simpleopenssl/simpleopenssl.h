@@ -206,6 +206,7 @@ SO_API void cleanUp();
 
 namespace asn1 {
   SO_API Expected<std::time_t> time2StdTime(const ASN1_TIME &asn1Time);
+  SO_API Expected<ASN1_TIME_uptr> stdTime2Time(std::time_t time);
 } // namepsace asn1
 
 namespace bignum {
@@ -299,19 +300,21 @@ namespace x509 {
     inline bool operator ==(const Validity &other) const;
     inline bool operator !=(const Validity &other) const;
 
-    std::time_t notBefore;
     std::time_t notAfter;
+    std::time_t notBefore;
   };
 
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
   SO_API Expected<Bytes> serialNumber(X509 &cert); 
   SO_API Expected<Info> subject(const X509 &cert);
-  SO_API Expected<long> version(const X509 &cert);
   SO_API Expected<Validity> validity(const X509 &cert);
+  SO_API Expected<long> version(const X509 &cert);
+
   SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert);
   SO_API Expected<bool> setIssuer(X509 &cert, const Info &commonInfo);
   SO_API Expected<bool> setSubject(X509 &cert, const Info &commonInfo);
+  SO_API Expected<bool> setValidity(X509 &cert, const Validity &validity);
   SO_API Expected<bool> setVersion(X509 &cert, long version);
 } // namespace x509
 
@@ -332,7 +335,7 @@ namespace detail {
   template<typename T>
   SO_LIB Expected<T> err(T &&val)
   {
-    return Expected<T>(ERR_peek_error(), std::move(val));
+    return Expected<T>(ERR_get_error(), std::move(val));
   }
  
   template
@@ -515,7 +518,6 @@ SO_API void init()
   // Since openssl v.1.1.0 we no longer need to set
   // locking callback for multithreaded support
 
-  // required for x509 for example
   OpenSSL_add_all_algorithms();
 
   // error more descriptive messages
@@ -528,7 +530,14 @@ SO_API void cleanUp()
   ERR_free_strings();
 }
 
-namespace asn1 { 
+namespace asn1 {
+  SO_API Expected<ASN1_TIME_uptr> stdTime2Time(std::time_t time)
+  {
+    auto ret = make_unique(ASN1_TIME_set(nullptr, time));
+    if(!ret) return detail::err<ASN1_TIME_uptr>();
+    return detail::ok(std::move(ret));
+  }
+
   SO_API Expected<std::time_t> time2StdTime(const ASN1_TIME &asn1Time)
   {
     // TODO: If we're extremly unlucky, can be off by whole second.
@@ -836,6 +845,35 @@ namespace x509 {
     return bignum::bn2Bytes(*bn);
   }
 
+  SO_API Expected<Info> subject(const X509 &x509)
+  {
+    // this is internal ptr and must not be freed
+    X509_NAME *subject = X509_get_subject_name(&x509);
+    if(!subject) return detail::err<Info>();
+    return detail::commonInfo(*subject); 
+  }
+
+  SO_API Expected<Validity> validity(const X509 &x509)
+  {
+    const auto notAfter = X509_get0_notAfter(&x509);
+    if(!notAfter) return detail::err<Validity>();
+    const auto notBefore = X509_get0_notBefore(&x509);
+    if(!notBefore) return detail::err<Validity>();
+    auto notBeforeTime = asn1::time2StdTime(*notBefore);
+    if(!notBeforeTime) return detail::err<Validity>(notBeforeTime.errorCode());
+    auto notAfterTime = asn1::time2StdTime(*notAfter);
+    if(!notAfterTime) return detail::err<Validity>(notAfterTime.errorCode());
+    return detail::ok(Validity{*notAfterTime, *notBeforeTime});
+  }
+
+  SO_API Expected<long> version(const X509 &x509)
+  {
+    // TODO: I kept returning Expected<> to keep API
+    // consistent, but I could just return long here....I don't know...
+    // Version is zero indexed, thus +1
+    return detail::ok(X509_get_version(&x509) + 1);
+  }
+
   SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert)
   {
     X509_NAME *issuer = X509_get_subject_name(&rootCert);
@@ -862,40 +900,22 @@ namespace x509 {
     return detail::ok(true);
   }
 
+  SO_API Expected<bool> setValidity(X509 &cert, const Validity &validity)
+  {
+    ASN1_TIME_uptr notAfterTime = make_unique(ASN1_TIME_set(nullptr, validity.notAfter));
+    if(!notAfterTime) return detail::err(false);
+    ASN1_TIME_uptr notBeforeTime = make_unique(ASN1_TIME_set(nullptr, validity.notBefore));
+    if(!notBeforeTime) return detail::err(false);
+    if(1 != X509_set1_notBefore(&cert, notBeforeTime.get())) return detail::err(false);
+    if(1 != X509_set1_notAfter(&cert, notAfterTime.get())) return detail::err(false);
+    return detail::ok(true);
+  }
+
   SO_API Expected<bool> setVersion(X509 &cert, long version)
   {
     --version;
     if(1 != X509_set_version(&cert, version)) return detail::err(false);
     return detail::ok(true);
-  }
-
-  SO_API Expected<Info> subject(const X509 &x509)
-  {
-    // this is internal ptr and must not be freed
-    X509_NAME *subject = X509_get_subject_name(&x509);
-    if(!subject) return detail::err<Info>();
-    return detail::commonInfo(*subject); 
-  }
-
-  SO_API Expected<Validity> validity(const X509 &x509)
-  {
-    const auto notAfter = X509_get0_notAfter(&x509);
-    if(!notAfter) return detail::err<Validity>();
-    const auto notBefore = X509_get0_notBefore(&x509);
-    if(!notBefore) return detail::err<Validity>();
-    auto notBeforeTime = asn1::time2StdTime(*notBefore);
-    if(!notBeforeTime) return detail::err<Validity>(notBeforeTime.errorCode());
-    auto notAfterTime = asn1::time2StdTime(*notAfter);
-    if(!notAfterTime) return detail::err<Validity>(notAfterTime.errorCode());
-    return detail::ok(Validity{*notBeforeTime, *notAfterTime});
-  }
-
-  SO_API Expected<long> version(const X509 &x509)
-  {
-    // TODO: I kept returning Expected<> to keep API
-    // consistent, but I could just return long here....I don't know...
-    // Version is zero indexed, thus +1
-    return detail::ok(X509_get_version(&x509) + 1);
   }
 } // namespace x509
 
