@@ -44,7 +44,7 @@ TEST(X509UT, getSubjectOK)
 
   // WHEN
   auto actual = x509::subject(*cert);
-
+  
   // THEN
   ASSERT_TRUE(actual);
   EXPECT_EQ("UK", (*actual).countryName);

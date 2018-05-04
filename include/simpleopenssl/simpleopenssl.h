@@ -142,7 +142,7 @@ public:
     typename = typename std::enable_if<std::is_move_constructible<U>::value>::type
   >
   explicit Expected(T &&val)
-    : m_value{std::move(val)}, m_opensslErrCode{1} {}
+    : m_value{std::move(val)}, m_opensslErrCode{0} {}
 
   template
   < 
@@ -150,15 +150,14 @@ public:
     typename = typename std::enable_if<std::is_default_constructible<U>::value>::type
   >
   explicit Expected(unsigned long opensslErrorCode)
-    : m_value {}, m_opensslErrCode{opensslErrorCode} {} 
- 
+    : m_value {}, m_opensslErrCode{opensslErrorCode} {}  
+
   explicit Expected(unsigned long opensslErrorCode, T &&value)
     : m_value {std::move(value)}, m_opensslErrCode{opensslErrorCode} {}
      
-
   constexpr operator bool() const noexcept
   {
-    return 1 == m_opensslErrCode;
+    return 0 == m_opensslErrCode;
   }
 
   constexpr const T& operator*() const
@@ -174,10 +173,8 @@ public:
   }
 
   bool hasValue() const
-  {
-    // a little lie here but most likely user will call this to check
-    // if we have an error
-    return 1 == m_opensslErrCode;
+  { 
+    return 0 == m_opensslErrCode;
   }
 
   unsigned long errorCode() const
@@ -187,7 +184,7 @@ public:
 
   std::string msg() const
   {
-    if(1 == m_opensslErrCode) return "OK";
+    if(0 == m_opensslErrCode) return "OK";
     constexpr size_t SIZE = 1024;
     char buff[SIZE];
     std::memset(buff, 0x00, SIZE);
@@ -198,7 +195,6 @@ public:
 private:
   T m_value;
   const unsigned long m_opensslErrCode;
-
 };
 
 SO_API void init();
@@ -248,8 +244,10 @@ namespace ecdsa {
     sect571r1 = NID_sect571r1
   };
 
+  SO_API Expected<bool> checkKey(const EC_KEY &ecKey);
   SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
   SO_API Expected<Curve> curveOf(const EC_KEY &key);
+  SO_API Expected<EC_KEY_uptr> extractPublic(const EC_KEY &key);
   SO_API Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
   SO_API Expected<EC_KEY_uptr> pem2PrivateKey(const std::string &pemPriv);
@@ -297,15 +295,16 @@ namespace x509 {
 
   struct Validity
   {
-    inline bool operator ==(const Validity &other) const;
-    inline bool operator !=(const Validity &other) const;
-
     std::time_t notAfter;
     std::time_t notBefore;
+    
+    inline bool operator ==(const Validity &other) const;
+    inline bool operator !=(const Validity &other) const; 
   };
 
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
+  SO_API Expected<EVP_PKEY_uptr> pubKey(const X509 &cert);
   SO_API Expected<Bytes> serialNumber(X509 &cert); 
   SO_API Expected<Info> subject(const X509 &cert);
   SO_API Expected<Validity> validity(const X509 &cert);
@@ -369,29 +368,27 @@ namespace detail {
   template<typename T>
   SO_LIB Expected<T> ok(T &&val)
   {
-    return Expected<T>(1, std::move(val));
+    return Expected<T>(0, std::move(val));
   }
   
   SO_LIB Expected<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
   {
-    const auto error = [&] { return detail::err<Bytes>(); };
-
     auto mdCtx = make_unique(EVP_MD_CTX_new());
-    if(!mdCtx) return error();
+    if(!mdCtx) return detail::err<Bytes>();
     
     const int initStatus = EVP_DigestSignInit(mdCtx.get(), nullptr, evpMd, nullptr, &privateKey);
-    if(1 != initStatus) return error();
+    if(1 != initStatus) return detail::err<Bytes>();
     
     const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
-    if(1 != updateStatus) return error();
+    if(1 != updateStatus) return detail::err<Bytes>();
     
     size_t sigLen = 0;
     int signStatus = EVP_DigestSignFinal(mdCtx.get(), nullptr, &sigLen);
-    if(1 != signStatus) return error();
+    if(1 != signStatus) return detail::err<Bytes>();
  
     Bytes tmp(sigLen);
     signStatus = EVP_DigestSignFinal(mdCtx.get(), tmp.data(), &sigLen);
-    if(1 != signStatus) return error();
+    if(1 != signStatus) return detail::err<Bytes>();
         
     Bytes signature(tmp.begin(), std::next(tmp.begin(), static_cast<long>(sigLen))); 
     return detail::ok(std::move(signature));
@@ -571,6 +568,12 @@ namespace bignum {
 }// namespace bignum
 
 namespace ecdsa {
+  SO_API Expected<bool> checkKey(const EC_KEY &ecKey)
+  {
+    if(1 != EC_KEY_check_key(&ecKey)) return detail::err(false);
+    return detail::ok(true);
+  }
+
   SO_API Expected<Curve> curveOf(const EC_KEY &key)
   {
     const EC_GROUP* group = EC_KEY_get0_group(&key);
@@ -585,6 +588,18 @@ namespace ecdsa {
     auto copy = make_unique(EC_KEY_dup(&ecKey));
     if(!copy) return detail::err<EC_KEY_uptr>();
     return detail::ok(std::move(copy));
+  }
+
+  SO_API Expected<EC_KEY_uptr> extractPublic(const EC_KEY &key)
+  {
+    auto ret = make_unique(EC_KEY_new());
+    if(!ret) return detail::err<EC_KEY_uptr>();
+    const EC_GROUP *group = EC_KEY_get0_group(&key);
+    if(1 != EC_KEY_set_group(ret.get(), group)) return detail::err<EC_KEY_uptr>();
+
+    const EC_POINT* pubPoint = EC_KEY_get0_public_key(&key);
+    if(1 != EC_KEY_set_public_key(ret.get(), pubPoint)) return detail::err<EC_KEY_uptr>();
+    return detail::ok(std::move(ret));
   }
 
   SO_API Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &ecKey)
@@ -815,10 +830,10 @@ namespace x509 {
     return !(*this == other);
   }
 
-  SO_API Expected<Info> issuer(const X509 &x509)
+  SO_API Expected<Info> issuer(const X509 &cert)
   {
     // this is internal ptr and must not be freed
-    X509_NAME *issuer = X509_get_issuer_name(&x509);
+    X509_NAME *issuer = X509_get_issuer_name(&cert);
     if(!issuer) return detail::err<Info>();
     return detail::commonInfo(*issuer); 
   }
@@ -835,29 +850,42 @@ namespace x509 {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<Bytes> serialNumber(X509 &x509)
+  SO_API Expected<EVP_PKEY_uptr> pubKey(const X509 &cert)
+  {
+    // internal pointer
+    const EVP_PKEY *pkey = X509_get0_pubkey(&cert);
+    if(!pkey) detail::err<EVP_PKEY_uptr>();
+    auto ret = make_unique(EVP_PKEY_new());
+    if(!ret) return detail::err<EVP_PKEY_uptr>();
+    if(1 != EVP_PKEY_copy_parameters(ret.get(), pkey))
+      return detail::err<EVP_PKEY_uptr>();
+
+    return detail::ok(std::move(ret)); 
+  }
+
+  SO_API Expected<Bytes> serialNumber(X509 &cert)
   {
     // both internal pointers, must not be freed
-    const ASN1_INTEGER *serialNumber = X509_get_serialNumber(&x509);
+    const ASN1_INTEGER *serialNumber = X509_get_serialNumber(&cert);
     if(!serialNumber) return detail::err<Bytes>();
     const BIGNUM *bn = ASN1_INTEGER_to_BN(serialNumber, nullptr);
     if(!bn) return detail::err<Bytes>();
     return bignum::bn2Bytes(*bn);
   }
 
-  SO_API Expected<Info> subject(const X509 &x509)
+  SO_API Expected<Info> subject(const X509 &cert)
   {
     // this is internal ptr and must not be freed
-    X509_NAME *subject = X509_get_subject_name(&x509);
+    X509_NAME *subject = X509_get_subject_name(&cert);
     if(!subject) return detail::err<Info>();
     return detail::commonInfo(*subject); 
   }
 
-  SO_API Expected<Validity> validity(const X509 &x509)
+  SO_API Expected<Validity> validity(const X509 &cert)
   {
-    const auto notAfter = X509_get0_notAfter(&x509);
+    const auto notAfter = X509_get0_notAfter(&cert);
     if(!notAfter) return detail::err<Validity>();
-    const auto notBefore = X509_get0_notBefore(&x509);
+    const auto notBefore = X509_get0_notBefore(&cert);
     if(!notBefore) return detail::err<Validity>();
     auto notBeforeTime = asn1::time2StdTime(*notBefore);
     if(!notBeforeTime) return detail::err<Validity>(notBeforeTime.errorCode());
@@ -866,12 +894,12 @@ namespace x509 {
     return detail::ok(Validity{*notAfterTime, *notBeforeTime});
   }
 
-  SO_API Expected<long> version(const X509 &x509)
+  SO_API Expected<long> version(const X509 &cert)
   {
     // TODO: I kept returning Expected<> to keep API
     // consistent, but I could just return long here....I don't know...
     // Version is zero indexed, thus +1
-    return detail::ok(X509_get_version(&x509) + 1);
+    return detail::ok(X509_get_version(&cert) + 1);
   }
 
   SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert)
