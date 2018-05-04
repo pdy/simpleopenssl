@@ -18,11 +18,9 @@ TEST(EcdsaUT, verifySha256_AgainstPrecalculatedSignature)
   auto maybeKey = ecdsa::pem2PublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
-  std::vector<uint8_t> msg(data::signedText.size());
-  std::transform(data::signedText.begin(), data::signedText.end(), msg.begin(), [](char chr){return static_cast<uint8_t>(chr);});
 
   // WHEN
-  const auto verified = ecdsa::verifySha256Signature(data::signature_sha256, msg, *key);
+  const auto verified = ecdsa::verifySha256Signature(data::signature_sha256, data::signedTextBytes, *key);
 
   // THEN
   ASSERT_TRUE(verified);
@@ -35,13 +33,11 @@ TEST(EcdsaUT, signVerifySHA256_AgainstPrecalculatedKey)
   auto maybeKey = ecdsa::pem2PrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
-  std::vector<uint8_t> msg(data::signedText.size());
-  std::transform(data::signedText.begin(), data::signedText.end(), msg.begin(), [](char chr){return static_cast<uint8_t>(chr);});
 
   // WHEN
-  const auto sig = ecdsa::signSha256(msg, *key); 
+  const auto sig = ecdsa::signSha256(data::signedTextBytes, *key); 
   ASSERT_TRUE(sig);
-  const auto verified = ecdsa::verifySha256Signature(*sig, msg, *key);
+  const auto verified = ecdsa::verifySha256Signature(*sig, data::signedTextBytes, *key);
   ASSERT_TRUE(verified);
 
   // THEN

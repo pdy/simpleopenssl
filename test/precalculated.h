@@ -3,10 +3,19 @@
 
 #include <string>
 #include <vector>
+#include <algorithm>
 
 namespace so { namespace ut { namespace data {
 
 const static std::string signedText = "test_test_foobar";
+const static std::vector<uint8_t> signedTextBytes = []{
+  std::vector<uint8_t> ret;
+  ret.reserve(signedText.size());
+  std::transform(signedText.begin(), signedText.end(), std::back_inserter(ret),[](char chr){
+        return static_cast<uint8_t>(chr);
+      });
+  return ret;
+}();
 
 // openssl ecparam -name secp256k1 -genkey -noout -out secp256k1-key.pem
 const static std::string secp256k1PrivKeyPem = R"(-----BEGIN EC PRIVATE KEY-----

@@ -16,11 +16,9 @@ TEST(EvpUT, verifySha1_AgainstPrecalculatedSignature)
   auto maybeKey = evp::pem2PublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
-  std::vector<uint8_t> msg(data::signedText.size());
-  std::transform(data::signedText.begin(), data::signedText.end(), msg.begin(), [](char chr){return static_cast<uint8_t>(chr);});
 
   // WHEN
-  const auto verified = evp::verifySha1Signature(data::signature_sha1, msg, *key);
+  const auto verified = evp::verifySha1Signature(data::signature_sha1, data::signedTextBytes, *key);
 
   // THEN
   ASSERT_TRUE(verified);
@@ -33,13 +31,11 @@ TEST(EvpUT, signVerifySHA1_AgainstPrecalculatedKey)
   auto maybeKey = evp::pem2PrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
-  std::vector<uint8_t> msg(data::signedText.size());
-  std::transform(data::signedText.begin(), data::signedText.end(), msg.begin(), [](char chr){return static_cast<uint8_t>(chr);});
 
   // WHEN
-  const auto sig = evp::signSha1(msg, *key); 
+  const auto sig = evp::signSha1(data::signedTextBytes, *key); 
   ASSERT_TRUE(sig);
-  const auto verified = evp::verifySha1Signature(*sig, msg, *key);
+  const auto verified = evp::verifySha1Signature(*sig, data::signedTextBytes, *key);
   ASSERT_TRUE(verified);
 
   // THEN
@@ -52,11 +48,9 @@ TEST(EvpUT, verifySha256_AgainstPrecalculatedSignature)
   auto maybeKey = evp::pem2PublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
-  std::vector<uint8_t> msg(data::signedText.size());
-  std::transform(data::signedText.begin(), data::signedText.end(), msg.begin(), [](char chr){return static_cast<uint8_t>(chr);});
 
   // WHEN
-  const auto verified = evp::verifySha256Signature(data::signature_sha256, msg, *key);
+  const auto verified = evp::verifySha256Signature(data::signature_sha256, data::signedTextBytes, *key);
 
   // THEN
   ASSERT_TRUE(verified);
@@ -69,13 +63,11 @@ TEST(EvpUT, signVerifySHA256_AgainstPrecalculatedKey)
   auto maybeKey = evp::pem2PrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
-  std::vector<uint8_t> msg(data::signedText.size());
-  std::transform(data::signedText.begin(), data::signedText.end(), msg.begin(), [](char chr){return static_cast<uint8_t>(chr);});
 
   // WHEN
-  const auto sig = evp::signSha256(msg, *key); 
+  const auto sig = evp::signSha256(data::signedTextBytes, *key); 
   ASSERT_TRUE(sig);
-  const auto verified = evp::verifySha256Signature(*sig, msg, *key);
+  const auto verified = evp::verifySha256Signature(*sig, data::signedTextBytes, *key);
   ASSERT_TRUE(verified);
 
   // THEN
@@ -124,6 +116,20 @@ TEST(EvpUT, signVerifySHA256_ApiIntegrity)
   // THEN
   ASSERT_TRUE(verResult);
   ASSERT_TRUE(*verResult);
+}
+
+TEST(EvpUT, verifySha1_PrecalculatedData)
+{
+  const auto sig = data::signature_sha1;
+  auto maybePub = evp::pem2PublicKey(data::secp256PubKeyPem);
+  ASSERT_TRUE(maybePub);
+  auto pub = *maybePub;
+
+  // WHEN
+  const auto verResult = evp::verifySha1Signature(sig, data::signedTextBytes, *pub);
+
+  ASSERT_TRUE(verResult);
+  EXPECT_TRUE(*verResult);
 }
 
 }}} // namespace so { namespace ut { namespace evp {
