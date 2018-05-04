@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
 
+#include <numeric>
 #include <simpleopenssl/simpleopenssl.h>
 #include "precalculated.h"
 
@@ -195,6 +196,49 @@ TEST(X509UT, getSetValidityAPIIntegrityOK)
   EXPECT_TRUE(setResult);
   ASSERT_TRUE(maybeValidity);
   EXPECT_EQ(expected, *maybeValidity);
+}
+
+TEST(X509UT, DISABLED_setPubKeyWhenUsingWithPrivKeyShouldSuccess)
+{
+  /*
+   * 1. Generate ec key par
+   * 2. Set key in x509 cert using whole pair
+   * 3. Extract public key from cert
+   * 4. Extracted key shoudl not be able to sign anything
+   * 5. Extracted key should be able to verify signature
+   */
+
+  // 1.
+  auto cert = ::so::make_unique(X509_new());
+  auto maybeKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::sect239k1);
+  ASSERT_TRUE(maybeKey);
+  auto key = *maybeKey;
+  auto maybeEvpkey = ::so::ecdsa::key2Evp(*key);
+  ASSERT_TRUE(maybeEvpkey);
+  auto evpKey = *maybeEvpkey; 
+  
+  // 2.
+  const auto result = x509::setPubKey(*cert, *evpKey);
+  ASSERT_TRUE(result);
+
+  // 3.
+  auto maybeExtractedPub = x509::pubKey(*cert);
+  ASSERT_TRUE(maybeExtractedPub);
+  auto extractedPub = *maybeExtractedPub;
+  
+  // 4.
+  ::so::Bytes data(256);
+  std::iota(data.begin(), data.end(), 0);
+  const auto signResult = ::so::evp::signSha1(data, *evpKey);
+  ASSERT_TRUE(signResult);
+  const auto pubSignResult = ::so::evp::signSha1(data, *extractedPub);
+  ASSERT_FALSE(pubSignResult);
+  
+  // 5.
+  const auto verResult = ::so::evp::verifySha1Signature(*signResult, data, *extractedPub);
+  std::cout << verResult.msg() << std::endl;
+  ASSERT_TRUE(verResult); 
+  EXPECT_TRUE(*verResult);
 }
 
 }}}

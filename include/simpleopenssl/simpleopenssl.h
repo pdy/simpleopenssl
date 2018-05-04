@@ -312,6 +312,7 @@ namespace x509 {
 
   SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert);
   SO_API Expected<bool> setIssuer(X509 &cert, const Info &commonInfo);
+  SO_API Expected<bool> setPubKey(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<bool> setSubject(X509 &cert, const Info &commonInfo);
   SO_API Expected<bool> setValidity(X509 &cert, const Validity &validity);
   SO_API Expected<bool> setVersion(X509 &cert, long version);
@@ -397,14 +398,14 @@ namespace detail {
   SO_LIB Expected<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
   {
     auto ctx = make_unique(EVP_MD_CTX_new());
-    if (!ctx) return detail::err<bool>();
+    if (!ctx) return detail::err(false);
 
     if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey)){
-      return detail::err<bool>();
+      return detail::err(false);
     }
     
     if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.data(), msg.size())){
-      return detail::err<bool>(); 
+      return detail::err(false); 
     }
    
     const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
@@ -604,6 +605,7 @@ namespace ecdsa {
 
   SO_API Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &ecKey)
   {
+    // I can keep const in arguments by doing this copy
     auto copy = make_unique(EC_KEY_dup(&ecKey));
     if(!copy) return detail::err<EVP_PKEY_uptr>();
 
@@ -916,6 +918,12 @@ namespace x509 {
     if(!maybeIssuer) return detail::err(false);
     auto issuer = *maybeIssuer;
     if(1 != X509_set_issuer_name(&cert, issuer.get())) return detail::err(false); 
+    return detail::ok(true);
+  }
+
+  SO_API Expected<bool> setPubKey(X509 &cert, EVP_PKEY &pkey)
+  {
+    if(1 != X509_set_pubkey(&cert, &pkey)) return detail::err(false);
     return detail::ok(true);
   }
 

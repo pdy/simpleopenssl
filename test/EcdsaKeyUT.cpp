@@ -119,6 +119,26 @@ TEST(EcdsaKeyUT, extractPublicKeyOK)
   EXPECT_TRUE(*verResult);
 }
 
+TEST(EcdsaKeyUT, extractedPublicKeyCantBeUsedForSign)
+{
+  // GIVEN
+  auto maybePriv = ecdsa::generateKey(ecdsa::Curve::secp160r2);
+  ASSERT_TRUE(maybePriv);
+  auto priv = *maybePriv;
+
+  auto maybePub = ecdsa::extractPublic(*priv);
+  ASSERT_TRUE(maybePub);
+  auto pub = *maybePub;
+  ::so::Bytes data(256);
+  std::iota(data.begin(), data.end(), 0);
+
+  // WHEN
+  const auto signResult = ecdsa::signSha256(data, *pub);
+
+  // THEN
+  EXPECT_FALSE(signResult);
+}
+
 TEST(EcdsaKeyUT, checkKeyOK)
 {
   // GIVEN
