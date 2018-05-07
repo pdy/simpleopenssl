@@ -244,6 +244,12 @@ namespace ecdsa {
     sect571r1 = NID_sect571r1
   };
 
+  struct Signature
+  {
+    Bytes r;
+    Bytes s;
+  };
+
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey);
   SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
   SO_API Expected<Curve> curveOf(const EC_KEY &key);
@@ -305,7 +311,9 @@ namespace x509 {
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
   SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
-  SO_API Expected<Bytes> serialNumber(X509 &cert); 
+  SO_API Expected<Bytes> serialNumber(X509 &cert);
+  SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
+  SO_API Expected<Bytes> signature(const X509 &cert);
   SO_API Expected<Info> subject(const X509 &cert);
   SO_API Expected<Validity> validity(const X509 &cert);
   SO_API Expected<long> version(const X509 &cert);
@@ -868,6 +876,33 @@ namespace x509 {
     if(!bn) return detail::err<Bytes>();
     return bignum::bn2Bytes(*bn);
   }
+
+  SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &key)
+  {
+    const int sigLen = X509_sign(&cert, &key, EVP_sha256());
+    if(sigLen == 0) return detail::err<size_t>();
+    return detail::ok(static_cast<size_t>(sigLen));
+  }
+
+  SO_API Expected<Bytes> signature(const X509 &cert)
+  {
+    // both internal pointers and must not be freed
+    const ASN1_BIT_STRING *psig = nullptr;
+    const X509_ALGOR *palg = nullptr;
+    X509_get0_signature(&psig, &palg, &cert);
+    if(!palg || !psig) return detail::err<Bytes>();
+
+    Bytes rawDerSequence;
+    rawDerSequence.reserve(static_cast<size_t>(psig->length));
+    std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
+
+    return detail::ok(std::move(rawDerSequence));
+  }
+  
+
+//  SO_API Expected<ecdsa::Signature> signatureEcdsa(const X509 &cert)
+//  {
+//  }
 
   SO_API Expected<Info> subject(const X509 &cert)
   {
