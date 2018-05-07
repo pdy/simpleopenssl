@@ -198,13 +198,13 @@ TEST(X509UT, getSetValidityAPIIntegrityOK)
   EXPECT_EQ(expected, *maybeValidity);
 }
 
-TEST(X509UT, DISABLED_setPubKeyWhenUsingWithPrivKeyShouldSuccess)
+TEST(X509UT, getSetPubKeyWithGeneratedKeyShouldSuccess)
 {
   /*
    * 1. Generate ec key par
-   * 2. Set key in x509 cert using whole pair
+   * 2. Set pub key in x509 cert
    * 3. Extract public key from cert
-   * 4. Extracted key shoudl not be able to sign anything
+   * 4. Extracted key should not be able to sign anything
    * 5. Extracted key should be able to verify signature
    */
 
@@ -213,12 +213,17 @@ TEST(X509UT, DISABLED_setPubKeyWhenUsingWithPrivKeyShouldSuccess)
   auto maybeKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::sect239k1);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
-  auto maybeEvpkey = ::so::ecdsa::key2Evp(*key);
-  ASSERT_TRUE(maybeEvpkey);
-  auto evpKey = *maybeEvpkey; 
+  auto maybePub = ::so::ecdsa::extractPublic(*key);
+  ASSERT_TRUE(maybePub);
+  auto maybeEvpPubKey = ::so::ecdsa::key2Evp(**maybePub);
+  ASSERT_TRUE(maybeEvpPubKey);
+  auto evpPubKey = *maybeEvpPubKey;
+  auto maybePriv = ::so::ecdsa::key2Evp(*key);
+  ASSERT_TRUE(maybePriv);
+  auto evpPrivKey = *maybePriv; 
   
   // 2.
-  const auto result = x509::setPubKey(*cert, *evpKey);
+  const auto result = x509::setPubKey(*cert, *evpPubKey);
   ASSERT_TRUE(result);
 
   // 3.
@@ -229,7 +234,7 @@ TEST(X509UT, DISABLED_setPubKeyWhenUsingWithPrivKeyShouldSuccess)
   // 4.
   ::so::Bytes data(256);
   std::iota(data.begin(), data.end(), 0);
-  const auto signResult = ::so::evp::signSha1(data, *evpKey);
+  const auto signResult = ::so::evp::signSha1(data, *evpPrivKey);
   ASSERT_TRUE(signResult);
   const auto pubSignResult = ::so::evp::signSha1(data, *extractedPub);
   ASSERT_FALSE(pubSignResult);
@@ -239,6 +244,53 @@ TEST(X509UT, DISABLED_setPubKeyWhenUsingWithPrivKeyShouldSuccess)
   std::cout << verResult.msg() << std::endl;
   ASSERT_TRUE(verResult); 
   EXPECT_TRUE(*verResult);
+}
+
+TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
+{
+  /*
+   * 1. Convert PEM priv and pub to evp
+   * 2. Verify keys are valid for sign/verify
+   * 3. Set pub key in cert
+   * 4. Extracted key from cert should be able to verify
+   *
+   */
+
+  // 1.
+  auto maybePriv = ::so::evp::pem2PrivateKey(data::secp256k1PrivKeyPem);
+  ASSERT_TRUE(maybePriv);
+  auto priv = *maybePriv;
+  auto maybePub = ::so::evp::pem2PublicKey(data::secp256PubKeyPem);
+  ASSERT_TRUE(maybePub);
+  auto pub = *maybePub;
+
+  // 2.
+  ::so::Bytes data(256);
+  std::iota(data.begin(), data.end(), 0);
+  const auto signResult = ::so::evp::signSha1(data, *priv);
+  ASSERT_TRUE(signResult);
+  const auto pubSignResult = ::so::evp::signSha1(data, *pub);
+  ASSERT_FALSE(pubSignResult); 
+  const auto verResult = ::so::evp::verifySha1Signature(*signResult, data, *pub);
+  ASSERT_TRUE(verResult); 
+  EXPECT_TRUE(*verResult);
+
+  // 3.
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+  
+  // 4.
+  const auto result = x509::setPubKey(*cert, *pub);
+  ASSERT_TRUE(result);
+
+  auto maybeExtractedPub = x509::pubKey(*cert);
+  ASSERT_TRUE(maybeExtractedPub);
+  auto extractedPub = *maybeExtractedPub;
+
+  const auto ver2Result = ::so::evp::verifySha1Signature(*signResult, data, *extractedPub);
+  std::cout << ver2Result.msg() << std::endl;
+  ASSERT_TRUE(ver2Result);
+  ASSERT_TRUE(*ver2Result);
 }
 
 }}}

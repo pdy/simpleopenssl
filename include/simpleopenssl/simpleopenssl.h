@@ -304,7 +304,7 @@ namespace x509 {
 
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
-  SO_API Expected<EVP_PKEY_uptr> pubKey(const X509 &cert);
+  SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
   SO_API Expected<Bytes> serialNumber(X509 &cert); 
   SO_API Expected<Info> subject(const X509 &cert);
   SO_API Expected<Validity> validity(const X509 &cert);
@@ -852,17 +852,11 @@ namespace x509 {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<EVP_PKEY_uptr> pubKey(const X509 &cert)
-  {
-    // internal pointer
-    const EVP_PKEY *pkey = X509_get0_pubkey(&cert);
-    if(!pkey) detail::err<EVP_PKEY_uptr>();
-    auto ret = make_unique(EVP_PKEY_new());
-    if(!ret) return detail::err<EVP_PKEY_uptr>();
-    if(1 != EVP_PKEY_copy_parameters(ret.get(), pkey))
-      return detail::err<EVP_PKEY_uptr>();
-
-    return detail::ok(std::move(ret)); 
+  SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert)
+  { 
+    auto pkey = make_unique(X509_get_pubkey(&cert));
+    if(!pkey) return detail::err<EVP_PKEY_uptr>();
+    return detail::ok(std::move(pkey));
   }
 
   SO_API Expected<Bytes> serialNumber(X509 &cert)
