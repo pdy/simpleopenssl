@@ -316,6 +316,7 @@ namespace x509 {
   SO_API Expected<Bytes> signature(const X509 &cert);
   SO_API Expected<Info> subject(const X509 &cert);
   SO_API Expected<Validity> validity(const X509 &cert);
+  SO_API Expected<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<long> version(const X509 &cert);
 
   SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert);
@@ -923,6 +924,12 @@ namespace x509 {
     auto notAfterTime = asn1::time2StdTime(*notAfter);
     if(!notAfterTime) return detail::err<Validity>(notAfterTime.errorCode());
     return detail::ok(Validity{*notAfterTime, *notBeforeTime});
+  }
+
+  SO_API Expected<bool> verifySignature(X509 &cert, EVP_PKEY &pkey)
+  {
+    const int result = X509_verify(&cert, &pkey);
+    return result == 1 ? detail::ok(true) : result == 0 ? detail::ok(false) : detail::err(false);
   }
 
   SO_API Expected<long> version(const X509 &cert)

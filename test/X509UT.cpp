@@ -293,4 +293,29 @@ TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
   ASSERT_TRUE(*ver2Result);
 }
 
+TEST(X509UT, certSignVerifyAPIIntegrityShoudlSuccess)
+{
+  // GIVEN
+  x509::Info name;
+  name.commonName = "CommonName";
+  name.organizationName = "simpleopenssl";
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(x509::setSubject(*cert, name));
+  ASSERT_TRUE(x509::setIssuer(*cert, name));
+  auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
+  ASSERT_TRUE(maybeEcKey);
+  auto maybeKey = ::so::ecdsa::key2Evp(**maybeEcKey);
+  ASSERT_TRUE(maybeKey);
+  auto key = *maybeKey;
+
+  // WHEN
+  const auto signResult = x509::signSha256(*cert, *key);
+  const auto verResult = x509::verifySignature(*cert, *key);
+
+  // THEN
+  ASSERT_TRUE(signResult);
+  ASSERT_TRUE(verResult);
+  EXPECT_TRUE(*verResult);  
+}
+
 }}}
