@@ -312,6 +312,7 @@ namespace x509 {
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
   SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
   SO_API Expected<Bytes> serialNumber(X509 &cert);
+  SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<Bytes> signature(const X509 &cert);
   SO_API Expected<Info> subject(const X509 &cert);
@@ -516,6 +517,13 @@ namespace detail {
     if(!append(name.get(), NID_stateOrProvinceName, info.stateOrProvinceName)) return err();
 
     return detail::ok(std::move(name));
+  }
+
+  SO_LIB Expected<size_t> signCert(X509 &cert, EVP_PKEY &key, const EVP_MD *md)
+  {
+    const int sigLen = X509_sign(&cert, &key, md);
+    if(sigLen == 0) return detail::err<size_t>();
+    return detail::ok(static_cast<size_t>(sigLen));
   }
 
 } //namespace detail
@@ -878,11 +886,14 @@ namespace x509 {
     return bignum::bn2Bytes(*bn);
   }
 
+  SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey)
+  {
+    return detail::signCert(cert, pkey, EVP_sha256());  
+  }
+
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &key)
   {
-    const int sigLen = X509_sign(&cert, &key, EVP_sha256());
-    if(sigLen == 0) return detail::err<size_t>();
-    return detail::ok(static_cast<size_t>(sigLen));
+    return detail::signCert(cert, key, EVP_sha256());  
   }
 
   SO_API Expected<Bytes> signature(const X509 &cert)
