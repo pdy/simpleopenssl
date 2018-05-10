@@ -16,7 +16,7 @@ TEST(Asn1UT, asn1TimeToStdTimeOK)
   ASN1_TIME_set(time.get(), now);
 
   // WHEN
-  auto actual = asn1::time2StdTime(*time);
+  auto actual = asn1::timeToStdTime(*time);
 
   // THEN
   ASSERT_TRUE(actual);
@@ -29,10 +29,10 @@ TEST(Asn1UT, asn1ApiTimeConvertersIntegrityOK)
   auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
   // WHEN
-  auto maybeAsn1Time = asn1::stdTime2Time(now);
+  auto maybeAsn1Time = asn1::stdTimeToTime(now);
   ASSERT_TRUE(maybeAsn1Time);
   auto asn1Time = *maybeAsn1Time;
-  const auto stdTime = asn1::time2StdTime(*asn1Time);
+  const auto stdTime = asn1::timeToStdTime(*asn1Time);
   ASSERT_TRUE(stdTime);
 
   // THEN

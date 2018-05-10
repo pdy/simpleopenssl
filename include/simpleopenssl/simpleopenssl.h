@@ -201,8 +201,8 @@ SO_API void init();
 SO_API void cleanUp();
 
 namespace asn1 {
-  SO_API Expected<std::time_t> time2StdTime(const ASN1_TIME &asn1Time);
-  SO_API Expected<ASN1_TIME_uptr> stdTime2Time(std::time_t time);
+  SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
+  SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
 } // namepsace asn1
 
 namespace bignum {
@@ -546,14 +546,14 @@ SO_API void cleanUp()
 }
 
 namespace asn1 {
-  SO_API Expected<ASN1_TIME_uptr> stdTime2Time(std::time_t time)
+  SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time)
   {
     auto ret = make_unique(ASN1_TIME_set(nullptr, time));
     if(!ret) return detail::err<ASN1_TIME_uptr>();
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<std::time_t> time2StdTime(const ASN1_TIME &asn1Time)
+  SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time)
   {
     // TODO: If we're extremly unlucky, can be off by whole second.
     // Despite tests didn't fail once, I should consider just straight string parsing here.
@@ -930,9 +930,9 @@ namespace x509 {
     if(!notAfter) return detail::err<Validity>();
     const auto notBefore = X509_get0_notBefore(&cert);
     if(!notBefore) return detail::err<Validity>();
-    auto notBeforeTime = asn1::time2StdTime(*notBefore);
+    auto notBeforeTime = asn1::timeToStdTime(*notBefore);
     if(!notBeforeTime) return detail::err<Validity>(notBeforeTime.errorCode());
-    auto notAfterTime = asn1::time2StdTime(*notAfter);
+    auto notAfterTime = asn1::timeToStdTime(*notAfter);
     if(!notAfterTime) return detail::err<Validity>(notAfterTime.errorCode());
     return detail::ok(Validity{*notAfterTime, *notBeforeTime});
   }
