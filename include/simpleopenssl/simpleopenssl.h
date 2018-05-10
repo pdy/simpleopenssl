@@ -461,7 +461,7 @@ namespace detail {
     return detail::ok(std::move(ret)); 
   }
 
-  SO_LIB Expected<std::string> name2String(const X509_NAME &name)
+  SO_LIB Expected<std::string> nameToString(const X509_NAME &name)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(0 > X509_NAME_print_ex(bio.get(), &name, 0, XN_FLAG_RFC2253))
@@ -477,7 +477,7 @@ namespace detail {
   SO_LIB Expected<x509::Info> commonInfo(X509_NAME &name)
   {
     const auto error = [](long errCode){ return detail::err<x509::Info>(errCode); };
-    const auto raw = name2String(name);
+    const auto raw = nameToString(name);
     if(!raw) return error(raw.errorCode());
     const auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName) return error(commonName.errorCode());
