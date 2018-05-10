@@ -14,7 +14,7 @@ namespace ecdsa = ::so::ecdsa;
 TEST(EcdsaKeyUT, pem2PubKeyConversion_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = ecdsa::pem2PublicKey(data::secp256PubKeyPem);
+  auto maybeKey = ecdsa::pemToPublicKey(data::secp256PubKeyPem);
 
   // THEN
   EXPECT_TRUE(maybeKey);
@@ -23,7 +23,7 @@ TEST(EcdsaKeyUT, pem2PubKeyConversion_shouldSuccess)
 TEST(EcdsaKeyUT, copyKey_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = ecdsa::pem2PublicKey(data::secp256PubKeyPem);
+  auto maybeKey = ecdsa::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
 
   auto key = *maybeKey;
@@ -37,7 +37,7 @@ TEST(EcdsaKeyUT, pem2PubKeyConversion_shouldFailWithInvalidPemFormat)
   const std::string incorrectPem = data::secp256PubKeyPem.substr(1);
 
   // WHEN
-  auto maybeKey = ecdsa::pem2PublicKey(incorrectPem);
+  auto maybeKey = ecdsa::pemToPublicKey(incorrectPem);
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -46,7 +46,7 @@ TEST(EcdsaKeyUT, pem2PubKeyConversion_shouldFailWithInvalidPemFormat)
 TEST(EcdsaKeyUT, pem2PubKeyConversion_shouldFailWithPrivKey)
 {
   // WHEN
-  auto maybeKey = ecdsa::pem2PublicKey(data::secp256k1PrivKeyPem);
+  auto maybeKey = ecdsa::pemToPublicKey(data::secp256k1PrivKeyPem);
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -55,7 +55,7 @@ TEST(EcdsaKeyUT, pem2PubKeyConversion_shouldFailWithPrivKey)
 TEST(EcdsaKeyUT, pem2PrivKeyConversion_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = ecdsa::pem2PrivateKey(data::secp256k1PrivKeyPem);
+  auto maybeKey = ecdsa::pemToPrivateKey(data::secp256k1PrivKeyPem);
 
   // THEN
   EXPECT_TRUE(maybeKey);
@@ -67,7 +67,7 @@ TEST(EcdsaKeyUT, pem2PrivKeyConversion_shouldFailWithInvalidPemFormat)
   const std::string incorrectPem = data::secp256k1PrivKeyPem.substr(1);
 
   // WHEN
-  auto maybeKey = ecdsa::pem2PrivateKey(incorrectPem);
+  auto maybeKey = ecdsa::pemToPrivateKey(incorrectPem);
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -76,7 +76,7 @@ TEST(EcdsaKeyUT, pem2PrivKeyConversion_shouldFailWithInvalidPemFormat)
 TEST(EcdsaKeyUT, pem2PrivKeyConversion_shouldFailWithPubKey)
 {
   // WHEN
-  auto maybeKey = ecdsa::pem2PrivateKey(data::secp256PubKeyPem);
+  auto maybeKey = ecdsa::pemToPrivateKey(data::secp256PubKeyPem);
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -85,7 +85,7 @@ TEST(EcdsaKeyUT, pem2PrivKeyConversion_shouldFailWithPubKey)
 TEST(EcdsaKeyUT, curveOf_AgainstPrecalculatedData)
 {
   // GIVEN
-  auto maybePriv = ecdsa::pem2PrivateKey(data::secp256k1PrivKeyPem);
+  auto maybePriv = ecdsa::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybePriv);
   auto priv = *maybePriv;
 

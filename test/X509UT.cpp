@@ -215,10 +215,10 @@ TEST(X509UT, getSetPubKeyWithGeneratedKeyShouldSuccess)
   auto key = *maybeKey;
   auto maybePub = ::so::ecdsa::extractPublic(*key);
   ASSERT_TRUE(maybePub);
-  auto maybeEvpPubKey = ::so::ecdsa::key2Evp(**maybePub);
+  auto maybeEvpPubKey = ::so::ecdsa::keyToEvp(**maybePub);
   ASSERT_TRUE(maybeEvpPubKey);
   auto evpPubKey = *maybeEvpPubKey;
-  auto maybePriv = ::so::ecdsa::key2Evp(*key);
+  auto maybePriv = ::so::ecdsa::keyToEvp(*key);
   ASSERT_TRUE(maybePriv);
   auto evpPrivKey = *maybePriv; 
   
@@ -257,10 +257,10 @@ TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
    */
 
   // 1.
-  auto maybePriv = ::so::evp::pem2PrivateKey(data::secp256k1PrivKeyPem);
+  auto maybePriv = ::so::evp::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybePriv);
   auto priv = *maybePriv;
-  auto maybePub = ::so::evp::pem2PublicKey(data::secp256PubKeyPem);
+  auto maybePub = ::so::evp::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybePub);
   auto pub = *maybePub;
 
@@ -304,7 +304,7 @@ TEST(X509UT, certSignSha256VerifyAPIIntegrityShoudlSuccess)
   ASSERT_TRUE(x509::setIssuer(*cert, name));
   auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
   ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::key2Evp(**maybeEcKey);
+  auto maybeKey = ::so::ecdsa::keyToEvp(**maybeEcKey);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
 
@@ -329,7 +329,7 @@ TEST(X509UT, certSignSha1VerifyAPIIntegrityShoudlSuccess)
   ASSERT_TRUE(x509::setIssuer(*cert, name));
   auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
   ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::key2Evp(**maybeEcKey);
+  auto maybeKey = ::so::ecdsa::keyToEvp(**maybeEcKey);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
 

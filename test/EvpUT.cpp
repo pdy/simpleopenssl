@@ -13,7 +13,7 @@ namespace evp = ::so::evp;
 TEST(EvpUT, verifySha1_AgainstPrecalculatedSignature)
 {
   // GIVEN
-  auto maybeKey = evp::pem2PublicKey(data::secp256PubKeyPem);
+  auto maybeKey = evp::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
 
@@ -28,7 +28,7 @@ TEST(EvpUT, verifySha1_AgainstPrecalculatedSignature)
 TEST(EvpUT, signVerifySHA1_AgainstPrecalculatedKey)
 {
   // GIVEN
-  auto maybeKey = evp::pem2PrivateKey(data::secp256k1PrivKeyPem);
+  auto maybeKey = evp::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
 
@@ -45,7 +45,7 @@ TEST(EvpUT, signVerifySHA1_AgainstPrecalculatedKey)
 TEST(EvpUT, verifySha256_AgainstPrecalculatedSignature)
 {
   // GIVEN
-  auto maybeKey = evp::pem2PublicKey(data::secp256PubKeyPem);
+  auto maybeKey = evp::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
 
@@ -60,7 +60,7 @@ TEST(EvpUT, verifySha256_AgainstPrecalculatedSignature)
 TEST(EvpUT, signVerifySHA256_AgainstPrecalculatedKey)
 {
   // GIVEN
-  auto maybeKey = evp::pem2PrivateKey(data::secp256k1PrivKeyPem);
+  auto maybeKey = evp::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
 
@@ -83,7 +83,7 @@ TEST(EvpUT, signVerifySHA1_ApiIntegrity)
   ASSERT_TRUE(key);
 
   auto keyUptr = *key;
-  auto maybeEvp = ecdsa::key2Evp(*keyUptr);
+  auto maybeEvp = ecdsa::keyToEvp(*keyUptr);
   ASSERT_TRUE(maybeEvp);
   auto evpKey = *maybeEvp; 
   
@@ -105,7 +105,7 @@ TEST(EvpUT, signVerifySHA256_ApiIntegrity)
   ASSERT_TRUE(key);
 
   auto keyUptr = *key;
-  auto maybeEvp = ecdsa::key2Evp(*keyUptr);
+  auto maybeEvp = ecdsa::keyToEvp(*keyUptr);
   ASSERT_TRUE(maybeEvp);
   auto evpKey = *maybeEvp; 
   
@@ -121,7 +121,7 @@ TEST(EvpUT, signVerifySHA256_ApiIntegrity)
 TEST(EvpUT, verifySha1_PrecalculatedData)
 {
   const auto sig = data::signature_sha1;
-  auto maybePub = evp::pem2PublicKey(data::secp256PubKeyPem);
+  auto maybePub = evp::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybePub);
   auto pub = *maybePub;
 

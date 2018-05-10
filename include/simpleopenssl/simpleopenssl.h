@@ -254,17 +254,17 @@ namespace ecdsa {
   SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
   SO_API Expected<Curve> curveOf(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> extractPublic(const EC_KEY &key);
-  SO_API Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &key);
+  SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
-  SO_API Expected<EC_KEY_uptr> pem2PrivateKey(const std::string &pemPriv);
-  SO_API Expected<EC_KEY_uptr> pem2PublicKey(const std::string &pemPub);
+  SO_API Expected<EC_KEY_uptr> pemToPrivateKey(const std::string &pemPriv);
+  SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub);
   SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
 } // namespace ecdsa
 
 namespace evp {
-  SO_API Expected<EVP_PKEY_uptr> pem2PrivateKey(const std::string &pemPriv);
-  SO_API Expected<EVP_PKEY_uptr> pem2PublicKey(const std::string &pemPub);
+  SO_API Expected<EVP_PKEY_uptr> pemToPrivateKey(const std::string &pemPriv);
+  SO_API Expected<EVP_PKEY_uptr> pemToPublicKey(const std::string &pemPub);
   SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   SO_API Expected<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
@@ -620,7 +620,7 @@ namespace ecdsa {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &ecKey)
+  SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &ecKey)
   {
     // I can keep const in arguments by doing this copy
     auto copy = make_unique(EC_KEY_dup(&ecKey));
@@ -637,7 +637,7 @@ namespace ecdsa {
   }
 
 
-  SO_API Expected<EC_KEY_uptr> pem2PublicKey(const std::string &pemPub)
+  SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), pemPub.size()));
     if(!bio) return detail::err<EC_KEY_uptr>();
@@ -646,7 +646,7 @@ namespace ecdsa {
     return detail::ok(make_unique(rawKey));
   }
 
-  SO_API Expected<EC_KEY_uptr> pem2PrivateKey(const std::string &pemPriv)
+  SO_API Expected<EC_KEY_uptr> pemToPrivateKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), pemPriv.size()));
     if(!bio) return detail::err<EC_KEY_uptr>();
@@ -711,7 +711,7 @@ namespace ecdsa {
 } //namespace ecdsa
 
 namespace evp {
-  SO_API Expected<EVP_PKEY_uptr> pem2PublicKey(const std::string &pemPub)
+  SO_API Expected<EVP_PKEY_uptr> pemToPublicKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), pemPub.size()));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
@@ -720,7 +720,7 @@ namespace evp {
     return detail::ok(make_unique(rawKey));
   }
 
-  SO_API Expected<EVP_PKEY_uptr> pem2PrivateKey(const std::string &pemPriv)
+  SO_API Expected<EVP_PKEY_uptr> pemToPrivateKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), pemPriv.size()));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
