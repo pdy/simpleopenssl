@@ -14,7 +14,7 @@ namespace evp = ::so::evp;
 TEST(EvpKeyUT, pem2PubKeyConversion_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = evp::pem2PublicKey(data::secp256PubKeyPem);
+  auto maybeKey = evp::pemToPublicKey(data::secp256PubKeyPem);
 
   // THEN
   EXPECT_TRUE(maybeKey);
@@ -26,7 +26,7 @@ TEST(EvpKeyUT, pem2PubKeyConversion_shouldFailWithInvalidPemFormat)
   const std::string incorrectPem = data::secp256PubKeyPem.substr(1);
 
   // WHEN
-  auto maybeKey = evp::pem2PublicKey(incorrectPem);
+  auto maybeKey = evp::pemToPublicKey(incorrectPem);
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -35,7 +35,7 @@ TEST(EvpKeyUT, pem2PubKeyConversion_shouldFailWithInvalidPemFormat)
 TEST(EvpKeyUT, pem2PubKeyConversion_shouldFailWithPrivKey)
 {
   // WHEN
-  auto maybeKey = evp::pem2PublicKey(data::secp256k1PrivKeyPem);
+  auto maybeKey = evp::pemToPublicKey(data::secp256k1PrivKeyPem);
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -44,7 +44,7 @@ TEST(EvpKeyUT, pem2PubKeyConversion_shouldFailWithPrivKey)
 TEST(EvpKeyUT, pem2PrivKeyConversion_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = evp::pem2PrivateKey(data::secp256k1PrivKeyPem);
+  auto maybeKey = evp::pemToPrivateKey(data::secp256k1PrivKeyPem);
 
   // THEN
   EXPECT_TRUE(maybeKey);
@@ -56,7 +56,7 @@ TEST(EvpKeyUT, pem2PrivKeyConversion_shouldFailWithInvalidPemFormat)
   const std::string incorrectPem = data::secp256k1PrivKeyPem.substr(1);
 
   // WHEN
-  auto maybeKey = evp::pem2PrivateKey(incorrectPem);
+  auto maybeKey = evp::pemToPrivateKey(incorrectPem);
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -65,7 +65,7 @@ TEST(EvpKeyUT, pem2PrivKeyConversion_shouldFailWithInvalidPemFormat)
 TEST(EvpKeyUT, pem2PrivKeyConversion_shouldFailWithPubKey)
 {
   // WHEN
-  auto maybeKey = evp::pem2PrivateKey(data::secp256PubKeyPem);
+  auto maybeKey = evp::pemToPrivateKey(data::secp256PubKeyPem);
 
   // THEN
   EXPECT_FALSE(maybeKey);

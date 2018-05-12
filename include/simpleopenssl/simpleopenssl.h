@@ -192,8 +192,8 @@ SO_API void init();
 SO_API void cleanUp();
 
 namespace asn1 {
-  SO_API Expected<std::time_t> time2StdTime(const ASN1_TIME &asn1Time);
-  SO_API Expected<ASN1_TIME_uptr> stdTime2Time(std::time_t time);
+  SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
+  SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
 } // namepsace asn1
 
 namespace bignum {
@@ -245,17 +245,17 @@ namespace ecdsa {
   SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
   SO_API Expected<Curve> curveOf(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> extractPublic(const EC_KEY &key);
-  SO_API Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &key);
+  SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
-  SO_API Expected<EC_KEY_uptr> pem2PrivateKey(const std::string &pemPriv);
-  SO_API Expected<EC_KEY_uptr> pem2PublicKey(const std::string &pemPub);
+  SO_API Expected<EC_KEY_uptr> pemToPrivateKey(const std::string &pemPriv);
+  SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub);
   SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
 } // namespace ecdsa
 
 namespace evp {
-  SO_API Expected<EVP_PKEY_uptr> pem2PrivateKey(const std::string &pemPriv);
-  SO_API Expected<EVP_PKEY_uptr> pem2PublicKey(const std::string &pemPub);
+  SO_API Expected<EVP_PKEY_uptr> pemToPrivateKey(const std::string &pemPriv);
+  SO_API Expected<EVP_PKEY_uptr> pemToPublicKey(const std::string &pemPub);
   SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   SO_API Expected<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
@@ -303,6 +303,7 @@ namespace x509 {
   SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
   SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
   SO_API Expected<Bytes> serialNumber(X509 &cert);
+  SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<Bytes> signature(const X509 &cert);
   SO_API Expected<Info> subject(const X509 &cert);
@@ -451,7 +452,7 @@ namespace detail {
     return detail::ok(std::move(ret)); 
   }
 
-  SO_LIB Expected<std::string> name2String(const X509_NAME &name)
+  SO_LIB Expected<std::string> nameToString(const X509_NAME &name)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(0 > X509_NAME_print_ex(bio.get(), &name, 0, XN_FLAG_RFC2253))
@@ -467,7 +468,7 @@ namespace detail {
   SO_LIB Expected<x509::Info> commonInfo(X509_NAME &name)
   {
     const auto error = [](long errCode){ return detail::err<x509::Info>(errCode); };
-    const auto raw = name2String(name);
+    const auto raw = nameToString(name);
     if(!raw) return error(raw.errorCode());
     const auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName) return error(commonName.errorCode());
@@ -509,6 +510,13 @@ namespace detail {
     return detail::ok(std::move(name));
   }
 
+  SO_LIB Expected<size_t> signCert(X509 &cert, EVP_PKEY &key, const EVP_MD *md)
+  {
+    const int sigLen = X509_sign(&cert, &key, md);
+    if(sigLen == 0) return detail::err<size_t>();
+    return detail::ok(static_cast<size_t>(sigLen));
+  }
+
 } //namespace detail
 
 SO_API void init()
@@ -529,14 +537,14 @@ SO_API void cleanUp()
 }
 
 namespace asn1 {
-  SO_API Expected<ASN1_TIME_uptr> stdTime2Time(std::time_t time)
+  SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time)
   {
     auto ret = make_unique(ASN1_TIME_set(nullptr, time));
     if(!ret) return detail::err<ASN1_TIME_uptr>();
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<std::time_t> time2StdTime(const ASN1_TIME &asn1Time)
+  SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time)
   {
     // TODO: If we're extremly unlucky, can be off by whole second.
     // Despite tests didn't fail once, I should consider just straight string parsing here.
@@ -603,7 +611,7 @@ namespace ecdsa {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<EVP_PKEY_uptr> key2Evp(const EC_KEY &ecKey)
+  SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &ecKey)
   {
     // I can keep const in arguments by doing this copy
     auto copy = make_unique(EC_KEY_dup(&ecKey));
@@ -620,7 +628,7 @@ namespace ecdsa {
   }
 
 
-  SO_API Expected<EC_KEY_uptr> pem2PublicKey(const std::string &pemPub)
+  SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), pemPub.size()));
     if(!bio) return detail::err<EC_KEY_uptr>();
@@ -629,7 +637,7 @@ namespace ecdsa {
     return detail::ok(make_unique(rawKey));
   }
 
-  SO_API Expected<EC_KEY_uptr> pem2PrivateKey(const std::string &pemPriv)
+  SO_API Expected<EC_KEY_uptr> pemToPrivateKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), pemPriv.size()));
     if(!bio) return detail::err<EC_KEY_uptr>();
@@ -694,7 +702,7 @@ namespace ecdsa {
 } //namespace ecdsa
 
 namespace evp {
-  SO_API Expected<EVP_PKEY_uptr> pem2PublicKey(const std::string &pemPub)
+  SO_API Expected<EVP_PKEY_uptr> pemToPublicKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), pemPub.size()));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
@@ -703,7 +711,7 @@ namespace evp {
     return detail::ok(make_unique(rawKey));
   }
 
-  SO_API Expected<EVP_PKEY_uptr> pem2PrivateKey(const std::string &pemPriv)
+  SO_API Expected<EVP_PKEY_uptr> pemToPrivateKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), pemPriv.size()));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
@@ -869,11 +877,14 @@ namespace x509 {
     return bignum::bn2Bytes(*bn);
   }
 
+  SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey)
+  {
+    return detail::signCert(cert, pkey, EVP_sha256());  
+  }
+
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &key)
   {
-    const int sigLen = X509_sign(&cert, &key, EVP_sha256());
-    if(sigLen == 0) return detail::err<size_t>();
-    return detail::ok(static_cast<size_t>(sigLen));
+    return detail::signCert(cert, key, EVP_sha256());  
   }
 
   SO_API Expected<Bytes> signature(const X509 &cert)
@@ -910,9 +921,9 @@ namespace x509 {
     if(!notAfter) return detail::err<Validity>();
     const auto notBefore = X509_get0_notBefore(&cert);
     if(!notBefore) return detail::err<Validity>();
-    auto notBeforeTime = asn1::time2StdTime(*notBefore);
+    auto notBeforeTime = asn1::timeToStdTime(*notBefore);
     if(!notBeforeTime) return detail::err<Validity>(notBeforeTime.errorCode());
-    auto notAfterTime = asn1::time2StdTime(*notAfter);
+    auto notAfterTime = asn1::timeToStdTime(*notAfter);
     if(!notAfterTime) return detail::err<Validity>(notAfterTime.errorCode());
     return detail::ok(Validity{*notAfterTime, *notBeforeTime});
   }

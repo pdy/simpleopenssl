@@ -15,7 +15,7 @@ namespace evp = ::so::evp;
 TEST(EcdsaUT, verifySha256_AgainstPrecalculatedSignature)
 {
   // GIVEN
-  auto maybeKey = ecdsa::pem2PublicKey(data::secp256PubKeyPem);
+  auto maybeKey = ecdsa::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
 
@@ -30,7 +30,7 @@ TEST(EcdsaUT, verifySha256_AgainstPrecalculatedSignature)
 TEST(EcdsaUT, signVerifySHA256_AgainstPrecalculatedKey)
 {
   // GIVEN
-  auto maybeKey = ecdsa::pem2PrivateKey(data::secp256k1PrivKeyPem);
+  auto maybeKey = ecdsa::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
 
@@ -77,7 +77,7 @@ TEST(EcdsaUT, signVerify_IntegrityWithEvp)
   const auto verResult = ecdsa::verifySha256Signature(*sig, data, *keyUptr);
 
   // WHEN
-  auto evpKey = ecdsa::key2Evp(*keyUptr);
+  auto evpKey = ecdsa::keyToEvp(*keyUptr);
   const auto evpVerResult = evp::verifySha256Signature(*sig, data, **evpKey);
   
   // THEN

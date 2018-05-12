@@ -215,10 +215,10 @@ TEST(X509UT, getSetPubKeyWithGeneratedKeyShouldSuccess)
   auto key = *maybeKey;
   auto maybePub = ::so::ecdsa::extractPublic(*key);
   ASSERT_TRUE(maybePub);
-  auto maybeEvpPubKey = ::so::ecdsa::key2Evp(**maybePub);
+  auto maybeEvpPubKey = ::so::ecdsa::keyToEvp(**maybePub);
   ASSERT_TRUE(maybeEvpPubKey);
   auto evpPubKey = *maybeEvpPubKey;
-  auto maybePriv = ::so::ecdsa::key2Evp(*key);
+  auto maybePriv = ::so::ecdsa::keyToEvp(*key);
   ASSERT_TRUE(maybePriv);
   auto evpPrivKey = *maybePriv; 
   
@@ -257,10 +257,10 @@ TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
    */
 
   // 1.
-  auto maybePriv = ::so::evp::pem2PrivateKey(data::secp256k1PrivKeyPem);
+  auto maybePriv = ::so::evp::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybePriv);
   auto priv = *maybePriv;
-  auto maybePub = ::so::evp::pem2PublicKey(data::secp256PubKeyPem);
+  auto maybePub = ::so::evp::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybePub);
   auto pub = *maybePub;
 
@@ -293,7 +293,7 @@ TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
   ASSERT_TRUE(*ver2Result);
 }
 
-TEST(X509UT, certSignVerifyAPIIntegrityShoudlSuccess)
+TEST(X509UT, certSignSha256VerifyAPIIntegrityShoudlSuccess)
 {
   // GIVEN
   x509::Info name;
@@ -304,12 +304,37 @@ TEST(X509UT, certSignVerifyAPIIntegrityShoudlSuccess)
   ASSERT_TRUE(x509::setIssuer(*cert, name));
   auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
   ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::key2Evp(**maybeEcKey);
+  auto maybeKey = ::so::ecdsa::keyToEvp(**maybeEcKey);
   ASSERT_TRUE(maybeKey);
   auto key = *maybeKey;
 
   // WHEN
   const auto signResult = x509::signSha256(*cert, *key);
+  const auto verResult = x509::verifySignature(*cert, *key);
+
+  // THEN
+  ASSERT_TRUE(signResult);
+  ASSERT_TRUE(verResult);
+  EXPECT_TRUE(*verResult);  
+}
+
+TEST(X509UT, certSignSha1VerifyAPIIntegrityShoudlSuccess)
+{
+  // GIVEN
+  x509::Info name;
+  name.commonName = "CommonName";
+  name.organizationName = "simpleopenssl";
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(x509::setSubject(*cert, name));
+  ASSERT_TRUE(x509::setIssuer(*cert, name));
+  auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
+  ASSERT_TRUE(maybeEcKey);
+  auto maybeKey = ::so::ecdsa::keyToEvp(**maybeEcKey);
+  ASSERT_TRUE(maybeKey);
+  auto key = *maybeKey;
+
+  // WHEN
+  const auto signResult = x509::signSha1(*cert, *key);
   const auto verResult = x509::verifySignature(*cert, *key);
 
   // THEN
