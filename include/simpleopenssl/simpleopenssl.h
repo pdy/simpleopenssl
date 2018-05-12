@@ -134,16 +134,7 @@ CUSTOM_DELETER_UNIQUE_POINTER(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 template<typename T>
 class Expected
 {
-public:
-  
-  template
-  <
-    typename U = T,
-    typename = typename std::enable_if<std::is_move_constructible<U>::value>::type
-  >
-  explicit Expected(T &&val)
-    : m_value{std::move(val)}, m_opensslErrCode{0} {}
-
+public: 
   template
   < 
     typename U = T,
