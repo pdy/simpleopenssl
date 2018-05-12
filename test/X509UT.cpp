@@ -241,7 +241,6 @@ TEST(X509UT, getSetPubKeyWithGeneratedKeyShouldSuccess)
   
   // 5.
   const auto verResult = ::so::evp::verifySha1Signature(*signResult, data, *extractedPub);
-  std::cout << verResult.msg() << std::endl;
   ASSERT_TRUE(verResult); 
   EXPECT_TRUE(*verResult);
 }
@@ -288,7 +287,6 @@ TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
   auto extractedPub = *maybeExtractedPub;
 
   const auto ver2Result = ::so::evp::verifySha1Signature(*signResult, data, *extractedPub);
-  std::cout << ver2Result.msg() << std::endl;
   ASSERT_TRUE(ver2Result);
   ASSERT_TRUE(*ver2Result);
 }
