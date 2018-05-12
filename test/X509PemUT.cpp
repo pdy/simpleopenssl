@@ -11,7 +11,7 @@ namespace x509 = ::so::x509;
 TEST(X509UT, pemStringToX509ShouldFail)
 {
   // WHEN
-  auto cert = x509::pem2X509(data::meaninglessInvalidPemCert);
+  auto cert = x509::pemToX509(data::meaninglessInvalidPemCert);
   
   // THEN
   EXPECT_FALSE(cert);
@@ -20,7 +20,7 @@ TEST(X509UT, pemStringToX509ShouldFail)
 TEST(X509UT, pemStringToX509ShouldSuccess)
 {
   // WHEN
-  auto cert = x509::pem2X509(data::meaninglessValidPemCert);
+  auto cert = x509::pemToX509(data::meaninglessValidPemCert);
   
   // THEN
   EXPECT_TRUE(cert);

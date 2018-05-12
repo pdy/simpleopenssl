@@ -58,7 +58,7 @@ TEST(X509UT, getSubjectOK)
 TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
 {
   // GIVEN
-  auto maybeRootCert = x509::pem2X509(data::meaninglessValidPemCert);
+  auto maybeRootCert = x509::pemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeRootCert);
   auto rootCert = *maybeRootCert;
   auto rootCertSubj = x509::subject(*rootCert);

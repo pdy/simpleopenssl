@@ -300,7 +300,7 @@ namespace x509 {
   };
 
   SO_API Expected<Info> issuer(const X509 &cert);
-  SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert);
+  SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
   SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
   SO_API Expected<Bytes> serialNumber(X509 &cert);
   SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
@@ -848,7 +848,7 @@ namespace x509 {
     return detail::commonInfo(*issuer); 
   }
   
-  SO_API Expected<X509_uptr> pem2X509(const std::string &pemCert)
+  SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 
