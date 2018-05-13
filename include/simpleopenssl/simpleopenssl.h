@@ -285,7 +285,6 @@ namespace x509 {
   
   struct Info
   {
-    std::string raw;
     std::string commonName;
     std::string countryName;
     std::string localityName;
@@ -307,6 +306,7 @@ namespace x509 {
 
   SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert);
   SO_API Expected<Info> issuer(const X509 &cert);
+  SO_API Expected<std::string> issuerString(const X509 &cert);
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
   SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
   SO_API Expected<Bytes> serialNumber(X509 &cert);
@@ -314,6 +314,7 @@ namespace x509 {
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<Bytes> signature(const X509 &cert);
   SO_API Expected<Info> subject(const X509 &cert);
+  SO_API Expected<std::string> subjectString(const X509 &cert);
   SO_API Expected<Validity> validity(const X509 &cert);
   SO_API Expected<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<long> version(const X509 &cert);
@@ -452,30 +453,28 @@ namespace detail {
     std::unique_ptr<unsigned char[], decltype(freeOpenssl)> strBuff(ptr, freeOpenssl);
 
     std::string ret;
-    ret.reserve(len);
+    ret.reserve(static_cast<size_t>(len));
     std::transform(strBuff.get(), strBuff.get() + len, std::back_inserter(ret), [](unsigned char chr){ return static_cast<char>(chr); });
 
     return detail::ok(std::move(ret)); 
   }
 
-  SO_LIB Expected<std::string> nameToString(const X509_NAME &name)
+  SO_LIB Expected<std::string> nameToString(const X509_NAME &name, unsigned long flags = XN_FLAG_RFC2253)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
-    if(0 > X509_NAME_print_ex(bio.get(), &name, 0, XN_FLAG_RFC2253))
+    if(0 > X509_NAME_print_ex(bio.get(), &name, 0, flags))
       return detail::err<std::string>();
 
     char *dataStart;
     const long nameLength = BIO_get_mem_data(bio.get(), &dataStart);
     if(nameLength < 0) return detail::err<std::string>();
     
-    return detail::ok(std::string(dataStart, nameLength));
+    return detail::ok(std::string(dataStart, static_cast<size_t>(nameLength)));
   }
 
   SO_LIB Expected<x509::Info> commonInfo(X509_NAME &name)
   {
-    const auto error = [](long errCode){ return detail::err<x509::Info>(errCode); };
-    const auto raw = nameToString(name);
-    if(!raw) return error(raw.errorCode());
+    const auto error = [](unsigned long errCode){ return detail::err<x509::Info>(errCode); }; 
     const auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName) return error(commonName.errorCode());
     const auto countryName = nameEntry2String(name, NID_countryName);
@@ -487,8 +486,7 @@ namespace detail {
     const auto stateOrProvinceName = nameEntry2String(name, NID_stateOrProvinceName);
     if(!stateOrProvinceName) return error(stateOrProvinceName.errorCode());
 
-    return detail::ok<x509::Info>({
-        *raw,
+    return detail::ok<x509::Info>({ 
         *commonName,
         *countryName,
         *localityName,
@@ -548,10 +546,8 @@ namespace asn1 {
     auto maybeBn = bignum::bytesToBn(bt);
     if(!maybeBn) return detail::err<ASN1_INTEGER_uptr>(); 
     auto bn = *maybeBn;
-    auto integer = make_unique(ASN1_INTEGER_new());
+    auto integer = make_unique(BN_to_ASN1_INTEGER(bn.get(), nullptr));
     if(!integer) return detail::err<ASN1_INTEGER_uptr>();
-    BN_to_ASN1_INTEGER(bn.get(), integer.get());
-
     return detail::ok(std::move(integer)); 
   }
 
@@ -600,7 +596,7 @@ namespace bignum {
 
   SO_API Expected<BIGNUM_uptr> bytesToBn(const Bytes &bt)
   {
-    auto ret = make_unique(BN_bin2bn(bt.data(), bt.size(), nullptr));
+    auto ret = make_unique(BN_bin2bn(bt.data(), static_cast<int>(bt.size()), nullptr));
     if(!ret) return detail::err<BIGNUM_uptr>();
     return detail::ok(std::move(ret));
   }
@@ -690,7 +686,7 @@ namespace ecdsa {
 
   SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), pemPub.size()));
+    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
     if(!bio) return detail::err<EC_KEY_uptr>();
     EC_KEY *rawKey = PEM_read_bio_EC_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
     if(!rawKey) return detail::err<EC_KEY_uptr>(); 
@@ -699,7 +695,7 @@ namespace ecdsa {
 
   SO_API Expected<EC_KEY_uptr> pemToPrivateKey(const std::string &pemPriv)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), pemPriv.size()));
+    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
     if(!bio) return detail::err<EC_KEY_uptr>();
     EC_KEY *rawKey = PEM_read_bio_ECPrivateKey(bio.get(), nullptr, nullptr, nullptr);
     if(!rawKey) return detail::err<EC_KEY_uptr>();
@@ -764,7 +760,7 @@ namespace ecdsa {
 namespace evp {
   SO_API Expected<EVP_PKEY_uptr> pemToPublicKey(const std::string &pemPub)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), pemPub.size()));
+    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
     EVP_PKEY *rawKey = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
     if(!rawKey) return detail::err<EVP_PKEY_uptr>();
@@ -773,7 +769,7 @@ namespace evp {
 
   SO_API Expected<EVP_PKEY_uptr> pemToPrivateKey(const std::string &pemPriv)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), pemPriv.size()));
+    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
     EVP_PKEY *rawKey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
     if(!rawKey) return detail::err<EVP_PKEY_uptr>();
@@ -907,6 +903,14 @@ namespace x509 {
     return detail::commonInfo(*issuer); 
   }
   
+  SO_API Expected<std::string> issuerString(const X509 &cert)
+  {
+    // this is internal ptr and must not be freed
+    const X509_NAME *issuer = X509_get_issuer_name(&cert);
+    if(!issuer) return detail::err<std::string>();
+    return detail::nameToString(*issuer);
+  }
+
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
@@ -985,6 +989,14 @@ namespace x509 {
     X509_NAME *subject = X509_get_subject_name(&cert);
     if(!subject) return detail::err<Info>();
     return detail::commonInfo(*subject); 
+  }
+
+  SO_API Expected<std::string> subjectString(const X509 &cert)
+  {
+    // this is internal ptr and must not be freed
+    const X509_NAME *subject = X509_get_subject_name(&cert);
+    if(!subject) return detail::err<std::string>();
+    return detail::nameToString(*subject);
   }
 
   SO_API Expected<Validity> validity(const X509 &cert)
