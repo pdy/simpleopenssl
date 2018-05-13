@@ -3,27 +3,29 @@ print-%  : ; @echo $* = $($*)
 CXX := clang++
 STRIP := strip
 
-# -frtti is required by boost, which is linked staticly
-MANUAL_FLAGS := -std=c++14 -frtti -fexceptions -Wno-deprecated-register
-FLAGS := $(MANUAL_FLAGS)
+# suppress GTEST warnings
+TEST_FLAGS := -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-prototypes -Wno-weak-vtables \
+	-Wno-missing-variable-declarations -Wno-gnu-zero-variadic-macro-arguments
+
+FLAGS := -std=c++14 -Wno-deprecated-register -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded
 
 LD_FLAGS := -L./3rd/gtest/lib -L./3rd/openssl/lib
 
-GTEST := -lgtest -lgmock -lgmock_main
-OPENSSL_LINKING := -lssl -lcrypto
+GTEST_LIBS := -lgtest -lgmock -lgmock_main
+OPENSSL_LIBS := -lssl -lcrypto
 
-LD_LIBS := -pthread $(OPENSSL_LINKING)
+LD_LIBS := -pthread $(OPENSSL_LIBS)
 
-INCLUDES := -I./include/ -I./3rd/openssl/include -I./3rd/gtest/include
+INCLUDES := -I./include/ -isystem./3rd/openssl/include -isystem./3rd/gtest/include
 ROOT_BUILD := ./build
 
 ifeq ($(MAKECMDGOALS),debug)
 	BUILD = $(ROOT_BUILD)/debug
-	CXXFLAGS = $(FLAGS) $(INCLUDES) -g -Wall 
+	CXXFLAGS = $(FLAGS) $(INCLUDES) -g -Weverything
 	STRIP = echo
 else
 	BUILD = $(ROOT_BUILD)/release
-	CXXFLAGS = $(FLAGS) $(INCLUDES) -O3 -Wall	
+	CXXFLAGS = $(FLAGS) $(INCLUDES) -O3 -Wall
 endif
 
 OBJ := $(BUILD)/obj
@@ -49,8 +51,8 @@ OBJS_UT := $(OBJ)/Asn1UT.o $(OBJ)/EcdsaUT.o $(OBJ)/EvpUT.o $(OBJ)/EcdsaKeyUT.o $
 	$(OBJ)/BignumUT.o
 
 $(DESTBIN)/UnitTests: $(OBJS_UT)
-	$(CXX) $(CXXFLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST) $(LD_LIBS)
+	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
 
 $(OBJ)/%.o: ./test/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
+	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 

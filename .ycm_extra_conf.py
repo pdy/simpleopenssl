@@ -5,11 +5,11 @@ import ycm_core
 
 myFlags = [
     '-Wall',
-    '-Werror',
+    '-Weverything',
     '-Wno-c++98-compat',
     '-Wno-c++98-compat-pedantic',
     '-Wno-global-constructors',
-    '-Wno-missing-prototypes',
+    '-Wno-exit-time-destructors',
     '-std=c++14',
     '-stdlib=libstdc++',
     '-x','c++',
