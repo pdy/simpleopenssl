@@ -14,7 +14,7 @@ struct KeyGenTestInput
 class EcdsaKeyGenUT : public ::testing::TestWithParam<KeyGenTestInput>
 {};
 
-TEST_P(EcdsaKeyGenUT, ok)
+TEST_P(EcdsaKeyGenUT, shouldSuccess)
 {
   const auto input = GetParam();
   

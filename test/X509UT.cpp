@@ -341,4 +341,68 @@ TEST(X509UT, certSignSha1VerifyAPIIntegrityShoudlSuccess)
   EXPECT_TRUE(*verResult);  
 }
 
+TEST(X509UT, getSerialNumberWithPrecalculatedDataShouldSuccess)
+{
+  // GIVEN
+  const std::vector<uint8_t> expected {0x1f, 0x47, 0xaf, 0xaa, 0x62, 0x00, 0x70, 0x50, 0x54, 0x4c, 0x01, 0x9e, 0x9b, 0x63, 0x99, 0x2a};
+
+  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = *maybeCert;
+
+  // WHEN
+  const auto maybeSerial = x509::serialNumber(*cert);
+
+  // THEN
+  ASSERT_TRUE(maybeSerial);
+  auto serial = *maybeSerial;
+  EXPECT_TRUE(std::equal(expected.begin(),
+      expected.end(),
+      serial.begin(),
+      serial.end()));
+}
+
+TEST(X509UT, getSerialNumberShouldSuccess)
+{
+  // GIVEN
+  const long expectedSerialNumber = 10810;
+  const std::vector<uint8_t> expectedSerialArray {0x2a, 0x3a};
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+  ASSERT_TRUE(ASN1_INTEGER_set(X509_get_serialNumber(cert.get()), expectedSerialNumber));
+
+  // WHEN
+  auto maybeSerial = x509::serialNumber(*cert);
+
+  // THEN
+  ASSERT_TRUE(maybeSerial);
+  auto serial = *maybeSerial;
+  EXPECT_TRUE(std::equal(expectedSerialArray.begin(),
+      expectedSerialArray.end(),
+      serial.begin(),
+      serial.end()));
+}
+
+TEST(X509UT, getSetSerialNumberAPIIntegrityShouldSuccess)
+{
+  // GIVEN
+  std::vector<uint8_t> expected(256);
+  std::iota(expected.begin(), expected.end(), 0x10);
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+
+  // WHEN
+  const auto setResult = x509::setSerial(*cert, expected);
+  auto getResult = x509::serialNumber(*cert);
+
+  // THEN
+  ASSERT_TRUE(setResult);
+  ASSERT_TRUE(getResult);
+  auto serial = *getResult;
+  EXPECT_TRUE(std::equal(expected.begin(),
+      expected.end(),
+      serial.begin(),
+      serial.end()));
+}
+
 }}}

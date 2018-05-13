@@ -32,6 +32,7 @@
 #include <openssl/err.h>
 #include <openssl/bio.h>
 #include <openssl/conf.h>
+#include <openssl/bn.h>
 #include <openssl/buffer.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
@@ -192,12 +193,16 @@ SO_API void init();
 SO_API void cleanUp();
 
 namespace asn1 {
+  SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
+  SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(uint16_t num);
+  SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt); 
   SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
 } // namepsace asn1
 
 namespace bignum {
-  SO_API Expected<Bytes> bn2Bytes(const BIGNUM &bn);
+  SO_API Expected<Bytes> bnToBytes(const BIGNUM &bn);
+  SO_API Expected<BIGNUM_uptr> bytesToBn(const Bytes &bt);
   SO_API Expected<size_t> size(const BIGNUM &bn);
 }
 
@@ -244,6 +249,7 @@ namespace ecdsa {
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey);
   SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
   SO_API Expected<Curve> curveOf(const EC_KEY &key);
+  SO_API Expected<Bytes> der(const Signature &signature);
   SO_API Expected<EC_KEY_uptr> extractPublic(const EC_KEY &key);
   SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
@@ -299,6 +305,7 @@ namespace x509 {
     inline bool operator !=(const Validity &other) const; 
   };
 
+  SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert);
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
   SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
@@ -314,6 +321,7 @@ namespace x509 {
   SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert);
   SO_API Expected<bool> setIssuer(X509 &cert, const Info &commonInfo);
   SO_API Expected<bool> setPubKey(X509 &cert, EVP_PKEY &pkey);
+  SO_API Expected<bool> setSerial(X509 &cert, const Bytes &bytes);
   SO_API Expected<bool> setSubject(X509 &cert, const Info &commonInfo);
   SO_API Expected<bool> setValidity(X509 &cert, const Validity &validity);
   SO_API Expected<bool> setVersion(X509 &cert, long version);
@@ -401,13 +409,11 @@ namespace detail {
     auto ctx = make_unique(EVP_MD_CTX_new());
     if (!ctx) return detail::err(false);
 
-    if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey)){
+    if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey))
       return detail::err(false);
-    }
     
-    if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.data(), msg.size())){
+    if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.data(), msg.size()))
       return detail::err(false); 
-    }
    
     const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
     return result == 1 ? detail::ok(true) : result == 0 ? detail::ok(false) : detail::err<bool>();
@@ -526,7 +532,7 @@ SO_API void init()
 
   OpenSSL_add_all_algorithms();
 
-  // error more descriptive messages
+  // more descriptive error messages
   ERR_load_crypto_strings();
   ERR_load_BIO_strings();
 }
@@ -537,6 +543,30 @@ SO_API void cleanUp()
 }
 
 namespace asn1 {
+  SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
+  {
+    auto maybeBn = bignum::bytesToBn(bt);
+    if(!maybeBn) return detail::err<ASN1_INTEGER_uptr>(); 
+    auto bn = *maybeBn;
+    auto integer = make_unique(ASN1_INTEGER_new());
+    if(!integer) return detail::err<ASN1_INTEGER_uptr>();
+    BN_to_ASN1_INTEGER(bn.get(), integer.get());
+
+    return detail::ok(std::move(integer)); 
+  }
+
+  //SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(uint64_t num);
+  
+  SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
+  {
+    auto ret = make_unique(ASN1_OCTET_STRING_new());
+    if(!ret) return detail::err<ASN1_OCTET_STRING_uptr>();
+    if(1 != ASN1_OCTET_STRING_set(ret.get(), bt.data(), static_cast<int>(bt.size())))
+      return detail::err<ASN1_OCTET_STRING_uptr>();
+
+    return detail::ok(std::move(ret));
+  }
+
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time)
   {
     auto ret = make_unique(ASN1_TIME_set(nullptr, time));
@@ -546,7 +576,7 @@ namespace asn1 {
 
   SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time)
   {
-    // TODO: If we're extremly unlucky, can be off by whole second.
+    // TODO: If we're extremly unlucky, we can be off by whole second.
     // Despite tests didn't fail once, I should consider just straight string parsing here.
     static_assert(sizeof(std::time_t) >= sizeof(int64_t), "std::time_t size too small, the dates may overflow");
     static constexpr int64_t SECONDS_IN_A_DAY = 24 * 60 * 60;
@@ -559,12 +589,19 @@ namespace asn1 {
 } // namespace asn1
 
 namespace bignum {
-  SO_API Expected<Bytes> bn2Bytes(const BIGNUM &bn)
+  SO_API Expected<Bytes> bnToBytes(const BIGNUM &bn)
   {
     const auto sz = size(bn); 
     if(!sz) return detail::err<Bytes>(sz.errorCode());
     Bytes ret(*sz);
-    if(1 != BN_bn2bin(&bn, ret.data())) return detail::err<Bytes>();
+    BN_bn2bin(&bn, ret.data());
+    return detail::ok(std::move(ret));
+  }
+
+  SO_API Expected<BIGNUM_uptr> bytesToBn(const Bytes &bt)
+  {
+    auto ret = make_unique(BN_bin2bn(bt.data(), bt.size(), nullptr));
+    if(!ret) return detail::err<BIGNUM_uptr>();
     return detail::ok(std::move(ret));
   }
 
@@ -582,6 +619,13 @@ namespace ecdsa {
     if(1 != EC_KEY_check_key(&ecKey)) return detail::err(false);
     return detail::ok(true);
   }
+  
+  SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey)
+  {
+    auto copy = make_unique(EC_KEY_dup(&ecKey));
+    if(!copy) return detail::err<EC_KEY_uptr>();
+    return detail::ok(std::move(copy));
+  }
 
   SO_API Expected<Curve> curveOf(const EC_KEY &key)
   {
@@ -592,11 +636,28 @@ namespace ecdsa {
     return detail::ok(static_cast<Curve>(nid)); 
   }
 
-  SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey)
+  SO_API Expected<Bytes> der(const Signature &signature)
   {
-    auto copy = make_unique(EC_KEY_dup(&ecKey));
-    if(!copy) return detail::err<EC_KEY_uptr>();
-    return detail::ok(std::move(copy));
+    auto maybeR = bignum::bytesToBn(signature.r);
+    if(!maybeR) return detail::err<Bytes>(maybeR.errorCode());
+    auto maybeS = bignum::bytesToBn(signature.s);
+    if(!maybeS) return detail::err<Bytes>(maybeS.errorCode());
+
+    auto r = *maybeR;
+    auto s = *maybeS;
+    auto sig = make_unique(ECDSA_SIG_new()); 
+    if(!sig) return detail::err<Bytes>();
+    if(1 != ECDSA_SIG_set0(sig.get(), r.release(), s.release()))
+      return detail::err<Bytes>();
+
+    const int derLen = i2d_ECDSA_SIG(sig.get(), nullptr); 
+    if(0 == derLen) return detail::err<Bytes>();
+    
+    Bytes ret;
+    ret.reserve(static_cast<size_t>(derLen));
+    auto *derIt = ret.data();
+    if(!i2d_ECDSA_SIG(sig.get(), &derIt)) return detail::err<Bytes>();
+    return detail::ok(std::move(ret));
   }
 
   SO_API Expected<EC_KEY_uptr> extractPublic(const EC_KEY &key)
@@ -620,10 +681,9 @@ namespace ecdsa {
     EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
     if (!evpKey) return detail::err<EVP_PKEY_uptr>();
 
-    if (1 != EVP_PKEY_set1_EC_KEY(evpKey.get(), copy.get())){
+    if (1 != EVP_PKEY_set1_EC_KEY(evpKey.get(), copy.get()))
         return detail::err<EVP_PKEY_uptr>();
-    }
-
+    
     return detail::ok(std::move(evpKey));
   }
 
@@ -807,9 +867,8 @@ namespace rand {
   SO_API Expected<Bytes> bytes(unsigned short numOfBytes)
   {
     Bytes ret(static_cast<size_t>(numOfBytes));
-    if(1 != RAND_bytes(ret.data(), static_cast<int>(numOfBytes))){
+    if(1 != RAND_bytes(ret.data(), static_cast<int>(numOfBytes)))
       return detail::err<Bytes>();
-    }
 
     return detail::ok(std::move(ret));
   }
@@ -874,7 +933,7 @@ namespace x509 {
     if(!serialNumber) return detail::err<Bytes>();
     const BIGNUM *bn = ASN1_INTEGER_to_BN(serialNumber, nullptr);
     if(!bn) return detail::err<Bytes>();
-    return bignum::bn2Bytes(*bn);
+    return bignum::bnToBytes(*bn);
   }
 
   SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey)
@@ -902,10 +961,23 @@ namespace x509 {
     return detail::ok(std::move(rawDerSequence));
   }
   
+  SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert)
+  {
+    // both internal pointers and must not be freed
+    const ASN1_BIT_STRING *psig = nullptr;
+    const X509_ALGOR *palg = nullptr;
+    X509_get0_signature(&psig, &palg, &cert);
+    if(!palg || !psig) return detail::err<ecdsa::Signature>();
 
-//  SO_API Expected<ecdsa::Signature> signatureEcdsa(const X509 &cert)
-//  {
-//  }
+    const unsigned char *it = psig->data;
+    const auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &it, static_cast<long>(psig->length)));
+    if(!sig) return detail::err<ecdsa::Signature>();
+
+    // internal pointers
+    const BIGNUM *r,*s;
+    ECDSA_SIG_get0(sig.get(), &r, &s);
+    return detail::ok(ecdsa::Signature{ *bignum::bnToBytes(*r), *bignum::bnToBytes(*s) });
+  }
 
   SO_API Expected<Info> subject(const X509 &cert)
   {
@@ -962,6 +1034,17 @@ namespace x509 {
   SO_API Expected<bool> setPubKey(X509 &cert, EVP_PKEY &pkey)
   {
     if(1 != X509_set_pubkey(&cert, &pkey)) return detail::err(false);
+    return detail::ok(true);
+  }
+ 
+  SO_API Expected<bool> setSerial(X509 &cert, const Bytes &bytes)
+  {
+    auto maybeInt = asn1::encodeInteger(bytes);
+    if(!maybeInt) return detail::err<bool>(maybeInt.errorCode());
+    auto integer = *maybeInt;
+    if(1 != X509_set_serialNumber(&cert, integer.get()))
+      return detail::err(false);
+
     return detail::ok(true);
   }
 
