@@ -427,4 +427,19 @@ TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
       serial.end()));
 }
 
+TEST(X509UT, getEcdsaSignatureShouldSuccess)
+{
+  // GIVEN
+  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = *maybeCert;
+
+  // WHEN
+  auto maybeSig = x509::ecdsaSignature(*cert);
+
+  // THEN
+  ASSERT_TRUE(maybeSig);
+  auto sig = *maybeSig;
+}
+
 }}}
