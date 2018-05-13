@@ -19,7 +19,6 @@ TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
   ASSERT_EQ(SIZE, *bignum::size(*bignum));
 
   auto maybeReturnedBuffer = bignum::bnToBytes(*bignum);
-  std::cout << maybeReturnedBuffer.msg() << std::endl;
   ASSERT_TRUE(maybeReturnedBuffer);
   auto returnedBuffer = *maybeReturnedBuffer;
   ASSERT_EQ(SIZE, returnedBuffer.size());
