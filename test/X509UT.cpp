@@ -405,4 +405,26 @@ TEST(X509UT, getSetSerialNumberAPIIntegrityShouldSuccess)
       serial.end()));
 }
 
+TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
+{
+  // GIVEN
+  std::vector<uint8_t> expected(256);
+  std::iota(expected.begin(), expected.end(), 0x00);
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+
+  // WHEN
+  const auto setResult = x509::setSerial(*cert, expected);
+  auto getResult = x509::serialNumber(*cert);
+
+  // THEN
+  ASSERT_TRUE(setResult);
+  ASSERT_TRUE(getResult);
+  auto serial = *getResult;
+  EXPECT_TRUE(std::equal(std::next(expected.begin()),
+      expected.end(),
+      serial.begin(),
+      serial.end()));
+}
+
 }}}
