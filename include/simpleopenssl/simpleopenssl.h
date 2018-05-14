@@ -147,19 +147,19 @@ public:
   explicit Expected(unsigned long opensslErrorCode, T &&value)
     : m_value {std::move(value)}, m_opensslErrCode{opensslErrorCode} {}
      
-  constexpr operator bool() const noexcept
+  operator bool() const noexcept
   {
     return hasValue(); 
   }
 
   template<typename U = T, typename = typename std::enable_if<!detail::is_uptr<U>::value>::type>
-  constexpr const T& operator*() const
+  const T& operator*() const
   { 
     return value();
   }
 
   template<typename U = T, typename = typename std::enable_if<!detail::is_uptr<U>::value>::type>
-  constexpr const T& value() const
+  const T& value() const
   {
     return m_value;
   }
@@ -174,14 +174,12 @@ public:
     return m_opensslErrCode;
   }
 
-  
-
-  bool hasValue() const
+  bool hasValue() const noexcept
   { 
     return 0 == m_opensslErrCode;
   }
 
-  bool hasError() const
+  bool hasError() const noexcept
   {
     return 0 != m_opensslErrCode;
   }
