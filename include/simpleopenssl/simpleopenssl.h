@@ -164,7 +164,7 @@ public:
     return m_value;
   }
 
-  constexpr T&& moveValue()
+  T&& moveValue()
   {
     return std::move(m_value);
   }
