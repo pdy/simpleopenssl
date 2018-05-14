@@ -21,7 +21,7 @@ TEST_P(EcdsaKeyGenUT, shouldSuccess)
   auto maybeKey = ecdsa::generateKey(input.curve);
   ASSERT_TRUE(maybeKey);
   
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
 
   const auto curve = ecdsa::curveOf(*key);
   ASSERT_TRUE(curve);

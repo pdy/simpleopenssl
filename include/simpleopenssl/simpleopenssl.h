@@ -149,29 +149,41 @@ public:
      
   constexpr operator bool() const noexcept
   {
-    return 0 == m_opensslErrCode;
+    return hasValue(); 
   }
 
+  template<typename U = T, typename = typename std::enable_if<!detail::is_uptr<U>::value>::type>
   constexpr const T& operator*() const
+  { 
+    return value();
+  }
+
+  template<typename U = T, typename = typename std::enable_if<!detail::is_uptr<U>::value>::type>
+  constexpr const T& value() const
   {
-    // technicaly we can return reference to unique_ptr, buuut c'mon...
-    static_assert(!detail::is_uptr<T>::value, "so::Expected<>::operator*(): Attempt to return reference to unique_ptr.");
     return m_value;
   }
 
-  constexpr T&& operator*()
+  constexpr T&& moveValue()
   {
     return std::move(m_value);
   }
+
+  unsigned long errorCode() const
+  {
+    return m_opensslErrCode;
+  }
+
+  
 
   bool hasValue() const
   { 
     return 0 == m_opensslErrCode;
   }
 
-  unsigned long errorCode() const
+  bool hasError() const
   {
-    return m_opensslErrCode;
+    return 0 != m_opensslErrCode;
   }
 
   std::string msg() const
@@ -545,7 +557,7 @@ namespace asn1 {
   {
     auto maybeBn = bignum::bytesToBn(bt);
     if(!maybeBn) return detail::err<ASN1_INTEGER_uptr>(); 
-    auto bn = *maybeBn;
+    auto bn = maybeBn.moveValue();
     auto integer = make_unique(BN_to_ASN1_INTEGER(bn.get(), nullptr));
     if(!integer) return detail::err<ASN1_INTEGER_uptr>();
     return detail::ok(std::move(integer)); 
@@ -639,8 +651,8 @@ namespace ecdsa {
     auto maybeS = bignum::bytesToBn(signature.s);
     if(!maybeS) return detail::err<Bytes>(maybeS.errorCode());
 
-    auto r = *maybeR;
-    auto s = *maybeS;
+    auto r = maybeR.moveValue();
+    auto s = maybeS.moveValue();
     auto sig = make_unique(ECDSA_SIG_new()); 
     if(!sig) return detail::err<Bytes>();
     if(1 != ECDSA_SIG_set0(sig.get(), r.release(), s.release()))
@@ -1038,7 +1050,7 @@ namespace x509 {
   {
     auto maybeIssuer = detail::info2X509Name(info);
     if(!maybeIssuer) return detail::err(false);
-    auto issuer = *maybeIssuer;
+    auto issuer = maybeIssuer.moveValue();
     if(1 != X509_set_issuer_name(&cert, issuer.get())) return detail::err(false); 
     return detail::ok(true);
   }
@@ -1053,7 +1065,7 @@ namespace x509 {
   {
     auto maybeInt = asn1::encodeInteger(bytes);
     if(!maybeInt) return detail::err<bool>(maybeInt.errorCode());
-    auto integer = *maybeInt;
+    auto integer = maybeInt.moveValue();
     if(1 != X509_set_serialNumber(&cert, integer.get()))
       return detail::err(false);
 
@@ -1064,7 +1076,7 @@ namespace x509 {
   {
     auto maybeSubject = detail::info2X509Name(info); 
     if(!maybeSubject) return detail::err(false);
-    auto subject = *maybeSubject;
+    auto subject = maybeSubject.moveValue();
     if(1 != X509_set_subject_name(&cert, subject.get())) return detail::err(false); 
     return detail::ok(true);
   }

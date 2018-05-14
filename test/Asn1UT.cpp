@@ -31,7 +31,7 @@ TEST(Asn1UT, asn1ApiTimeConvertersIntegrityOK)
   // WHEN
   auto maybeAsn1Time = asn1::stdTimeToTime(now);
   ASSERT_TRUE(maybeAsn1Time);
-  auto asn1Time = *maybeAsn1Time;
+  auto asn1Time = maybeAsn1Time.moveValue();
   const auto stdTime = asn1::timeToStdTime(*asn1Time);
   ASSERT_TRUE(stdTime);
 

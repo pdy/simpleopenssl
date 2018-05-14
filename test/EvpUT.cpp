@@ -15,7 +15,7 @@ TEST(EvpUT, verifySha1_AgainstPrecalculatedSignature)
   // GIVEN
   auto maybeKey = evp::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
 
   // WHEN
   const auto verified = evp::verifySha1Signature(data::signature_sha1, data::signedTextBytes, *key);
@@ -30,7 +30,7 @@ TEST(EvpUT, signVerifySHA1_AgainstPrecalculatedKey)
   // GIVEN
   auto maybeKey = evp::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
 
   // WHEN
   const auto sig = evp::signSha1(data::signedTextBytes, *key); 
@@ -47,7 +47,7 @@ TEST(EvpUT, verifySha256_AgainstPrecalculatedSignature)
   // GIVEN
   auto maybeKey = evp::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
 
   // WHEN
   const auto verified = evp::verifySha256Signature(data::signature_sha256, data::signedTextBytes, *key);
@@ -62,7 +62,7 @@ TEST(EvpUT, signVerifySHA256_AgainstPrecalculatedKey)
   // GIVEN
   auto maybeKey = evp::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
 
   // WHEN
   const auto sig = evp::signSha256(data::signedTextBytes, *key); 
@@ -82,10 +82,10 @@ TEST(EvpUT, signVerifySHA1_ApiIntegrity)
   auto key = ecdsa::generateKey(ecdsa::Curve::sect571r1);
   ASSERT_TRUE(key);
 
-  auto keyUptr = *key;
+  auto keyUptr = key.moveValue();
   auto maybeEvp = ecdsa::keyToEvp(*keyUptr);
   ASSERT_TRUE(maybeEvp);
-  auto evpKey = *maybeEvp; 
+  auto evpKey = maybeEvp.moveValue();
   
   // WHEN
   const auto sig = evp::signSha1(data, *evpKey);
@@ -104,10 +104,10 @@ TEST(EvpUT, signVerifySHA256_ApiIntegrity)
   auto key = ecdsa::generateKey(ecdsa::Curve::sect571r1);
   ASSERT_TRUE(key);
 
-  auto keyUptr = *key;
+  auto keyUptr = key.moveValue();
   auto maybeEvp = ecdsa::keyToEvp(*keyUptr);
   ASSERT_TRUE(maybeEvp);
-  auto evpKey = *maybeEvp; 
+  auto evpKey = maybeEvp.moveValue();
   
   // WHEN
   const auto sig = evp::signSha256(data, *evpKey);
@@ -123,7 +123,7 @@ TEST(EvpUT, verifySha1_PrecalculatedData)
   const auto sig = data::signature_sha1;
   auto maybePub = evp::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybePub);
-  auto pub = *maybePub;
+  auto pub = maybePub.moveValue();
 
   // WHEN
   const auto verResult = evp::verifySha1Signature(sig, data::signedTextBytes, *pub);

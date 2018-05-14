@@ -15,7 +15,7 @@ TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
 
   auto maybeBignum = bignum::bytesToBn(buffer);
   ASSERT_TRUE(maybeBignum);
-  auto bignum = *maybeBignum;
+  auto bignum = maybeBignum.moveValue();
   ASSERT_EQ(SIZE, *bignum::size(*bignum));
 
   auto maybeReturnedBuffer = bignum::bnToBytes(*bignum);

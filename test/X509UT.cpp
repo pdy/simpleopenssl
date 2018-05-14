@@ -60,7 +60,7 @@ TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
   // GIVEN
   auto maybeRootCert = x509::pemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeRootCert);
-  auto rootCert = *maybeRootCert;
+  auto rootCert = maybeRootCert.moveValue();
   auto rootCertSubj = x509::subject(*rootCert);
   ASSERT_TRUE(rootCertSubj);
 
@@ -212,15 +212,15 @@ TEST(X509UT, getSetPubKeyWithGeneratedKeyShouldSuccess)
   auto cert = ::so::make_unique(X509_new());
   auto maybeKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::sect239k1);
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
   auto maybePub = ::so::ecdsa::extractPublic(*key);
   ASSERT_TRUE(maybePub);
-  auto maybeEvpPubKey = ::so::ecdsa::keyToEvp(**maybePub);
+  auto maybeEvpPubKey = ::so::ecdsa::keyToEvp(*maybePub.moveValue());
   ASSERT_TRUE(maybeEvpPubKey);
-  auto evpPubKey = *maybeEvpPubKey;
+  auto evpPubKey = maybeEvpPubKey.moveValue();
   auto maybePriv = ::so::ecdsa::keyToEvp(*key);
   ASSERT_TRUE(maybePriv);
-  auto evpPrivKey = *maybePriv; 
+  auto evpPrivKey = maybePriv.moveValue();
   
   // 2.
   const auto result = x509::setPubKey(*cert, *evpPubKey);
@@ -229,7 +229,7 @@ TEST(X509UT, getSetPubKeyWithGeneratedKeyShouldSuccess)
   // 3.
   auto maybeExtractedPub = x509::pubKey(*cert);
   ASSERT_TRUE(maybeExtractedPub);
-  auto extractedPub = *maybeExtractedPub;
+  auto extractedPub = maybeExtractedPub.moveValue();
   
   // 4.
   ::so::Bytes data(256);
@@ -258,10 +258,10 @@ TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
   // 1.
   auto maybePriv = ::so::evp::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybePriv);
-  auto priv = *maybePriv;
+  auto priv = maybePriv.moveValue();
   auto maybePub = ::so::evp::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybePub);
-  auto pub = *maybePub;
+  auto pub = maybePub.moveValue();
 
   // 2.
   ::so::Bytes data(256);
@@ -284,7 +284,7 @@ TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
 
   auto maybeExtractedPub = x509::pubKey(*cert);
   ASSERT_TRUE(maybeExtractedPub);
-  auto extractedPub = *maybeExtractedPub;
+  auto extractedPub = maybeExtractedPub.moveValue();
 
   const auto ver2Result = ::so::evp::verifySha1Signature(*signResult, data, *extractedPub);
   ASSERT_TRUE(ver2Result);
@@ -302,9 +302,9 @@ TEST(X509UT, certSignSha256VerifyAPIIntegrityShoudlSuccess)
   ASSERT_TRUE(x509::setIssuer(*cert, name));
   auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
   ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::keyToEvp(**maybeEcKey);
+  auto maybeKey = ::so::ecdsa::keyToEvp(*maybeEcKey.moveValue());
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
 
   // WHEN
   const auto signResult = x509::signSha256(*cert, *key);
@@ -327,9 +327,9 @@ TEST(X509UT, certSignSha1VerifyAPIIntegrityShoudlSuccess)
   ASSERT_TRUE(x509::setIssuer(*cert, name));
   auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
   ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::keyToEvp(**maybeEcKey);
+  auto maybeKey = ::so::ecdsa::keyToEvp(*maybeEcKey.moveValue());
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
 
   // WHEN
   const auto signResult = x509::signSha1(*cert, *key);
@@ -348,7 +348,7 @@ TEST(X509UT, getSerialNumberWithPrecalculatedDataShouldSuccess)
 
   auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeCert);
-  auto cert = *maybeCert;
+  auto cert = maybeCert.moveValue();
 
   // WHEN
   const auto maybeSerial = x509::serialNumber(*cert);
@@ -432,7 +432,7 @@ TEST(X509UT, getEcdsaSignatureShouldSuccess)
   // GIVEN
   auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeCert);
-  auto cert = *maybeCert;
+  auto cert = maybeCert.moveValue();
 
   // WHEN
   auto maybeSig = x509::ecdsaSignature(*cert);

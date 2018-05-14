@@ -17,7 +17,7 @@ TEST(EcdsaUT, verifySha256_AgainstPrecalculatedSignature)
   // GIVEN
   auto maybeKey = ecdsa::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
 
   // WHEN
   const auto verified = ecdsa::verifySha256Signature(data::signature_sha256, data::signedTextBytes, *key);
@@ -32,7 +32,7 @@ TEST(EcdsaUT, signVerifySHA256_AgainstPrecalculatedKey)
   // GIVEN
   auto maybeKey = ecdsa::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
 
   // WHEN
   const auto sig = ecdsa::signSha256(data::signedTextBytes, *key); 
@@ -52,7 +52,7 @@ TEST(EcdsaUT, signVerifySHA256_ApiIntegrity)
   auto key = ecdsa::generateKey(ecdsa::Curve::secp224r1);
   ASSERT_TRUE(key);
 
-  auto keyUptr = *key; 
+  auto keyUptr = key.moveValue();
   
   // WHEN
   const auto sig = ecdsa::signSha256(data, *keyUptr);
@@ -71,14 +71,14 @@ TEST(EcdsaUT, signVerify_IntegrityWithEvp)
   auto key = ecdsa::generateKey(ecdsa::Curve::secp224r1);
   ASSERT_TRUE(key);
 
-  auto keyUptr = *key;
+  auto keyUptr = key.moveValue();
   
   const auto sig = ecdsa::signSha256(data, *keyUptr);
   const auto verResult = ecdsa::verifySha256Signature(*sig, data, *keyUptr);
 
   // WHEN
   auto evpKey = ecdsa::keyToEvp(*keyUptr);
-  const auto evpVerResult = evp::verifySha256Signature(*sig, data, **evpKey);
+  const auto evpVerResult = evp::verifySha256Signature(*sig, data, *evpKey.moveValue());
   
   // THEN
   ASSERT_TRUE(verResult);

@@ -26,7 +26,7 @@ TEST(EcdsaKeyUT, copyKey_shouldSuccess)
   auto maybeKey = ecdsa::pemToPublicKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybeKey);
 
-  auto key = *maybeKey;
+  auto key = maybeKey.moveValue();
   auto copied = ecdsa::copyKey(*key);
   EXPECT_TRUE(copied);
 }
@@ -87,7 +87,7 @@ TEST(EcdsaKeyUT, curveOf_AgainstPrecalculatedData)
   // GIVEN
   auto maybePriv = ecdsa::pemToPrivateKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybePriv);
-  auto priv = *maybePriv;
+  auto priv = maybePriv.moveValue();
 
   // WHEN
   const auto actual = ecdsa::curveOf(*priv);
@@ -101,11 +101,11 @@ TEST(EcdsaKeyUT, extractPublicKeyOK)
   // GIVEN
   auto maybePriv = ecdsa::generateKey(ecdsa::Curve::secp160r2);
   ASSERT_TRUE(maybePriv);
-  auto priv = *maybePriv;
+  auto priv = maybePriv.moveValue();
 
   auto maybePub = ecdsa::extractPublic(*priv);
   ASSERT_TRUE(maybePub);
-  auto pub = *maybePub;
+  auto pub = maybePub.moveValue();
   ::so::Bytes data(256);
   std::iota(data.begin(), data.end(), 0);
 
@@ -124,11 +124,11 @@ TEST(EcdsaKeyUT, extractedPublicKeyCantBeUsedForSign)
   // GIVEN
   auto maybePriv = ecdsa::generateKey(ecdsa::Curve::secp160r2);
   ASSERT_TRUE(maybePriv);
-  auto priv = *maybePriv;
+  auto priv = maybePriv.moveValue();
 
   auto maybePub = ecdsa::extractPublic(*priv);
   ASSERT_TRUE(maybePub);
-  auto pub = *maybePub;
+  auto pub = maybePub.moveValue();
   ::so::Bytes data(256);
   std::iota(data.begin(), data.end(), 0);
 
@@ -144,7 +144,7 @@ TEST(EcdsaKeyUT, checkKeyOK)
   // GIVEN
   auto maybeKey = ecdsa::generateKey(ecdsa::Curve::secp112r1);
   ASSERT_TRUE(maybeKey);
-  auto key = *maybeKey; 
+  auto key = maybeKey.moveValue();
   
   // WHEN/THEN
   EXPECT_TRUE(ecdsa::checkKey(*key));
