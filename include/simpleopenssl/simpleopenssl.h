@@ -132,8 +132,27 @@ CUSTOM_DELETER_UNIQUE_POINTER(X509_CRL, X509_CRL_free);
 CUSTOM_DELETER_UNIQUE_POINTER(X509_NAME, X509_NAME_free);
 CUSTOM_DELETER_UNIQUE_POINTER(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 
+namespace detail {
+
+template<typename T, typename TSelf, typename Tag>
+class AddValueRef {};
+
+template<typename T, typename TSelf>
+class AddValueRef<T, TSelf, std::false_type>
+{
+public:
+  const T& operator*() const { return value(); }
+  const T& value() const { return static_cast<const TSelf*>(this)->m_value; }
+};
+
+template<typename T, typename TSelf>
+class AddValueRef<T, TSelf, std::true_type>
+{};
+
+} //namespace detail
+
 template<typename T>
-class Expected
+class Expected : public detail::AddValueRef<T, Expected<T>, typename detail::is_uptr<T>::type>
 {
 public: 
   template
@@ -151,19 +170,7 @@ public:
   {
     return hasValue(); 
   }
-
-  template<typename U = T, typename = typename std::enable_if<!detail::is_uptr<U>::value>::type>
-  const T& operator*() const
-  { 
-    return value();
-  }
-
-  template<typename U = T, typename = typename std::enable_if<!detail::is_uptr<U>::value>::type>
-  const T& value() const
-  {
-    return m_value;
-  }
-
+ 
   T&& moveValue()
   {
     return std::move(m_value);
@@ -195,7 +202,40 @@ public:
   }
 
 private:
+  friend detail::AddValueRef<T, Expected<T>, typename detail::is_uptr<T>::type>;
+
   T m_value;
+  const unsigned long m_opensslErrCode;
+};
+
+template<>
+class Expected<void>
+{
+public:
+  explicit Expected(unsigned long opensslErrorCode)
+    : m_opensslErrCode{opensslErrorCode} {}
+ 
+  operator bool() const noexcept
+  {
+    return 0 == m_opensslErrCode;
+  }
+
+  bool hasError() const noexcept
+  {
+    return 0 != m_opensslErrCode;
+  }
+
+  std::string msg() const
+  {
+    if(0 == m_opensslErrCode) return "OK";
+    constexpr size_t SIZE = 1024;
+    char buff[SIZE];
+    std::memset(buff, 0x00, SIZE);
+    ERR_error_string_n(m_opensslErrCode, buff, SIZE);
+    return std::string(buff);
+  }
+
+private:
   const unsigned long m_opensslErrCode;
 };
 
@@ -329,13 +369,13 @@ namespace x509 {
   SO_API Expected<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<long> version(const X509 &cert);
 
-  SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert);
-  SO_API Expected<bool> setIssuer(X509 &cert, const Info &commonInfo);
-  SO_API Expected<bool> setPubKey(X509 &cert, EVP_PKEY &pkey);
-  SO_API Expected<bool> setSerial(X509 &cert, const Bytes &bytes);
-  SO_API Expected<bool> setSubject(X509 &cert, const Info &commonInfo);
-  SO_API Expected<bool> setValidity(X509 &cert, const Validity &validity);
-  SO_API Expected<bool> setVersion(X509 &cert, long version);
+  SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert);
+  SO_API Expected<void> setIssuer(X509 &cert, const Info &commonInfo);
+  SO_API Expected<void> setPubKey(X509 &cert, EVP_PKEY &pkey);
+  SO_API Expected<void> setSerial(X509 &cert, const Bytes &bytes);
+  SO_API Expected<void> setSubject(X509 &cert, const Info &commonInfo);
+  SO_API Expected<void> setValidity(X509 &cert, const Validity &validity);
+  SO_API Expected<void> setVersion(X509 &cert, long version);
 } // namespace x509
 
 
@@ -385,13 +425,28 @@ namespace detail {
   { 
     return Expected<T>(errCode);
   }
- 
+
+  SO_LIB Expected<void> err()
+  {
+    return Expected<void>(ERR_get_error());
+  }
+
+  SO_LIB Expected<void> err(unsigned long errCode)
+  {
+    return Expected<void>(errCode);
+  }
+
   template<typename T>
   SO_LIB Expected<T> ok(T &&val)
   {
     return Expected<T>(0, std::move(val));
   }
-  
+
+  SO_LIB Expected<void> ok()
+  {
+    return Expected<void>(0);
+  }
+
   SO_LIB Expected<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
   {
     auto mdCtx = make_unique(EVP_MD_CTX_new());
@@ -597,7 +652,7 @@ namespace asn1 {
 namespace bignum {
   SO_API Expected<Bytes> bnToBytes(const BIGNUM &bn)
   {
-    const auto sz = size(bn); 
+    const auto sz = size(bn);
     if(!sz) return detail::err<Bytes>(sz.errorCode());
     Bytes ret(*sz);
     BN_bn2bin(&bn, ret.data());
@@ -1036,65 +1091,65 @@ namespace x509 {
     return detail::ok(X509_get_version(&cert) + 1);
   }
 
-  SO_API Expected<bool> setIssuer(X509 &cert, const X509 &rootCert)
+  SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert)
   {
     X509_NAME *issuer = X509_get_subject_name(&rootCert);
-    if(!issuer) return detail::err(false);
-    if(1 != X509_set_issuer_name(&cert, issuer)) return detail::err(false);
-    return detail::ok(true);
+    if(!issuer) return detail::err();
+    if(1 != X509_set_issuer_name(&cert, issuer)) return detail::err();
+    return detail::ok();
   }
 
-  SO_API Expected<bool> setIssuer(X509 &cert, const Info &info)
+  SO_API Expected<void> setIssuer(X509 &cert, const Info &info)
   {
     auto maybeIssuer = detail::info2X509Name(info);
-    if(!maybeIssuer) return detail::err(false);
+    if(!maybeIssuer) return detail::err();
     auto issuer = maybeIssuer.moveValue();
-    if(1 != X509_set_issuer_name(&cert, issuer.get())) return detail::err(false); 
-    return detail::ok(true);
+    if(1 != X509_set_issuer_name(&cert, issuer.get())) return detail::err(); 
+    return detail::ok();
   }
 
-  SO_API Expected<bool> setPubKey(X509 &cert, EVP_PKEY &pkey)
+  SO_API Expected<void> setPubKey(X509 &cert, EVP_PKEY &pkey)
   {
-    if(1 != X509_set_pubkey(&cert, &pkey)) return detail::err(false);
-    return detail::ok(true);
+    if(1 != X509_set_pubkey(&cert, &pkey)) return detail::err();
+    return detail::ok();
   }
  
-  SO_API Expected<bool> setSerial(X509 &cert, const Bytes &bytes)
+  SO_API Expected<void> setSerial(X509 &cert, const Bytes &bytes)
   {
     auto maybeInt = asn1::encodeInteger(bytes);
-    if(!maybeInt) return detail::err<bool>(maybeInt.errorCode());
+    if(!maybeInt) return detail::err(maybeInt.errorCode());
     auto integer = maybeInt.moveValue();
     if(1 != X509_set_serialNumber(&cert, integer.get()))
-      return detail::err(false);
+      return detail::err();
 
-    return detail::ok(true);
+    return detail::ok();
   }
 
-  SO_API Expected<bool> setSubject(X509 &cert, const Info &info)
+  SO_API Expected<void> setSubject(X509 &cert, const Info &info)
   {
     auto maybeSubject = detail::info2X509Name(info); 
-    if(!maybeSubject) return detail::err(false);
+    if(!maybeSubject) return detail::err();
     auto subject = maybeSubject.moveValue();
-    if(1 != X509_set_subject_name(&cert, subject.get())) return detail::err(false); 
-    return detail::ok(true);
+    if(1 != X509_set_subject_name(&cert, subject.get())) return detail::err();
+    return detail::ok();
   }
 
-  SO_API Expected<bool> setValidity(X509 &cert, const Validity &validity)
+  SO_API Expected<void> setValidity(X509 &cert, const Validity &validity)
   {
     ASN1_TIME_uptr notAfterTime = make_unique(ASN1_TIME_set(nullptr, validity.notAfter));
-    if(!notAfterTime) return detail::err(false);
+    if(!notAfterTime) return detail::err();
     ASN1_TIME_uptr notBeforeTime = make_unique(ASN1_TIME_set(nullptr, validity.notBefore));
-    if(!notBeforeTime) return detail::err(false);
-    if(1 != X509_set1_notBefore(&cert, notBeforeTime.get())) return detail::err(false);
-    if(1 != X509_set1_notAfter(&cert, notAfterTime.get())) return detail::err(false);
-    return detail::ok(true);
+    if(!notBeforeTime) return detail::err();
+    if(1 != X509_set1_notBefore(&cert, notBeforeTime.get())) return detail::err();
+    if(1 != X509_set1_notAfter(&cert, notAfterTime.get())) return detail::err();
+    return detail::ok();
   }
 
-  SO_API Expected<bool> setVersion(X509 &cert, long version)
+  SO_API Expected<void> setVersion(X509 &cert, long version)
   {
     --version;
-    if(1 != X509_set_version(&cert, version)) return detail::err(false);
-    return detail::ok(true);
+    if(1 != X509_set_version(&cert, version)) return detail::err();
+    return detail::ok();
   }
 } // namespace x509
 
