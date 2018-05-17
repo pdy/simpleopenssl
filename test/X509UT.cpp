@@ -341,6 +341,31 @@ TEST(X509UT, certSignSha1VerifyAPIIntegrityShoudlSuccess)
   EXPECT_TRUE(*verResult);  
 }
 
+TEST(X509UT, certSignSha384VerifyAPIIntegrityShoudlSuccess)
+{
+  // GIVEN
+  x509::Info name;
+  name.commonName = "CommonName";
+  name.organizationName = "simpleopenssl";
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(x509::setSubject(*cert, name));
+  ASSERT_TRUE(x509::setIssuer(*cert, name));
+  auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::sect193r1);
+  ASSERT_TRUE(maybeEcKey);
+  auto maybeKey = ::so::ecdsa::keyToEvp(*maybeEcKey.moveValue());
+  ASSERT_TRUE(maybeKey);
+  auto key = maybeKey.moveValue();
+
+  // WHEN
+  const auto signResult = x509::signSha384(*cert, *key);
+  const auto verResult = x509::verifySignature(*cert, *key);
+
+  // THEN
+  ASSERT_TRUE(signResult);
+  ASSERT_TRUE(verResult);
+  EXPECT_TRUE(*verResult);  
+}
+
 TEST(X509UT, getSerialNumberWithPrecalculatedDataShouldSuccess)
 {
   // GIVEN

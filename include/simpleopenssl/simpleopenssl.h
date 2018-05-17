@@ -362,6 +362,7 @@ namespace x509 {
   SO_API Expected<Bytes> serialNumber(X509 &cert);
   SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
+  SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<Bytes> signature(const X509 &cert);
   SO_API Expected<Info> subject(const X509 &cert);
   SO_API Expected<std::string> subjectString(const X509 &cert);
@@ -1013,6 +1014,11 @@ namespace x509 {
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &key)
   {
     return detail::signCert(cert, key, EVP_sha256());  
+  }
+
+  SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey)
+  {
+    return detail::signCert(cert, pkey, EVP_sha384());  
   }
 
   SO_API Expected<Bytes> signature(const X509 &cert)
