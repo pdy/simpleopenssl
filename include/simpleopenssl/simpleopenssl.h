@@ -149,6 +149,7 @@ template<typename T, typename TSelf>
 class AddValueRef<T, TSelf, std::true_type>
 {};
 
+SO_LIB std::string errCodeToString(unsigned long errCode);
 } //namespace detail
 
 template<typename T>
@@ -194,11 +195,7 @@ public:
   std::string msg() const
   {
     if(0 == m_opensslErrCode) return "OK";
-    constexpr size_t SIZE = 1024;
-    char buff[SIZE];
-    std::memset(buff, 0x00, SIZE);
-    ERR_error_string_n(m_opensslErrCode, buff, SIZE);
-    return std::string(buff);
+    return detail::errCodeToString(m_opensslErrCode); 
   }
 
 private:
@@ -228,11 +225,7 @@ public:
   std::string msg() const
   {
     if(0 == m_opensslErrCode) return "OK";
-    constexpr size_t SIZE = 1024;
-    char buff[SIZE];
-    std::memset(buff, 0x00, SIZE);
-    ERR_error_string_n(m_opensslErrCode, buff, SIZE);
-    return std::string(buff);
+    return detail::errCodeToString(m_opensslErrCode); 
   }
 
 private:
@@ -387,6 +380,15 @@ namespace x509 {
 /////////////////////////////////////////////////////////////////////////////////
 
 namespace detail {
+  SO_LIB std::string errCodeToString(unsigned long errCode)
+  {
+    constexpr size_t SIZE = 1024;
+    char buff[SIZE];
+    std::memset(buff, 0x00, SIZE);
+    ERR_error_string_n(errCode, buff, SIZE);
+    return std::string(buff);
+  }
+
   template<typename T>
   struct uptr_underlying_type
   {
