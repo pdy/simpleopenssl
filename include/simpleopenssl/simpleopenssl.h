@@ -158,8 +158,8 @@ class Expected : public detail::AddValueRef<T, Expected<T>, typename detail::is_
 public: 
   template
   < 
-    typename U = T,
-    typename = typename std::enable_if<std::is_default_constructible<U>::value>::type
+    typename T_ = T,
+    typename = typename std::enable_if<std::is_default_constructible<T_>::value>::type
   >
   explicit Expected(unsigned long opensslErrorCode)
     : m_value {}, m_opensslErrCode{opensslErrorCode} {}  
@@ -414,7 +414,7 @@ namespace detail {
   template
   <
     typename T,
-    typename U = T, // TODO: U is placeholder to avoid of 'reassining default template param' error, I should use some smarter solution
+    typename T_ = T, // TODO: U is placeholder to avoid of 'reassining default template param' error, I should use some smarter solution
     typename = typename std::enable_if<detail::is_uptr<T>::value>::type
   >
   SO_LIB Expected<T> err()
