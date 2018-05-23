@@ -9,6 +9,17 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
+namespace {
+std::string bin2Hex(const std::vector<uint8_t> &buff)
+{
+  std::ostringstream oss;
+  for(const auto bt : buff){
+    oss << std::setfill('0') << std::setw(2) << std::hex << +bt;
+  }
+  return oss.str(); 
+}
+}// anonymous namespace
+
 TEST(X509UT, getIssuerOK)
 {
   // GIVEN  
@@ -464,7 +475,9 @@ TEST(X509UT, getEcdsaSignatureShouldSuccess)
 
   // THEN
   ASSERT_TRUE(maybeSig);
-  auto sig = *maybeSig;
+  const auto& sig = *maybeSig;
+  ASSERT_EQ(48, sig.r.size()); // it's secp384r1
+  ASSERT_EQ(48, sig.s.size()); // it's secp384r1
 }
 
 }}}
