@@ -589,6 +589,21 @@ namespace detail {
     return detail::ok(static_cast<size_t>(sigLen));
   }
 
+  SO_LIB Expected<bool> ecdsaVerifySignature(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
+  {
+    if(1 != ECDSA_verify(0,
+          dg.data(),
+          static_cast<int>(dg.size()),
+          signature.data(),
+          static_cast<int>(signature.size()),
+          &publicKey))
+    {
+      return detail::err<bool>();
+    }
+
+    return detail::ok(true);
+  }
+
 } //namespace detail
 
 SO_API void init()
@@ -809,19 +824,7 @@ namespace ecdsa {
   {
     const auto digest = hash::sha256(message);
     if(!digest) return detail::err<bool>(digest.errorCode());
-
-    const auto dg = *digest;
-    if(1 != ECDSA_verify(0,
-          dg.data(),
-          static_cast<int>(dg.size()),
-          signature.data(),
-          static_cast<int>(signature.size()),
-          &publicKey))
-    {
-      return detail::err<bool>();
-    }
-
-    return detail::ok(true);
+    return detail::ecdsaVerifySignature(signature, *digest, publicKey);
   }
 } //namespace ecdsa
 
