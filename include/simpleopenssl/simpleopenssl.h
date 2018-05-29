@@ -298,7 +298,9 @@ namespace ecdsa {
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
   SO_API Expected<EC_KEY_uptr> pemToPrivateKey(const std::string &pemPriv);
   SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub);
+  SO_API Expected<Bytes> signSha1(const Bytes &message, EC_KEY &key);
   SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key);
+  SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
 } // namespace ecdsa
 
@@ -815,11 +817,25 @@ namespace ecdsa {
     return detail::ok(std::move(key));
   }
 
+  SO_API Expected<Bytes> signSha1(const Bytes &message, EC_KEY &key)
+  {
+    const auto digest = hash::sha1(message);
+    if(!digest) return detail::err<Bytes>(digest.errorCode());
+    return detail::ecdsaSign(*digest, key);
+  }
+
   SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha256(message);
     if(!digest) return detail::err<Bytes>(digest.errorCode());
-    return detail::ecdsaSign(*digest, key);    
+    return detail::ecdsaSign(*digest, key);
+  }
+
+  SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  {
+    const auto digest = hash::sha1(message);
+    if(!digest) return detail::err<bool>(digest.errorCode());
+    return detail::ecdsaVerifySignature(signature, *digest, publicKey);
   }
 
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)

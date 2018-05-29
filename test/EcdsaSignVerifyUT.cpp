@@ -114,7 +114,18 @@ TEST_P(EcdsaSignVerifyUT, signVerify_IntegrityWithEvp)
 
 const auto testCases = ::testing::Values(
   SignVerifyInput {
-    "ECDSA with SHA256",
+    "Sign/Verify with SHA1",
+    data::secp256k1PrivKeyPem,
+    data::secp256PubKeyPem,
+    data::signedTextBytes,
+    data::signature_sha1,
+    &::so::ecdsa::signSha1,
+    &::so::ecdsa::verifySha1Signature,
+    &::so::evp::verifySha1Signature   
+  },
+    
+  SignVerifyInput {
+    "Sign/Verify with SHA256",
     data::secp256k1PrivKeyPem,
     data::secp256PubKeyPem,
     data::signedTextBytes,
@@ -123,6 +134,7 @@ const auto testCases = ::testing::Values(
     &::so::ecdsa::verifySha256Signature,
     &::so::evp::verifySha256Signature   
   }
+  
 );
 
 INSTANTIATE_TEST_CASE_P(
