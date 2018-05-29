@@ -589,6 +589,27 @@ namespace detail {
     return detail::ok(static_cast<size_t>(sigLen));
   }
 
+  SO_LIB Expected<Bytes> ecdsaSign(const Bytes &dg, EC_KEY &key)
+  {
+    const int sigLen = ECDSA_size(&key);
+    if(0 >= sigLen) return detail::err<Bytes>();
+
+    Bytes tmpSig(static_cast<size_t>(sigLen));
+    unsigned int finalSigLen = 0;
+    if(1 != ECDSA_sign(0,
+          dg.data(),
+          static_cast<int>(dg.size()),
+          tmpSig.data(),
+          &finalSigLen,
+          &key))
+    {
+      return detail::err<Bytes>();
+    }
+
+    Bytes signature(tmpSig.begin(), std::next(tmpSig.begin(), finalSigLen));
+    return detail::ok(std::move(signature));
+  }
+
   SO_LIB Expected<bool> ecdsaVerifySignature(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
   {
     if(1 != ECDSA_verify(0,
@@ -798,27 +819,8 @@ namespace ecdsa {
   {
     const auto digest = hash::sha256(message);
     if(!digest) return detail::err<Bytes>(digest.errorCode());
-
-    const int sigLen = ECDSA_size(&key);
-    if(0 >= sigLen) return detail::err<Bytes>();
-
-    Bytes tmpSig(static_cast<size_t>(sigLen));
-    unsigned int finalSigLen = 0;
-    const auto dg = *digest;
-    if(1 != ECDSA_sign(0,
-          dg.data(),
-          static_cast<int>(dg.size()),
-          tmpSig.data(),
-          &finalSigLen,
-          &key))
-    {
-      return detail::err<Bytes>();
-    }
-
-    Bytes signature(tmpSig.begin(), std::next(tmpSig.begin(), finalSigLen));
-    return detail::ok(std::move(signature));
+    return detail::ecdsaSign(*digest, key);    
   }
-
 
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
