@@ -46,9 +46,9 @@ clean:
 strip:
 	$(STRIP) $(DESTBIN)/*
 
-OBJS_UT := $(OBJ)/Asn1UT.o $(OBJ)/EcdsaSignVerifyUT.o $(OBJ)/EvpUT.o $(OBJ)/EcdsaKeyUT.o $(OBJ)/EcdsaKeyUT.o \
-	$(OBJ)/EcdsaKeyGenUT.o $(OBJ)/EvpKeyUT.o $(OBJ)/HashUT.o $(OBJ)/X509UT.o $(OBJ)/X509PemUT.o \
-	$(OBJ)/BignumUT.o
+OBJS_UT := $(OBJ)/Asn1UT.o $(OBJ)/EcdsaSignVerifyUT.o $(OBJ)/EvpSignVerifyUT.o $(OBJ)/EcdsaKeyUT.o \
+	$(OBJ)/EcdsaKeyUT.o $(OBJ)/EcdsaKeyGenUT.o $(OBJ)/EvpKeyUT.o $(OBJ)/HashUT.o $(OBJ)/X509UT.o \
+	$(OBJ)/X509PemUT.o $(OBJ)/BignumUT.o
 
 $(DESTBIN)/UnitTests: $(OBJS_UT)
 	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
