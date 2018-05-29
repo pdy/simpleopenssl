@@ -9,17 +9,6 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
-namespace {
-std::string bin2Hex(const std::vector<uint8_t> &buff)
-{
-  std::ostringstream oss;
-  for(const auto bt : buff){
-    oss << std::setfill('0') << std::setw(2) << std::hex << +bt;
-  }
-  return oss.str(); 
-}
-}// anonymous namespace
-
 TEST(X509UT, getIssuerOK)
 {
   // GIVEN  
