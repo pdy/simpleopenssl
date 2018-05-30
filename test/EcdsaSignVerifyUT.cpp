@@ -144,6 +144,17 @@ const auto testCases = ::testing::Values(
     &::so::ecdsa::signSha384,
     &::so::ecdsa::verifySha384Signature,
     &::so::evp::verifySha384Signature   
+  },
+  
+  SignVerifyInput {
+    "Sign/Verify with SHA512",
+    data::secp256k1PrivKeyPem,
+    data::secp256PubKeyPem,
+    data::signedTextBytes,
+    data::signature_sha512,
+    &::so::ecdsa::signSha512,
+    &::so::ecdsa::verifySha512Signature,
+    &::so::evp::verifySha512Signature   
   }
   
 );
