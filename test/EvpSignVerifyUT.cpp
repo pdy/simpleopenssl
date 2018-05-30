@@ -107,6 +107,16 @@ const auto testCases = ::testing::Values(
     data::signature_sha256,
     &::so::evp::signSha256,
     &::so::evp::verifySha256Signature
+  },
+
+  EvpSignVerifyInput {
+    "Sign/Verify with SHA384",
+    data::secp256k1PrivKeyPem,
+    data::secp256PubKeyPem,
+    data::signedTextBytes,
+    data::signature_sha384,
+    &::so::evp::signSha384,
+    &::so::evp::verifySha384Signature
   }
 );
 

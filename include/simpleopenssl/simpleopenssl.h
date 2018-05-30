@@ -300,8 +300,10 @@ namespace ecdsa {
   SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub);
   SO_API Expected<Bytes> signSha1(const Bytes &message, EC_KEY &key);
   SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key);
+  SO_API Expected<Bytes> signSha384(const Bytes &message, EC_KEY &key);
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
+  SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
 } // namespace ecdsa
 
 namespace evp {
@@ -309,8 +311,10 @@ namespace evp {
   SO_API Expected<EVP_PKEY_uptr> pemToPublicKey(const std::string &pemPub);
   SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   SO_API Expected<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
+  SO_API Expected<Bytes> signSha384(const Bytes &msg, EVP_PKEY &privKey);
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
+  SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
 } // namepsace evp
 
 namespace hash {
@@ -831,6 +835,13 @@ namespace ecdsa {
     return detail::ecdsaSign(*digest, key);
   }
 
+  SO_API Expected<Bytes> signSha384(const Bytes &message, EC_KEY &key)
+  {
+    const auto digest = hash::sha384(message);
+    if(!digest) return detail::err<Bytes>(digest.errorCode());
+    return detail::ecdsaSign(*digest, key);
+  }
+
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha1(message);
@@ -841,6 +852,13 @@ namespace ecdsa {
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha256(message);
+    if(!digest) return detail::err<bool>(digest.errorCode());
+    return detail::ecdsaVerifySignature(signature, *digest, publicKey);
+  }
+
+  SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  {
+    const auto digest = hash::sha384(message);
     if(!digest) return detail::err<bool>(digest.errorCode());
     return detail::ecdsaVerifySignature(signature, *digest, publicKey);
   }
@@ -875,6 +893,11 @@ namespace evp {
     return detail::evpSign(message, EVP_sha256(), privateKey);
   }
 
+  SO_API Expected<Bytes> signSha384(const Bytes &message, EVP_PKEY &privateKey)
+  { 
+    return detail::evpSign(message, EVP_sha384(), privateKey);
+  }
+
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
   {
     return detail::evpVerify(signature, message, EVP_sha1(), pubKey); 
@@ -883,6 +906,11 @@ namespace evp {
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
   {
     return detail::evpVerify(signature, message, EVP_sha256(), pubKey); 
+  }
+
+  SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  {
+    return detail::evpVerify(signature, message, EVP_sha384(), pubKey); 
   }
 } //namespace evp
 
