@@ -5,20 +5,11 @@
 
 #include <sstream>
 
+#include "utils.h"
+
 namespace so { namespace ut { namespace hash {
 
 namespace hash = ::so::hash;
-
-namespace {
-std::string bin2Hex(const std::vector<uint8_t> &buff)
-{
-  std::ostringstream oss;
-  for(const auto bt : buff){
-    oss << std::setfill('0') << std::setw(2) << std::hex << +bt;
-  }
-  return oss.str(); 
-}
-} // anonymous namespace
 
 TEST(Hash, md4)
 {
@@ -34,7 +25,7 @@ TEST(Hash, md4)
 
   // THEN
   ASSERT_TRUE(hash);
-  EXPECT_EQ(expectedHexString, bin2Hex(*hash));
+  EXPECT_EQ(expectedHexString, utils::bin2Hex(*hash));
 }
 
 TEST(Hash, md5)
@@ -51,7 +42,7 @@ TEST(Hash, md5)
 
   // THEN
   ASSERT_TRUE(hash);
-  EXPECT_EQ(expectedHexString, bin2Hex(*hash));
+  EXPECT_EQ(expectedHexString, utils::bin2Hex(*hash));
 }
 
 TEST(Hash, sha1)
@@ -68,7 +59,24 @@ TEST(Hash, sha1)
 
   // THEN
   ASSERT_TRUE(hash);
-  EXPECT_EQ(expectedHexString, bin2Hex(*hash));
+  EXPECT_EQ(expectedHexString, utils::bin2Hex(*hash));
+}
+
+TEST(Hash, sha224)
+{
+  // GIVEN
+  // generated using debian's builtin sha224sum
+  const std::string str = "test_test_foobar";
+  const std::string expectedHexString = "42388802eda260242eabb109f3959dca377cc326a4fe6ef0b6cf7b25";
+  ::so::Bytes data(str.size());
+  std::transform(str.begin(), str.end(), data.begin(), [](char chr){return static_cast<uint8_t>(chr);});
+
+  // WHEN
+  const auto hash = hash::sha224(data);
+
+  // THEN
+  ASSERT_TRUE(hash);
+  EXPECT_EQ(expectedHexString, utils::bin2Hex(*hash));
 }
 
 TEST(Hash, sha256)
@@ -85,7 +93,7 @@ TEST(Hash, sha256)
 
   // THEN
   ASSERT_TRUE(hash);
-  EXPECT_EQ(expectedHexString, bin2Hex(*hash));
+  EXPECT_EQ(expectedHexString, utils::bin2Hex(*hash));
 }
 
 TEST(Hash, sha384)
@@ -102,7 +110,7 @@ TEST(Hash, sha384)
 
   // THEN
   ASSERT_TRUE(hash);
-  EXPECT_EQ(expectedHexString, bin2Hex(*hash));
+  EXPECT_EQ(expectedHexString, utils::bin2Hex(*hash));
 }
 
 TEST(Hash, sha512)
@@ -119,7 +127,7 @@ TEST(Hash, sha512)
 
   // THEN
   ASSERT_TRUE(hash);
-  EXPECT_EQ(expectedHexString, bin2Hex(*hash));
+  EXPECT_EQ(expectedHexString, utils::bin2Hex(*hash));
 } 
 
 }}} // namespace so { namespace ut { namepsace hash

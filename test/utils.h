@@ -1,5 +1,5 @@
 #ifndef SEVERALGH_SO_TESTS_UTILS_H_
-#define SEVERALGH_SO_TESTS_UTILS_H
+#define SEVERALGH_SO_TESTS_UTILS_H_
 
 #include <iomanip>
 #include <sstream>

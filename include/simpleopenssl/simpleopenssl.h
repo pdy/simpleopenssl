@@ -90,8 +90,8 @@ public:                                             \
 };                                                  \
 }                                                   \
 using Type ## _uptr = detail::CustomDeleterUniquePtr<Type>; \
-template<>                                                  \
-struct detail::is_uptr<detail::CustomDeleterUniquePtr<Type>> : std::true_type {};
+namespace detail {                                          \
+template<> struct is_uptr<detail::CustomDeleterUniquePtr<Type>> : std::true_type {};}
 
 template<typename T, typename D = detail::CustomDeleter<T>>
 SO_API auto make_unique(T *ptr) -> std::unique_ptr<T, D>
@@ -237,7 +237,6 @@ SO_API void cleanUp();
 
 namespace asn1 {
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
-  SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(uint16_t num);
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt); 
   SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
@@ -325,6 +324,7 @@ namespace hash {
   SO_API Expected<Bytes> md4(const Bytes &data);
   SO_API Expected<Bytes> md5(const Bytes &data);
   SO_API Expected<Bytes> sha1(const Bytes &data);
+  SO_API Expected<Bytes> sha224(const Bytes &data);
   SO_API Expected<Bytes> sha256(const Bytes &data);
   SO_API Expected<Bytes> sha384(const Bytes &data);
   SO_API Expected<Bytes> sha512(const Bytes &data);
@@ -970,6 +970,16 @@ namespace hash {
     if(1 != SHA1_Init(&ctx)) return detail::err<Bytes>();
     if(1 != SHA1_Update(&ctx, data.data(), data.size())) return detail::err<Bytes>();
     if(1 != SHA1_Final(hash.data(), &ctx)) return detail::err<Bytes>();
+    return detail::ok(std::move(hash));
+  }
+  
+  SO_API Expected<Bytes> sha224(const Bytes &data)
+  {
+    Bytes hash(SHA224_DIGEST_LENGTH);
+    SHA256_CTX ctx;
+    if(1 != SHA224_Init(&ctx)) return detail::err<Bytes>();
+    if(1 != SHA224_Update(&ctx, data.data(), data.size())) return detail::err<Bytes>();
+    if(1 != SHA224_Final(hash.data(), &ctx)) return detail::err<Bytes>();
     return detail::ok(std::move(hash));
   }
 
