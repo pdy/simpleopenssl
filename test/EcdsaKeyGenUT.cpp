@@ -14,7 +14,7 @@ struct KeyGenTestInput
 class EcdsaKeyGenUT : public ::testing::TestWithParam<KeyGenTestInput>
 {};
 
-TEST_P(EcdsaKeyGenUT, shouldSuccess)
+TEST_P(EcdsaKeyGenUT, shouldExtractCurveInfoFromGeneratedKey)
 {
   const auto input = GetParam();
   

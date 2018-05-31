@@ -30,7 +30,7 @@ std::ostream& operator<<(std::ostream &s, const EvpSignVerifyInput &input)
 class EvpSignVerifyUT : public ::testing::TestWithParam<EvpSignVerifyInput>
 {};
 
-TEST_P(EvpSignVerifyUT, verify_AgainstPrecalculatedSignature)
+TEST_P(EvpSignVerifyUT, verify_PrecalculatedSignature)
 {
   // GIVEN
   const EvpSignVerifyInput input{ GetParam() };
@@ -46,7 +46,7 @@ TEST_P(EvpSignVerifyUT, verify_AgainstPrecalculatedSignature)
   EXPECT_TRUE(*verified);
 }
 
-TEST_P(EvpSignVerifyUT, signVerify_AgainstPrecalculatedKey)
+TEST_P(EvpSignVerifyUT, signVerify_WithPrecalculatedKey)
 {
   // GIVEN
   const EvpSignVerifyInput input{ GetParam() };
@@ -64,7 +64,7 @@ TEST_P(EvpSignVerifyUT, signVerify_AgainstPrecalculatedKey)
   EXPECT_TRUE(*verified);
 }
 
-TEST_P(EvpSignVerifyUT, signVerify_ApiIntegrity)
+TEST_P(EvpSignVerifyUT, signVerify_ShouldSignAndVerifyWithEcdsaGeneratedKeys)
 {
   // GIVEN
   const EvpSignVerifyInput input{ GetParam() };
