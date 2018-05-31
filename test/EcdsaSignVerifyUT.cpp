@@ -123,7 +123,18 @@ const auto testCases = ::testing::Values(
     &::so::ecdsa::verifySha1Signature,
     &::so::evp::verifySha1Signature   
   },
-    
+  
+  SignVerifyInput {
+    "Sign/Verify with SHA224",
+    data::secp256k1PrivKeyPem,
+    data::secp256PubKeyPem,
+    data::signedTextBytes,
+    data::signature_sha224,
+    &::so::ecdsa::signSha224,
+    &::so::ecdsa::verifySha224Signature,
+    &::so::evp::verifySha224Signature   
+  },
+
   SignVerifyInput {
     "Sign/Verify with SHA256",
     data::secp256k1PrivKeyPem,
