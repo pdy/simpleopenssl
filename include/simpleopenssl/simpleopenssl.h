@@ -364,6 +364,8 @@ namespace x509 {
   SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert);
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<std::string> issuerString(const X509 &cert);
+  SO_API Expected<bool> isCa(X509 &cert);
+  SO_API Expected<bool> isSelfSigned(X509 &cert);
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
   SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
   SO_API Expected<Bytes> serialNumber(X509 &cert);
@@ -428,7 +430,7 @@ namespace detail {
   template
   <
     typename T,
-    typename T_ = T, // TODO: U is placeholder to avoid of 'reassining default template param' error, I should use some smarter solution
+    typename T_ = T, // TODO: T_ is placeholder to avoid of 'reassining default template param' error, I should use some smarter solution
     typename = typename std::enable_if<detail::is_uptr<T>::value>::type
   >
   SO_LIB Expected<T> err()
@@ -1092,6 +1094,26 @@ namespace x509 {
     const X509_NAME *issuer = X509_get_issuer_name(&cert);
     if(!issuer) return detail::err<std::string>();
     return detail::nameToString(*issuer);
+  }
+
+  SO_API Expected<bool> isCa(X509 &cert)
+  {
+    if(0 == X509_check_ca(&cert)){
+      const auto lastErr = ERR_get_error();
+      if(0 == lastErr) return detail::ok(false);
+      return detail::err<bool>(lastErr);
+    }
+    return detail::ok(true);
+  }
+
+  SO_API Expected<bool> isSelfSigned(X509 &cert)
+  {
+    if(X509_V_OK == X509_check_issued(&cert, &cert))
+      return detail::ok(true);
+    
+    const auto lastErr = ERR_get_error();
+    if(0 == lastErr) return detail::ok(false);
+    return detail::err<bool>(lastErr);
   }
 
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert)

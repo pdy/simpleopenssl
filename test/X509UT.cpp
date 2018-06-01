@@ -198,7 +198,7 @@ TEST(X509UT, getSetValidityAPIIntegrityOK)
   EXPECT_EQ(expected, *maybeValidity);
 }
 
-TEST(X509UT, getSetPubKeyWithGeneratedKeyShouldSuccess)
+TEST(X509UT, getSetPubKeyWithGeneratedKey)
 {
   /*
    * 1. Generate ec key par
@@ -245,7 +245,7 @@ TEST(X509UT, getSetPubKeyWithGeneratedKeyShouldSuccess)
   EXPECT_TRUE(*verResult);
 }
 
-TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
+TEST(X509UT, setGetPubWithPrecalculatedKeys)
 {
   /*
    * 1. Convert PEM priv and pub to evp
@@ -291,7 +291,7 @@ TEST(X509UT, setGetPubWithPrecalculatedKeysShouldSuccess)
   ASSERT_TRUE(*ver2Result);
 }
 
-TEST(X509UT, certSignSha256VerifyAPIIntegrityShoudlSuccess)
+TEST(X509UT, certSignSha256VerifyAPIIntegrity)
 {
   // GIVEN
   x509::Info name;
@@ -316,7 +316,7 @@ TEST(X509UT, certSignSha256VerifyAPIIntegrityShoudlSuccess)
   EXPECT_TRUE(*verResult);  
 }
 
-TEST(X509UT, certSignSha1VerifyAPIIntegrityShoudlSuccess)
+TEST(X509UT, certSignSha1VerifyAPIIntegrity)
 {
   // GIVEN
   x509::Info name;
@@ -341,7 +341,7 @@ TEST(X509UT, certSignSha1VerifyAPIIntegrityShoudlSuccess)
   EXPECT_TRUE(*verResult);  
 }
 
-TEST(X509UT, certSignSha384VerifyAPIIntegrityShoudlSuccess)
+TEST(X509UT, certSignSha384VerifyAPIIntegrity)
 {
   // GIVEN
   x509::Info name;
@@ -366,7 +366,7 @@ TEST(X509UT, certSignSha384VerifyAPIIntegrityShoudlSuccess)
   EXPECT_TRUE(*verResult);  
 }
 
-TEST(X509UT, getSerialNumberWithPrecalculatedDataShouldSuccess)
+TEST(X509UT, getSerialNumberWithPrecalculatedData)
 {
   // GIVEN
   const std::vector<uint8_t> expected {0x1f, 0x47, 0xaf, 0xaa, 0x62, 0x00, 0x70, 0x50, 0x54, 0x4c, 0x01, 0x9e, 0x9b, 0x63, 0x99, 0x2a};
@@ -387,7 +387,7 @@ TEST(X509UT, getSerialNumberWithPrecalculatedDataShouldSuccess)
       serial.end()));
 }
 
-TEST(X509UT, getSerialNumberShouldSuccess)
+TEST(X509UT, getSerialNumber)
 {
   // GIVEN
   const long expectedSerialNumber = 10810;
@@ -408,7 +408,7 @@ TEST(X509UT, getSerialNumberShouldSuccess)
       serial.end()));
 }
 
-TEST(X509UT, getSetSerialNumberAPIIntegrityShouldSuccess)
+TEST(X509UT, getSetSerialNumberAPIIntegrity)
 {
   // GIVEN
   std::vector<uint8_t> expected(256);
@@ -452,7 +452,7 @@ TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
       serial.end()));
 }
 
-TEST(X509UT, getEcdsaSignatureShouldSuccess)
+TEST(X509UT, getEcdsaSignature)
 {
   // GIVEN
   auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
@@ -467,6 +467,51 @@ TEST(X509UT, getEcdsaSignatureShouldSuccess)
   const auto& sig = *maybeSig;
   ASSERT_EQ(48, sig.r.size()); // it's secp384r1
   ASSERT_EQ(48, sig.s.size()); // it's secp384r1
+}
+
+TEST(X509UT, isSelfSignedShouldBeTrue)
+{
+  // GIVEN  
+  auto name = so::make_unique(X509_NAME_new());
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(name.get(), NID_countryName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("UK"), -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(name.get(), NID_organizationName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Unorganized"), -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(name.get(), NID_commonName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Joe Briggs"), -1, -1, 0));
+
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(X509_set_issuer_name(cert.get(), name.get()));
+  ASSERT_TRUE(X509_set_subject_name(cert.get(), name.get()));
+
+  // WHEN
+  const auto isSelfSigned = x509::isSelfSigned(*cert);
+
+  // THEN
+  ASSERT_TRUE(isSelfSigned);
+  ASSERT_TRUE(*isSelfSigned);
+}
+
+TEST(X509UT, isSelfSignedShouldBeFalse)
+{
+  // GIVEN  
+  auto issuer = so::make_unique(X509_NAME_new());
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(issuer.get(), NID_countryName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("UK"), -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(issuer.get(), NID_organizationName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Unorganized"), -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(issuer.get(), NID_commonName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Joe Briggs"), -1, -1, 0));
+
+  auto subject = so::make_unique(X509_NAME_new());
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(subject.get(), NID_countryName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("UK"), -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(subject.get(), NID_organizationName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Unorganized"), -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(subject.get(), NID_commonName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Joe Brem"), -1, -1, 0));
+
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(X509_set_issuer_name(cert.get(), issuer.get()));
+  ASSERT_TRUE(X509_set_subject_name(cert.get(), subject.get()));
+
+  // WHEN
+  const auto isSelfSigned = x509::isSelfSigned(*cert);
+
+  // THEN
+  ASSERT_TRUE(isSelfSigned);
+  ASSERT_FALSE(*isSelfSigned);
 }
 
 }}}
