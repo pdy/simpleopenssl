@@ -1058,11 +1058,8 @@ namespace rand {
 namespace x509 {
   inline bool Info::operator ==(const Info &other) const
   {
-    return commonName == other.commonName &&
-      countryName == other.countryName &&
-      organizationName == other.organizationName &&
-      localityName == other.localityName &&
-      stateOrProvinceName == other.stateOrProvinceName;
+    return std::tie( commonName, countryName, organizationName, localityName, stateOrProvinceName) ==
+      std::tie(other.commonName, other.countryName, other.organizationName, other.localityName, other.stateOrProvinceName); 
   }
 
   inline bool Info::operator !=(const Info &other) const
@@ -1072,7 +1069,7 @@ namespace x509 {
  
   inline bool Validity::operator==(const Validity &other) const
   {
-    return notBefore == other.notBefore && notAfter == other.notAfter;
+    return std::tie(notBefore, notAfter) == std::tie(other.notBefore, other.notAfter);
   }
   
   inline bool Validity::operator!=(const Validity &other) const
