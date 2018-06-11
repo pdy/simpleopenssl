@@ -362,6 +362,7 @@ namespace x509 {
   };
 
   SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert);
+  SO_API Expected<size_t> extensionsCount(const X509 &cert);
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<std::string> issuerString(const X509 &cert);
   SO_API Expected<bool> isCa(X509 &cert);
@@ -1188,6 +1189,13 @@ namespace x509 {
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
     return detail::ok(ecdsa::Signature{ *bignum::bnToBytes(*r), *bignum::bnToBytes(*s) });
+  }
+
+  SO_API Expected<size_t> extensionsCount(const X509 &cert)
+  {
+    const int extsCount = X509_get_ext_count(&cert);
+    if(extsCount < 0) return detail::err<size_t>(); 
+    return detail::ok(static_cast<size_t>(extsCount));
   }
 
   SO_API Expected<Info> subject(const X509 &cert)
