@@ -150,6 +150,16 @@ class AddValueRef<T, TSelf, std::true_type>
 {};
 
 SO_LIB std::string errCodeToString(unsigned long errCode);
+
+template<typename ID>
+struct X509Extension
+{
+  ID id;
+  bool critical;
+  std::string description;
+  Bytes data;
+};
+
 } //namespace detail
 
 template<typename T>
@@ -339,7 +349,30 @@ namespace rand {
 } //namespace rand
 
 namespace x509 {
+  enum class CertExtensionId : int
+  {
+    BASIC_CONSTRAINTS = NID_basic_constraints,
+    KEY_USAGE = NID_key_usage,
+    EXT_KEY_USAGE = NID_ext_key_usage,
+    SUBJECT_KEY_IDENTIFIER = NID_subject_key_identifier,
+    AUTHORITY_KEY_IDENTIFIER = NID_authority_key_identifier,
+    PRIVATE_KEY_USAGE_PERIOD = NID_private_key_usage_period,
+    SUBJECT_ALT_NAME = NID_subject_alt_name,
+    ISSUER_ALT_NAME = NID_issuer_alt_name,
+    INFO_ACCESS = NID_info_access,
+    SINFO_ACCESS = NID_sinfo_access,
+    NAME_CONSTRAINTS = NID_name_constraints,
+    CERTIFICATE_POLICIES = NID_certificate_policies,
+    POLICY_MAPPINGS = NID_policy_mappings,
+    POLICY_CONSTRAINTS = NID_policy_constraints,
+    INHIBIT_ANY_POLICY = NID_inhibit_any_policy,
+    TLS_FEATURE = NID_tlsfeature,
+    STRONG_EXTRANET_ID = NID_sxnet,
+    PROXY_CERTIFICATE_INFO = NID_proxyCertInfo
+  };
   
+  using CertExtension = detail::X509Extension<CertExtensionId>;
+
   struct Info
   {
     std::string commonName;
@@ -362,6 +395,7 @@ namespace x509 {
   };
 
   SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert);
+  SO_API Expected<std::vector<CertExtension>> extensions(const X509 &cert);
   SO_API Expected<size_t> extensionsCount(const X509 &cert);
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<std::string> issuerString(const X509 &cert);
@@ -640,6 +674,59 @@ namespace detail {
     }
 
     return detail::ok(true);
+  }
+
+  template<typename ID>
+  SO_LIB detail::X509Extension<ID> getExtension(X509_EXTENSION &ex)
+  {
+    using RetType = detail::X509Extension<ID>;
+    const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
+    const int nid = OBJ_obj2nid(asn1Obj);
+
+    if(nid == NID_undef)
+    { 
+      const std::string extName = obj2Str(asn1Obj);
+      const auto val = X509_EXTENSION_get_data(&ex);
+
+      std::vector<uint8_t> data(static_cast<size_t>(val->length));
+      std::copy_n(val->data, val->length, data.begin());
+
+      return RetType {
+            static_cast<ID>(nid),
+            false,
+            extName,
+            data
+      };
+    }
+
+    auto bio = make_unique(BIO_new(BIO_s_mem()));
+    if(!X509V3_EXT_print(bio.get(), &ex, 0, 0))
+    {// revocation extensions, to be finished 
+      const auto val = X509_EXTENSION_get_data(&ex);
+
+      Bytes data(static_cast<size_t>(val->length));
+      std::copy_n(val->data, val->length, data.begin());
+
+      return Extension{
+        nid,
+        std::string(OBJ_nid2ln(nid)),
+        data
+      };
+    }
+
+    BUF_MEM *bptr; // this will be freed when bio will be closed
+    BIO_get_mem_ptr(bio.get(), &bptr);
+
+    std::vector<uint8_t> data(static_cast<size_t>(bptr->length));
+
+    const auto noNewLineChar = [](uint8_t chr){ return chr != '\r' && chr != '\n'; };
+    std::copy_if(bptr->data, bptr->data + bptr->length, data.begin(), noNewLineChar);
+
+    return Extension{
+        nid,
+        std::string(OBJ_nid2ln(nid)),
+        data
+    };
   }
 
 } //namespace detail
@@ -1189,6 +1276,23 @@ namespace x509 {
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
     return detail::ok(ecdsa::Signature{ *bignum::bnToBytes(*r), *bignum::bnToBytes(*s) });
+  }
+
+  SO_API Expected<std::vector<CertExtension>> extensions(const X509 &cert)
+  {
+    using RetType = std::vector<CertExtension>;
+    const auto extsCount = extensionsCount(cert);
+    if(!extsCount) return detail::err<RetType>(extsCount.errorCode());
+    if(0 == *extsCount) return detail::ok(RetType{});
+    RetType ret;
+    ret.reserve(*extsCount);
+    // std::generate(ret.begin(), ret.end(), [&cert, &index]{return getExtension(X509_get_ext(&cert, index++));});
+    for(int index = 0; index < static_cast<int>(*extsCount); ++index)
+    {
+
+    }
+
+    return detail::ok(std::move(ret));
   }
 
   SO_API Expected<size_t> extensionsCount(const X509 &cert)
