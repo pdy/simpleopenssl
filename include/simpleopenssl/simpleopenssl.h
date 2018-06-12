@@ -678,7 +678,7 @@ namespace detail {
   }
 
   template<typename ID>
-  SO_LIB detail::X509Extension<ID> getExtension(X509_EXTENSION &ex)
+  SO_LIB Expected<detail::X509Extension<ID>> getExtension(X509_EXTENSION &ex)
   {
     using RetType = detail::X509Extension<ID>;
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
@@ -695,12 +695,12 @@ namespace detail {
       data.reserve(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, std::back_inserter(data));
 
-      return RetType {
+      return detail::ok(RetType {
             static_cast<ID>(nid),
             static_cast<bool>(critical),
             *extName,
             data
-      };
+      });
     }
 
     
@@ -712,15 +712,14 @@ namespace detail {
       Bytes data(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, data.begin());
 
-      return RetType{
+      return detail::ok(RetType{
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         data
-      };
+      });
     }
     
-
     BUF_MEM *bptr; // will be freed when bio will be closed
     BIO_get_mem_ptr(bio.get(), &bptr);
 
@@ -728,12 +727,12 @@ namespace detail {
     data.reserve(static_cast<size_t>(bptr->length));
     std::copy_if(bptr->data, bptr->data + bptr->length, std::back_inserter(data), [](uint8_t chr){ return chr != '\r' && chr != '\n'; });
 
-    return RetType{
+    return detail::ok(RetType{
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         data
-      };
+      });
   }
 
 } //namespace detail
@@ -1306,7 +1305,9 @@ namespace x509 {
     // std::generate(ret.begin(), ret.end(), [&cert, &index]{return getExtension(X509_get_ext(&cert, index++));});
     for(int index = 0; index < static_cast<int>(*extsCount); ++index)
     {
-
+      auto extension = detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
+      if(!extension) return detail::err<RetType>(extension.errorCode());
+      ret.push_back(extension.moveValue());
     }
 
     return detail::ok(std::move(ret));

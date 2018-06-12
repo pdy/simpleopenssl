@@ -15,13 +15,29 @@ TEST(X509CertExtensionsUT, getExtensionCount)
   auto cert = so::make_unique(X509_new());
 
   // WHEN
-  const auto extensions = x509::extensionsCount(*cert);
+  const auto extCount = x509::extensionsCount(*cert);
 
   // THEN
   const size_t expected = 0;  
-  EXPECT_TRUE(extensions);
-  EXPECT_EQ(expected, *extensions);
+  EXPECT_TRUE(extCount);
+  EXPECT_EQ(expected, *extCount);
 }
 
+TEST(X509CertExtensionsUT, getExtensions)
+{
+  // GIVEN
+  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN
+  const auto extCount = x509::extensionsCount(*cert);
+  const auto extensions = x509::extensions(*cert);
+  
+  // THEN
+  ASSERT_TRUE(extCount);
+  ASSERT_TRUE(extensions);
+  EXPECT_EQ(*extCount, (*extensions).size());
+}
 
 }}}
