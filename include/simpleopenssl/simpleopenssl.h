@@ -150,6 +150,16 @@ class AddValueRef<T, TSelf, std::true_type>
 {};
 
 SO_LIB std::string errCodeToString(unsigned long errCode);
+
+template<typename ID>
+struct X509Extension
+{
+  ID id;
+  bool critical;
+  std::string name;
+  Bytes data;
+};
+
 } //namespace detail
 
 template<typename T>
@@ -238,6 +248,7 @@ SO_API void cleanUp();
 namespace asn1 {
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt); 
+  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj);
   SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
 } // namepsace asn1
@@ -339,7 +350,30 @@ namespace rand {
 } //namespace rand
 
 namespace x509 {
+  enum class CertExtensionId : int
+  {
+    BASIC_CONSTRAINTS = NID_basic_constraints,
+    KEY_USAGE = NID_key_usage,
+    EXT_KEY_USAGE = NID_ext_key_usage,
+    SUBJECT_KEY_IDENTIFIER = NID_subject_key_identifier,
+    AUTHORITY_KEY_IDENTIFIER = NID_authority_key_identifier,
+    PRIVATE_KEY_USAGE_PERIOD = NID_private_key_usage_period,
+    SUBJECT_ALT_NAME = NID_subject_alt_name,
+    ISSUER_ALT_NAME = NID_issuer_alt_name,
+    INFO_ACCESS = NID_info_access,
+    SINFO_ACCESS = NID_sinfo_access,
+    NAME_CONSTRAINTS = NID_name_constraints,
+    CERTIFICATE_POLICIES = NID_certificate_policies,
+    POLICY_MAPPINGS = NID_policy_mappings,
+    POLICY_CONSTRAINTS = NID_policy_constraints,
+    INHIBIT_ANY_POLICY = NID_inhibit_any_policy,
+    TLS_FEATURE = NID_tlsfeature,
+    STRONG_EXTRANET_ID = NID_sxnet,
+    PROXY_CERTIFICATE_INFO = NID_proxyCertInfo
+  };
   
+  using CertExtension = detail::X509Extension<CertExtensionId>;
+
   struct Info
   {
     std::string commonName;
@@ -362,6 +396,7 @@ namespace x509 {
   };
 
   SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert);
+  SO_API Expected<std::vector<CertExtension>> extensions(const X509 &cert);
   SO_API Expected<size_t> extensionsCount(const X509 &cert);
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<std::string> issuerString(const X509 &cert);
@@ -642,6 +677,64 @@ namespace detail {
     return detail::ok(true);
   }
 
+  template<typename ID>
+  SO_LIB Expected<detail::X509Extension<ID>> getExtension(X509_EXTENSION &ex)
+  {
+    using RetType = detail::X509Extension<ID>;
+    const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
+    const int nid = OBJ_obj2nid(asn1Obj);
+    const int critical = X509_EXTENSION_get_critical(&ex);
+
+    if(nid == NID_undef)
+    { 
+      const auto extName = asn1::objToStr(*asn1Obj);
+      if(!extName) return detail::err<RetType>();
+      const auto val = X509_EXTENSION_get_data(&ex);
+
+      Bytes data;
+      data.reserve(static_cast<size_t>(val->length));
+      std::copy_n(val->data, val->length, std::back_inserter(data));
+
+      return detail::ok(RetType {
+            static_cast<ID>(nid),
+            static_cast<bool>(critical),
+            *extName,
+            data
+      });
+    }
+
+    
+    auto bio = make_unique(BIO_new(BIO_s_mem()));
+    if(!X509V3_EXT_print(bio.get(), &ex, 0, 0))
+    {// revocation extensions, not yet fully working
+      const auto val = X509_EXTENSION_get_data(&ex);
+
+      Bytes data(static_cast<size_t>(val->length));
+      std::copy_n(val->data, val->length, data.begin());
+
+      return detail::ok(RetType{
+        static_cast<ID>(nid),
+        static_cast<bool>(critical),
+        std::string(OBJ_nid2ln(nid)),
+        data
+      });
+    }
+    
+    BUF_MEM *bptr; // will be freed when bio will be closed
+    BIO_get_mem_ptr(bio.get(), &bptr);
+
+    Bytes data;
+    data.reserve(static_cast<size_t>(bptr->length));
+    std::copy_if(bptr->data, bptr->data + bptr->length, std::back_inserter(data), [](uint8_t chr){ return chr != '\r' && chr != '\n'; });
+
+    return detail::ok(RetType{
+        static_cast<ID>(nid),
+        static_cast<bool>(critical),
+        std::string(OBJ_nid2ln(nid)),
+        data
+      });
+  }
+
 } //namespace detail
 
 SO_API void init()
@@ -671,9 +764,7 @@ namespace asn1 {
     if(!integer) return detail::err<ASN1_INTEGER_uptr>();
     return detail::ok(std::move(integer)); 
   }
-
-  //SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(uint64_t num);
-  
+ 
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
   {
     auto ret = make_unique(ASN1_OCTET_STRING_new());
@@ -682,6 +773,18 @@ namespace asn1 {
       return detail::err<ASN1_OCTET_STRING_uptr>();
 
     return detail::ok(std::move(ret));
+  }
+
+  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj)
+  {
+    // according to documentation, size of 80 should be more than enough
+    constexpr size_t size = 1024;
+    char extname[size];
+    std::memset(extname, 0x00, size);
+    const int charsWritten = OBJ_obj2txt(extname, size, &obj, 1);
+    if(0 > charsWritten) return detail::err<std::string>();
+    if(0 == charsWritten) return detail::ok(std::string{});
+    return detail::ok(std::string(extname));
   }
 
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time)
@@ -1189,6 +1292,25 @@ namespace x509 {
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
     return detail::ok(ecdsa::Signature{ *bignum::bnToBytes(*r), *bignum::bnToBytes(*s) });
+  }
+
+  SO_API Expected<std::vector<CertExtension>> extensions(const X509 &cert)
+  {
+    using RetType = std::vector<CertExtension>;
+    const auto extsCount = extensionsCount(cert);
+    if(!extsCount) return detail::err<RetType>(extsCount.errorCode());
+    if(0 == *extsCount) return detail::ok(RetType{});
+    RetType ret;
+    ret.reserve(*extsCount);
+    // std::generate(ret.begin(), ret.end(), [&cert, &index]{return getExtension(X509_get_ext(&cert, index++));});
+    for(int index = 0; index < static_cast<int>(*extsCount); ++index)
+    {
+      auto extension = detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
+      if(!extension) return detail::err<RetType>(extension.errorCode());
+      ret.push_back(extension.moveValue());
+    }
+
+    return detail::ok(std::move(ret));
   }
 
   SO_API Expected<size_t> extensionsCount(const X509 &cert)
