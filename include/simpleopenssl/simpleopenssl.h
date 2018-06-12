@@ -156,7 +156,7 @@ struct X509Extension
 {
   ID id;
   bool critical;
-  std::string description;
+  std::string name;
   Bytes data;
 };
 
@@ -248,6 +248,7 @@ SO_API void cleanUp();
 namespace asn1 {
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt); 
+  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj);
   SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
 } // namepsace asn1
@@ -682,51 +683,57 @@ namespace detail {
     using RetType = detail::X509Extension<ID>;
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
     const int nid = OBJ_obj2nid(asn1Obj);
+    const int critical = X509_EXTENSION_get_critical(&ex);
 
     if(nid == NID_undef)
     { 
-      const std::string extName = obj2Str(asn1Obj);
+      const auto extName = asn1::objToStr(*asn1Obj);
+      if(!extName) return detail::err<RetType>();
       const auto val = X509_EXTENSION_get_data(&ex);
 
-      std::vector<uint8_t> data(static_cast<size_t>(val->length));
-      std::copy_n(val->data, val->length, data.begin());
+      Bytes data;
+      data.reserve(static_cast<size_t>(val->length));
+      std::copy_n(val->data, val->length, std::back_inserter(data));
 
       return RetType {
             static_cast<ID>(nid),
-            false,
-            extName,
+            static_cast<bool>(critical),
+            *extName,
             data
       };
     }
 
+    
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(!X509V3_EXT_print(bio.get(), &ex, 0, 0))
-    {// revocation extensions, to be finished 
+    {// revocation extensions, not yet fully working
       const auto val = X509_EXTENSION_get_data(&ex);
 
       Bytes data(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, data.begin());
 
-      return Extension{
-        nid,
+      return RetType{
+        static_cast<ID>(nid),
+        static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         data
       };
     }
+    
 
-    BUF_MEM *bptr; // this will be freed when bio will be closed
+    BUF_MEM *bptr; // will be freed when bio will be closed
     BIO_get_mem_ptr(bio.get(), &bptr);
 
-    std::vector<uint8_t> data(static_cast<size_t>(bptr->length));
+    Bytes data;
+    data.reserve(static_cast<size_t>(bptr->length));
+    std::copy_if(bptr->data, bptr->data + bptr->length, std::back_inserter(data), [](uint8_t chr){ return chr != '\r' && chr != '\n'; });
 
-    const auto noNewLineChar = [](uint8_t chr){ return chr != '\r' && chr != '\n'; };
-    std::copy_if(bptr->data, bptr->data + bptr->length, data.begin(), noNewLineChar);
-
-    return Extension{
-        nid,
+    return RetType{
+        static_cast<ID>(nid),
+        static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         data
-    };
+      };
   }
 
 } //namespace detail
@@ -758,9 +765,7 @@ namespace asn1 {
     if(!integer) return detail::err<ASN1_INTEGER_uptr>();
     return detail::ok(std::move(integer)); 
   }
-
-  //SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(uint64_t num);
-  
+ 
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
   {
     auto ret = make_unique(ASN1_OCTET_STRING_new());
@@ -769,6 +774,18 @@ namespace asn1 {
       return detail::err<ASN1_OCTET_STRING_uptr>();
 
     return detail::ok(std::move(ret));
+  }
+
+  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj)
+  {
+    // according to documentation, size of 80 should be more than enough
+    constexpr size_t size = 1024;
+    char extname[size];
+    std::memset(extname, 0x00, size);
+    const int charsWritten = OBJ_obj2txt(extname, size, &obj, 1);
+    if(0 > charsWritten) return detail::err<std::string>();
+    if(0 == charsWritten) return detail::ok(std::string{});
+    return detail::ok(std::string(extname));
   }
 
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time)
