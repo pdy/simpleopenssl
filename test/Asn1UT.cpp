@@ -39,4 +39,37 @@ TEST(Asn1UT, asn1ApiTimeConvertersIntegrityOK)
   EXPECT_EQ(now, *stdTime);
 }
 
+class Asn1ObjectEncodeUT : public testing::TestWithParam<std::string>
+{};
+
+TEST_P(Asn1ObjectEncodeUT, encodeDecodeApiIntegrity)
+{
+  // GIVEN
+  const std::string input { GetParam() };
+
+  // WHEN
+  auto maybeEncoded = asn1::encodeObject(input);
+  std::cout << maybeEncoded.msg() << '\n';
+  ASSERT_TRUE(maybeEncoded);
+  auto encoded = maybeEncoded.moveValue();
+  auto actual = asn1::objToStr(*encoded);
+  
+  // THEN
+  ASSERT_TRUE(actual);
+  EXPECT_EQ(input, *actual);
+}
+
+INSTANTIATE_TEST_CASE_P(
+    Asn1UT,
+    Asn1ObjectEncodeUT,
+    ::testing::Values(
+      std::string{"name"},
+      std::string{"1.3.6.1.4.1.343"},
+      std::string{"2.1.5.3.6.1.243"},
+      std::string{"serialNumber"},
+      std::string{"md5WithRSAEncryption"},
+      std::string{"userPassword"}
+  )
+);
+
 }}} // namespace so { namespace ut { namespace asn1 {

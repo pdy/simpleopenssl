@@ -99,6 +99,8 @@ SO_API auto make_unique(T *ptr) -> std::unique_ptr<T, D>
   return std::unique_ptr<T, D>(ptr);
 }
 
+
+CUSTOM_DELETER_UNIQUE_POINTER(ASN1_OBJECT, ASN1_OBJECT_free);
 CUSTOM_DELETER_UNIQUE_POINTER(ASN1_STRING, ASN1_STRING_free);
 using ASN1_INTEGER_uptr         = ASN1_STRING_uptr;
 using ASN1_ENUMERATED_uptr      = ASN1_STRING_uptr;
@@ -247,7 +249,8 @@ SO_API void cleanUp();
 
 namespace asn1 {
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
-  SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt); 
+  SO_API Expected<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
+  SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
   SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj);
   SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
@@ -766,6 +769,13 @@ namespace asn1 {
     return detail::ok(std::move(integer)); 
   }
  
+  SO_API Expected<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical)
+  {
+    auto ret = make_unique(OBJ_txt2obj(nameOrNumerical.c_str(), 0));
+    if(!ret) return detail::err<ASN1_OBJECT_uptr>();
+    return detail::ok(std::move(ret));
+  }
+
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
   {
     auto ret = make_unique(ASN1_OCTET_STRING_new());
@@ -782,7 +792,7 @@ namespace asn1 {
     constexpr size_t size = 1024;
     char extname[size];
     std::memset(extname, 0x00, size);
-    const int charsWritten = OBJ_obj2txt(extname, size, &obj, 1);
+    const int charsWritten = OBJ_obj2txt(extname, size, &obj, 0);
     if(0 > charsWritten) return detail::err<std::string>();
     if(0 == charsWritten) return detail::ok(std::string{});
     return detail::ok(std::string(extname));
