@@ -352,24 +352,25 @@ namespace rand {
 namespace x509 {
   enum class CertExtensionId : int
   {
-    BASIC_CONSTRAINTS = NID_basic_constraints,
-    KEY_USAGE = NID_key_usage,
-    EXT_KEY_USAGE = NID_ext_key_usage,
-    SUBJECT_KEY_IDENTIFIER = NID_subject_key_identifier,
-    AUTHORITY_KEY_IDENTIFIER = NID_authority_key_identifier,
-    PRIVATE_KEY_USAGE_PERIOD = NID_private_key_usage_period,
-    SUBJECT_ALT_NAME = NID_subject_alt_name,
-    ISSUER_ALT_NAME = NID_issuer_alt_name,
-    INFO_ACCESS = NID_info_access,
-    SINFO_ACCESS = NID_sinfo_access,
-    NAME_CONSTRAINTS = NID_name_constraints,
-    CERTIFICATE_POLICIES = NID_certificate_policies,
-    POLICY_MAPPINGS = NID_policy_mappings,
-    POLICY_CONSTRAINTS = NID_policy_constraints,
-    INHIBIT_ANY_POLICY = NID_inhibit_any_policy,
-    TLS_FEATURE = NID_tlsfeature,
-    STRONG_EXTRANET_ID = NID_sxnet,
-    PROXY_CERTIFICATE_INFO = NID_proxyCertInfo
+    UNDEF                     = NID_undef,
+    BASIC_CONSTRAINTS         = NID_basic_constraints,
+    KEY_USAGE                 = NID_key_usage,
+    EXT_KEY_USAGE             = NID_ext_key_usage,
+    SUBJECT_KEY_IDENTIFIER    = NID_subject_key_identifier,
+    AUTHORITY_KEY_IDENTIFIER  = NID_authority_key_identifier,
+    PRIVATE_KEY_USAGE_PERIOD  = NID_private_key_usage_period,
+    SUBJECT_ALT_NAME          = NID_subject_alt_name,
+    ISSUER_ALT_NAME           = NID_issuer_alt_name,
+    INFO_ACCESS               = NID_info_access,
+    SINFO_ACCESS              = NID_sinfo_access,
+    NAME_CONSTRAINTS          = NID_name_constraints,
+    CERTIFICATE_POLICIES      = NID_certificate_policies,
+    POLICY_MAPPINGS           = NID_policy_mappings,
+    POLICY_CONSTRAINTS        = NID_policy_constraints,
+    INHIBIT_ANY_POLICY        = NID_inhibit_any_policy,
+    TLS_FEATURE               = NID_tlsfeature,
+    STRONG_EXTRANET_ID        = NID_sxnet,
+    PROXY_CERTIFICATE_INFO    = NID_proxyCertInfo
   };
   
   using CertExtension = detail::X509Extension<CertExtensionId>;
