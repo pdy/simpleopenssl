@@ -40,4 +40,19 @@ TEST(X509CertExtensionsUT, getExtensions)
   EXPECT_EQ(*extCount, (*extensions).size());
 }
 
+TEST(X509CertExtensionsUT, getExtension)
+{
+  // GIVEN
+  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN
+  const auto extension = x509::extension(*cert, x509::CertExtensionId::KEY_USAGE);
+  
+  // THEN
+  ASSERT_TRUE(extension);
+  EXPECT_EQ(x509::CertExtensionId::KEY_USAGE, (*extension).id);
+}
+
 }}}

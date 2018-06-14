@@ -400,6 +400,7 @@ namespace x509 {
   };
 
   SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert);
+  SO_API Expected<CertExtension> extension(const X509 &cert, CertExtensionId extensionId);
   SO_API Expected<std::vector<CertExtension>> extensions(const X509 &cert);
   SO_API Expected<size_t> extensionsCount(const X509 &cert);
   SO_API Expected<Info> issuer(const X509 &cert);
@@ -1303,6 +1304,13 @@ namespace x509 {
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
     return detail::ok(ecdsa::Signature{ *bignum::bnToBytes(*r), *bignum::bnToBytes(*s) });
+  }
+
+  SO_API Expected<CertExtension> extension(const X509 &cert, CertExtensionId extensionId)
+  {
+    const int loc = X509_get_ext_by_NID(&cert, static_cast<int>(extensionId), -1);
+    if(-1 == loc) return detail::err<CertExtension>();
+    return detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
   }
 
   SO_API Expected<std::vector<CertExtension>> extensions(const X509 &cert)
