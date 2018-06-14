@@ -55,4 +55,18 @@ TEST(X509CertExtensionsUT, getExtension)
   EXPECT_EQ(x509::CertExtensionId::KEY_USAGE, (*extension).id);
 }
 
+TEST(X509CertExtensionsUT, getExtensionShouldReturnError)
+{
+  // GIVEN
+  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN
+  const auto extension = x509::extension(*cert, x509::CertExtensionId::TLS_FEATURE);
+  
+  // THEN
+  ASSERT_FALSE(extension);
+}
+
 }}}

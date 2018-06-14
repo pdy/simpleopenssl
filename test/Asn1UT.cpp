@@ -49,7 +49,6 @@ TEST_P(Asn1ObjectEncodeUT, encodeDecodeApiIntegrity)
 
   // WHEN
   auto maybeEncoded = asn1::encodeObject(input);
-  std::cout << maybeEncoded.msg() << '\n';
   ASSERT_TRUE(maybeEncoded);
   auto encoded = maybeEncoded.moveValue();
   auto actual = asn1::objToStr(*encoded);
