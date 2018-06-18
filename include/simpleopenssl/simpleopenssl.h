@@ -305,7 +305,7 @@ namespace ecdsa {
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey);
   SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
   SO_API Expected<Curve> curveOf(const EC_KEY &key);
-  SO_API Expected<Bytes> der(const Signature &signature);
+  SO_API Expected<Bytes> signatureToDer(const Signature &signature);
   SO_API Expected<EC_KEY_uptr> extractPublic(const EC_KEY &key);
   SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
@@ -868,7 +868,7 @@ namespace ecdsa {
     return detail::ok(static_cast<Curve>(nid)); 
   }
 
-  SO_API Expected<Bytes> der(const Signature &signature)
+  SO_API Expected<Bytes> signatureToDer(const Signature &signature)
   {
     auto maybeR = bignum::bytesToBn(signature.r);
     if(!maybeR) return detail::err<Bytes>(maybeR.errorCode());
@@ -885,8 +885,7 @@ namespace ecdsa {
     const int derLen = i2d_ECDSA_SIG(sig.get(), nullptr); 
     if(0 == derLen) return detail::err<Bytes>();
     
-    Bytes ret;
-    ret.reserve(static_cast<size_t>(derLen));
+    Bytes ret(static_cast<size_t>(derLen));
     auto *derIt = ret.data();
     if(!i2d_ECDSA_SIG(sig.get(), &derIt)) return detail::err<Bytes>();
     return detail::ok(std::move(ret));
@@ -918,7 +917,6 @@ namespace ecdsa {
     
     return detail::ok(std::move(evpKey));
   }
-
 
   SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub)
   {
@@ -1281,8 +1279,7 @@ namespace x509 {
     X509_get0_signature(&psig, &palg, &cert);
     if(!palg || !psig) return detail::err<Bytes>();
 
-    Bytes rawDerSequence;
-    rawDerSequence.reserve(static_cast<size_t>(psig->length));
+    Bytes rawDerSequence(static_cast<size_t>(psig->length));
     std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
 
     return detail::ok(std::move(rawDerSequence));
