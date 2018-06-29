@@ -249,10 +249,16 @@ SO_API void init();
 SO_API void cleanUp();
 
 namespace asn1 {
+  enum class Form : int
+  {
+    NAME = 0,
+    NUMERICAL = 1
+  };
+
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
   SO_API Expected<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
-  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj);
+  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj, Form form = Form::NAME);
   SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
 } // namepsace asn1
@@ -699,7 +705,7 @@ namespace detail {
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
     const int nid = OBJ_obj2nid(asn1Obj);
     const int critical = X509_EXTENSION_get_critical(&ex);
-    const auto oidStr = asn1::objToStr(*asn1Obj);
+    const auto oidStr = asn1::objToStr(*asn1Obj, asn1::Form::NUMERICAL);
     if(!oidStr) return detail::err<RetType>();
 
     if(nid == NID_undef)
@@ -743,7 +749,8 @@ namespace detail {
 
     Bytes data;
     data.reserve(static_cast<size_t>(bptr->length));
-    std::copy_if(bptr->data, bptr->data + bptr->length, std::back_inserter(data), [](uint8_t chr){ return chr != '\r' && chr != '\n'; });
+//    std::copy_if(bptr->data, bptr->data + bptr->length, std::back_inserter(data), [](uint8_t chr){ return chr != '\r' && chr != '\n'; });
+    std::copy_n(bptr->data, bptr->length, std::back_inserter(data));
 
     return detail::ok(RetType{
         static_cast<ID>(nid),
@@ -801,13 +808,13 @@ namespace asn1 {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj)
+  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj, Form form)
   {
     // according to documentation, size of 80 should be more than enough
     constexpr size_t size = 1024;
     char extname[size];
     std::memset(extname, 0x00, size);
-    const int charsWritten = OBJ_obj2txt(extname, size, &obj, 0);
+    const int charsWritten = OBJ_obj2txt(extname, size, &obj, static_cast<int>(form));
     if(0 > charsWritten) return detail::err<std::string>();
     if(0 == charsWritten) return detail::ok(std::string{});
     return detail::ok(std::string(extname));

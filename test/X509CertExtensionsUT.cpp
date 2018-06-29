@@ -9,6 +9,13 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
+namespace {
+  std::ostream& operator<<(std::ostream &oss, const x509::CertExtension &ext)
+  {
+    return oss << "Name [" << ext.name << "] oid [" << ext.oidStr << "]\n"; 
+  }
+}
+
 TEST(X509CertExtensionsUT, getExtensionCountShouldEqualToZeor)
 {
   // GIVEN
@@ -55,7 +62,7 @@ TEST(X509CertExtensionsUT, getExtensions)
   EXPECT_EQ(*extCount, (*extensions).size());
 }
 
-TEST(X509CertExtensionsUT, getExtension)
+TEST(X509CertExtensionsUT, getExtensionKeyUsage)
 {
   // GIVEN
   auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
@@ -67,6 +74,7 @@ TEST(X509CertExtensionsUT, getExtension)
   
   // THEN
   ASSERT_TRUE(extension);
+  std::cout << *extension;
   EXPECT_EQ(x509::CertExtensionId::KEY_USAGE, (*extension).id);
 }
 
