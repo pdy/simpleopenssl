@@ -159,7 +159,7 @@ struct X509Extension
   ID id;
   bool critical;
   std::string name;
-  std::string oidStr;
+  std::string oidNumerical;
   Bytes data;
 };
 

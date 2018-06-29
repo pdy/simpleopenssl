@@ -12,7 +12,9 @@ namespace x509 = ::so::x509;
 namespace {
   std::ostream& operator<<(std::ostream &oss, const x509::CertExtension &ext)
   {
-    return oss << "Name [" << ext.name << "] oid [" << ext.oidStr << "]\n"; 
+    oss << "Name [" << ext.name << "] oid [" << ext.oidNumerical << "] Data [";
+    std::copy(ext.data.begin(), ext.data.end(), std::ostream_iterator<char>(oss, ""));
+    return oss << "]\n";
   }
 }
 
