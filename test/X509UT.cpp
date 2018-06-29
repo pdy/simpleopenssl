@@ -125,7 +125,7 @@ TEST(X509UT, getVersionOK)
   ASSERT_TRUE(X509_set_version(cert.get(), expected - 1));
 
   // WHEN
-  const auto actual = x509::version(*cert);
+  const auto actual = x509::getVersion(*cert);
 
   // THEN
   ASSERT_TRUE(actual);
@@ -141,7 +141,7 @@ TEST(X509UT, getSetVersionApiIntegrityOK)
 
   // WHEN
   const auto setResult = x509::setVersion(*cert, expected);
-  const auto actual = x509::version(*cert);
+  const auto actual = x509::getVersion(*cert);
 
   // THEN
   ASSERT_TRUE(setResult);
@@ -376,7 +376,7 @@ TEST(X509UT, getSerialNumberWithPrecalculatedData)
   auto cert = maybeCert.moveValue();
 
   // WHEN
-  const auto maybeSerial = x509::serialNumber(*cert);
+  const auto maybeSerial = x509::getSerialNumber(*cert);
 
   // THEN
   ASSERT_TRUE(maybeSerial);
@@ -397,7 +397,7 @@ TEST(X509UT, getSerialNumber)
   ASSERT_TRUE(ASN1_INTEGER_set(X509_get_serialNumber(cert.get()), expectedSerialNumber));
 
   // WHEN
-  auto maybeSerial = x509::serialNumber(*cert);
+  auto maybeSerial = x509::getSerialNumber(*cert);
 
   // THEN
   ASSERT_TRUE(maybeSerial);
@@ -418,7 +418,7 @@ TEST(X509UT, getSetSerialNumberAPIIntegrity)
 
   // WHEN
   const auto setResult = x509::setSerial(*cert, expected);
-  auto getResult = x509::serialNumber(*cert);
+  auto getResult = x509::getSerialNumber(*cert);
 
   // THEN
   ASSERT_TRUE(setResult);
@@ -440,7 +440,7 @@ TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
 
   // WHEN
   const auto setResult = x509::setSerial(*cert, expected);
-  auto getResult = x509::serialNumber(*cert);
+  auto getResult = x509::getSerialNumber(*cert);
 
   // THEN
   ASSERT_TRUE(setResult);

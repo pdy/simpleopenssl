@@ -404,18 +404,18 @@ namespace x509 {
   SO_API Expected<std::vector<CertExtension>> getExtensions(const X509 &cert);
   SO_API Expected<size_t> getExtensionsCount(const X509 &cert);
   SO_API Expected<Info> getIssuer(const X509 &cert);
-  SO_API Expected<std::string> getIssuerString(const X509 &cert);
+  SO_API Expected<std::string> getIssuerString(const X509 &cert); 
+  SO_API Expected<Bytes> getSerialNumber(X509 &cert);
   SO_API Expected<Bytes> getSignature(const X509 &cert);
   SO_API Expected<Info> getSubject(const X509 &cert);
   SO_API Expected<std::string> getSubjectString(const X509 &cert);
   SO_API Expected<Validity> getValidity(const X509 &cert);
-  SO_API Expected<long> version(const X509 &cert);
+  SO_API Expected<long> getVersion(const X509 &cert);
   
   SO_API Expected<bool> isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
   SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
-  SO_API Expected<Bytes> serialNumber(X509 &cert);
   SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey);  
@@ -1247,7 +1247,7 @@ namespace x509 {
     return detail::ok(std::move(pkey));
   }
 
-  SO_API Expected<Bytes> serialNumber(X509 &cert)
+  SO_API Expected<Bytes> getSerialNumber(X509 &cert)
   {
     // both internal pointers, must not be freed
     const ASN1_INTEGER *serialNumber = X509_get_serialNumber(&cert);
@@ -1372,7 +1372,7 @@ namespace x509 {
     return result == 1 ? detail::ok(true) : result == 0 ? detail::ok(false) : detail::err(false);
   }
 
-  SO_API Expected<long> version(const X509 &cert)
+  SO_API Expected<long> getVersion(const X509 &cert)
   {
     // TODO: I kept returning Expected<> to keep API
     // consistent, but I could just return long here....I don't know...
