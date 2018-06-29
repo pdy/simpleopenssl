@@ -23,7 +23,7 @@ TEST_P(EcdsaKeyGenUT, shouldExtractCurveInfoFromGeneratedKey)
   
   auto key = maybeKey.moveValue();
 
-  const auto curve = ecdsa::curveOf(*key);
+  const auto curve = ecdsa::getCurve(*key);
   ASSERT_TRUE(curve);
   ASSERT_EQ(1, EC_KEY_check_key(key.get()));
   EXPECT_EQ(input.curve, *curve);

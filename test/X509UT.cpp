@@ -213,7 +213,7 @@ TEST(X509UT, getSetPubKeyWithGeneratedKey)
   auto maybeKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::sect239k1);
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
-  auto maybePub = ::so::ecdsa::extractPublic(*key);
+  auto maybePub = ::so::ecdsa::getPublic(*key);
   ASSERT_TRUE(maybePub);
   auto maybeEvpPubKey = ::so::ecdsa::keyToEvp(*maybePub.moveValue());
   ASSERT_TRUE(maybeEvpPubKey);
@@ -227,7 +227,7 @@ TEST(X509UT, getSetPubKeyWithGeneratedKey)
   ASSERT_TRUE(result);
 
   // 3.
-  auto maybeExtractedPub = x509::pubKey(*cert);
+  auto maybeExtractedPub = x509::getPubKey(*cert);
   ASSERT_TRUE(maybeExtractedPub);
   auto extractedPub = maybeExtractedPub.moveValue();
   
@@ -282,7 +282,7 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
   const auto result = x509::setPubKey(*cert, *pub);
   ASSERT_TRUE(result);
 
-  auto maybeExtractedPub = x509::pubKey(*cert);
+  auto maybeExtractedPub = x509::getPubKey(*cert);
   ASSERT_TRUE(maybeExtractedPub);
   auto extractedPub = maybeExtractedPub.moveValue();
 

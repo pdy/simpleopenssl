@@ -259,7 +259,7 @@ namespace asn1 {
 namespace bignum {
   SO_API Expected<Bytes> bnToBytes(const BIGNUM &bn);
   SO_API Expected<BIGNUM_uptr> bytesToBn(const Bytes &bt);
-  SO_API Expected<size_t> size(const BIGNUM &bn);
+  SO_API Expected<size_t> getByteNum(const BIGNUM &bn);
 }
 
 namespace ecdsa {
@@ -304,18 +304,22 @@ namespace ecdsa {
 
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey);
   SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
-  SO_API Expected<Curve> curveOf(const EC_KEY &key);
-  SO_API Expected<Bytes> signatureToDer(const Signature &signature);
-  SO_API Expected<EC_KEY_uptr> extractPublic(const EC_KEY &key);
-  SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
+  SO_API Expected<Curve> getCurve(const EC_KEY &key);
+  SO_API Expected<EC_KEY_uptr> getPublic(const EC_KEY &key);
+  SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &key);
+  
   SO_API Expected<EC_KEY_uptr> pemToPrivateKey(const std::string &pemPriv);
   SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub);
+ 
+  SO_API Expected<Bytes> signatureToDer(const Signature &signature);
+ 
   SO_API Expected<Bytes> signSha1(const Bytes &message, EC_KEY &key);
   SO_API Expected<Bytes> signSha224(const Bytes &message, EC_KEY &key);
   SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key);
   SO_API Expected<Bytes> signSha384(const Bytes &message, EC_KEY &key);
   SO_API Expected<Bytes> signSha512(const Bytes &message, EC_KEY &key);
+  
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
   SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
@@ -326,11 +330,13 @@ namespace ecdsa {
 namespace evp {
   SO_API Expected<EVP_PKEY_uptr> pemToPrivateKey(const std::string &pemPriv);
   SO_API Expected<EVP_PKEY_uptr> pemToPublicKey(const std::string &pemPub);
+  
   SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   SO_API Expected<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
   SO_API Expected<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
   SO_API Expected<Bytes> signSha384(const Bytes &msg, EVP_PKEY &privKey);
   SO_API Expected<Bytes> signSha512(const Bytes &msg, EVP_PKEY &privKey);
+  
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
   SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
@@ -405,6 +411,7 @@ namespace x509 {
   SO_API Expected<size_t> getExtensionsCount(const X509 &cert);
   SO_API Expected<Info> getIssuer(const X509 &cert);
   SO_API Expected<std::string> getIssuerString(const X509 &cert); 
+  SO_API Expected<EVP_PKEY_uptr> getPubKey(X509 &cert);
   SO_API Expected<Bytes> getSerialNumber(X509 &cert);
   SO_API Expected<Bytes> getSignature(const X509 &cert);
   SO_API Expected<Info> getSubject(const X509 &cert);
@@ -415,12 +422,7 @@ namespace x509 {
   SO_API Expected<bool> isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
-  SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert);
-  SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
-  SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
-  SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey);  
-  SO_API Expected<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
-
+  
   SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert);
   SO_API Expected<void> setIssuer(X509 &cert, const Info &commonInfo);
   SO_API Expected<void> setPubKey(X509 &cert, EVP_PKEY &pkey);
@@ -428,6 +430,12 @@ namespace x509 {
   SO_API Expected<void> setSubject(X509 &cert, const Info &commonInfo);
   SO_API Expected<void> setValidity(X509 &cert, const Validity &validity);
   SO_API Expected<void> setVersion(X509 &cert, long version);
+  
+  SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
+  SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
+  SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey);  
+  SO_API Expected<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
+ 
 } // namespace x509
 
 
@@ -824,7 +832,7 @@ namespace asn1 {
 namespace bignum {
   SO_API Expected<Bytes> bnToBytes(const BIGNUM &bn)
   {
-    const auto sz = size(bn);
+    const auto sz = getByteNum(bn);
     if(!sz) return detail::err<Bytes>(sz.errorCode());
     Bytes ret(*sz);
     BN_bn2bin(&bn, ret.data());
@@ -838,7 +846,7 @@ namespace bignum {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<size_t> size(const BIGNUM &bn)
+  SO_API Expected<size_t> getByteNum(const BIGNUM &bn)
   {
     const int bnlen = BN_num_bytes(&bn);
     if(bnlen < 0) return detail::err<size_t>();
@@ -860,7 +868,7 @@ namespace ecdsa {
     return detail::ok(std::move(copy));
   }
 
-  SO_API Expected<Curve> curveOf(const EC_KEY &key)
+  SO_API Expected<Curve> getCurve(const EC_KEY &key)
   {
     const EC_GROUP* group = EC_KEY_get0_group(&key);
     if(!group) return detail::err<Curve>();
@@ -892,7 +900,7 @@ namespace ecdsa {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<EC_KEY_uptr> extractPublic(const EC_KEY &key)
+  SO_API Expected<EC_KEY_uptr> getPublic(const EC_KEY &key)
   {
     auto ret = make_unique(EC_KEY_new());
     if(!ret) return detail::err<EC_KEY_uptr>();
@@ -1240,7 +1248,7 @@ namespace x509 {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<EVP_PKEY_uptr> pubKey(X509 &cert)
+  SO_API Expected<EVP_PKEY_uptr> getPubKey(X509 &cert)
   { 
     auto pkey = make_unique(X509_get_pubkey(&cert));
     if(!pkey) return detail::err<EVP_PKEY_uptr>();

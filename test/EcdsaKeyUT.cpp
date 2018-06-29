@@ -90,7 +90,7 @@ TEST(EcdsaKeyUT, curveOf_AgainstPrecalculatedData)
   auto priv = maybePriv.moveValue();
 
   // WHEN
-  const auto actual = ecdsa::curveOf(*priv);
+  const auto actual = ecdsa::getCurve(*priv);
 
   //THEN
   EXPECT_EQ(ecdsa::Curve::secp256k1, *actual);
@@ -103,7 +103,7 @@ TEST(EcdsaKeyUT, extractPublicKeyOK)
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
-  auto maybePub = ecdsa::extractPublic(*priv);
+  auto maybePub = ecdsa::getPublic(*priv);
   ASSERT_TRUE(maybePub);
   auto pub = maybePub.moveValue();
   ::so::Bytes data(256);
@@ -126,7 +126,7 @@ TEST(EcdsaKeyUT, extractedPublicKeyCantBeUsedForSign)
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
-  auto maybePub = ecdsa::extractPublic(*priv);
+  auto maybePub = ecdsa::getPublic(*priv);
   ASSERT_TRUE(maybePub);
   auto pub = maybePub.moveValue();
   ::so::Bytes data(256);
