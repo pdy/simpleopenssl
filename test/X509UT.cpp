@@ -460,7 +460,7 @@ TEST(X509UT, getEcdsaSignature)
   auto cert = maybeCert.moveValue();
 
   // WHEN
-  auto maybeSig = x509::ecdsaSignature(*cert);
+  auto maybeSig = x509::getEcdsaSignature(*cert);
 
   // THEN
   ASSERT_TRUE(maybeSig);
@@ -521,7 +521,7 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
   auto cert = maybeCert.moveValue();
 
   const auto maybeSignature = x509::signature(*cert);
-  const auto maybeEcdsaSignature = x509::ecdsaSignature(*cert);
+  const auto maybeEcdsaSignature = x509::getEcdsaSignature(*cert);
 
   ASSERT_TRUE(maybeSignature);
   ASSERT_TRUE(maybeEcdsaSignature);

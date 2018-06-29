@@ -399,10 +399,10 @@ namespace x509 {
     inline bool operator !=(const Validity &other) const; 
   };
 
-  SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert);
-  SO_API Expected<CertExtension> extension(const X509 &cert, CertExtensionId extensionId);
-  SO_API Expected<std::vector<CertExtension>> extensions(const X509 &cert);
-  SO_API Expected<size_t> extensionsCount(const X509 &cert);
+  SO_API Expected<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
+  SO_API Expected<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
+  SO_API Expected<std::vector<CertExtension>> getExtensions(const X509 &cert);
+  SO_API Expected<size_t> getExtensionsCount(const X509 &cert);
   SO_API Expected<Info> issuer(const X509 &cert);
   SO_API Expected<std::string> issuerString(const X509 &cert);
   SO_API Expected<bool> isCa(X509 &cert);
@@ -711,7 +711,7 @@ namespace detail {
     
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(!X509V3_EXT_print(bio.get(), &ex, 0, 0))
-    {// revocation extensions, not yet fully working
+    {// revocation getExtensions, not yet fully working
       const auto val = X509_EXTENSION_get_data(&ex);
 
       Bytes data(static_cast<size_t>(val->length));
@@ -1285,7 +1285,7 @@ namespace x509 {
     return detail::ok(std::move(rawDerSequence));
   }
   
-  SO_API Expected<ecdsa::Signature> ecdsaSignature(const X509 &cert)
+  SO_API Expected<ecdsa::Signature> getEcdsaSignature(const X509 &cert)
   {
     // both internal pointers and must not be freed
     const ASN1_BIT_STRING *psig = nullptr;
@@ -1303,17 +1303,17 @@ namespace x509 {
     return detail::ok(ecdsa::Signature{ *bignum::bnToBytes(*r), *bignum::bnToBytes(*s) });
   }
 
-  SO_API Expected<CertExtension> extension(const X509 &cert, CertExtensionId extensionId)
+  SO_API Expected<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId)
   {
-    const int loc = X509_get_ext_by_NID(&cert, static_cast<int>(extensionId), -1);
+    const int loc = X509_get_ext_by_NID(&cert, static_cast<int>(getExtensionId), -1);
     if(-1 == loc) return detail::err<CertExtension>();
     return detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
   }
 
-  SO_API Expected<std::vector<CertExtension>> extensions(const X509 &cert)
+  SO_API Expected<std::vector<CertExtension>> getExtensions(const X509 &cert)
   {
     using RetType = std::vector<CertExtension>;
-    const auto extsCount = extensionsCount(cert);
+    const auto extsCount = getExtensionsCount(cert);
     if(!extsCount) return detail::err<RetType>(extsCount.errorCode());
     if(0 == *extsCount) return detail::ok(RetType{});
     RetType ret;
@@ -1321,15 +1321,15 @@ namespace x509 {
     // std::generate(ret.begin(), ret.end(), [&cert, &index]{return getExtension(X509_get_ext(&cert, index++));});
     for(int index = 0; index < static_cast<int>(*extsCount); ++index)
     {
-      auto extension = detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
-      if(!extension) return detail::err<RetType>(extension.errorCode());
-      ret.push_back(extension.moveValue());
+      auto getExtension = detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
+      if(!getExtension) return detail::err<RetType>(getExtension.errorCode());
+      ret.push_back(getExtension.moveValue());
     }
 
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<size_t> extensionsCount(const X509 &cert)
+  SO_API Expected<size_t> getExtensionsCount(const X509 &cert)
   {
     const int extsCount = X509_get_ext_count(&cert);
     if(extsCount < 0) return detail::err<size_t>(); 

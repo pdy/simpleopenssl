@@ -15,7 +15,7 @@ TEST(X509CertExtensionsUT, getExtensionCountShouldEqualToZeor)
   auto cert = so::make_unique(X509_new());
 
   // WHEN
-  const auto extCount = x509::extensionsCount(*cert);
+  const auto extCount = x509::getExtensionsCount(*cert);
 
   // THEN
   const size_t expected = 0;  
@@ -31,7 +31,7 @@ TEST(X509CertExtensionsUT, getExtensionsCountShouldEqualToThree)
   auto cert = maybeCert.moveValue();
 
   // WHEN
-  const auto extCount = x509::extensionsCount(*cert);
+  const auto extCount = x509::getExtensionsCount(*cert);
   
   // THEN
   ASSERT_TRUE(extCount);
@@ -46,8 +46,8 @@ TEST(X509CertExtensionsUT, getExtensions)
   auto cert = maybeCert.moveValue();
 
   // WHEN
-  const auto extCount = x509::extensionsCount(*cert);
-  const auto extensions = x509::extensions(*cert);
+  const auto extCount = x509::getExtensionsCount(*cert);
+  const auto extensions = x509::getExtensions(*cert);
   
   // THEN
   ASSERT_TRUE(extCount);
@@ -63,7 +63,7 @@ TEST(X509CertExtensionsUT, getExtension)
   auto cert = maybeCert.moveValue();
 
   // WHEN
-  const auto extension = x509::extension(*cert, x509::CertExtensionId::KEY_USAGE);
+  const auto extension = x509::getExtension(*cert, x509::CertExtensionId::KEY_USAGE);
   
   // THEN
   ASSERT_TRUE(extension);
@@ -78,7 +78,7 @@ TEST(X509CertExtensionsUT, getExtensionShouldReturnErrorWhenExtensionDoesNotExis
   auto cert = maybeCert.moveValue();
 
   // WHEN
-  const auto extension = x509::extension(*cert, x509::CertExtensionId::TLS_FEATURE);
+  const auto extension = x509::getExtension(*cert, x509::CertExtensionId::TLS_FEATURE);
   
   // THEN
   ASSERT_FALSE(extension);
