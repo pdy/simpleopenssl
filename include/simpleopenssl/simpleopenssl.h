@@ -406,9 +406,9 @@ namespace x509 {
   SO_API Expected<Info> getIssuer(const X509 &cert);
   SO_API Expected<std::string> getIssuerString(const X509 &cert);
   SO_API Expected<Bytes> getSignature(const X509 &cert);
-  SO_API Expected<Info> subject(const X509 &cert);
-  SO_API Expected<std::string> subjectString(const X509 &cert);
-  SO_API Expected<Validity> validity(const X509 &cert);
+  SO_API Expected<Info> getSubject(const X509 &cert);
+  SO_API Expected<std::string> getSubjectString(const X509 &cert);
+  SO_API Expected<Validity> getValidity(const X509 &cert);
   SO_API Expected<long> version(const X509 &cert);
   
   SO_API Expected<bool> isCa(X509 &cert);
@@ -1337,7 +1337,7 @@ namespace x509 {
     return detail::ok(static_cast<size_t>(extsCount));
   }
 
-  SO_API Expected<Info> subject(const X509 &cert)
+  SO_API Expected<Info> getSubject(const X509 &cert)
   {
     // this is internal ptr and must not be freed
     X509_NAME *subject = X509_get_subject_name(&cert);
@@ -1345,7 +1345,7 @@ namespace x509 {
     return detail::commonInfo(*subject); 
   }
 
-  SO_API Expected<std::string> subjectString(const X509 &cert)
+  SO_API Expected<std::string> getSubjectString(const X509 &cert)
   {
     // this is internal ptr and must not be freed
     const X509_NAME *subject = X509_get_subject_name(&cert);
@@ -1353,7 +1353,7 @@ namespace x509 {
     return detail::nameToString(*subject);
   }
 
-  SO_API Expected<Validity> validity(const X509 &cert)
+  SO_API Expected<Validity> getValidity(const X509 &cert)
   {
     const auto notAfter = X509_get0_notAfter(&cert);
     if(!notAfter) return detail::err<Validity>();

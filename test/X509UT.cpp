@@ -44,7 +44,7 @@ TEST(X509UT, getSubjectOK)
   ASSERT_TRUE(X509_set_subject_name(cert.get(), subject.get()));
 
   // WHEN
-  auto actual = x509::subject(*cert);
+  auto actual = x509::getSubject(*cert);
   
   // THEN
   ASSERT_TRUE(actual);
@@ -61,7 +61,7 @@ TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
   auto maybeRootCert = x509::pemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeRootCert);
   auto rootCert = maybeRootCert.moveValue();
-  auto rootCertSubj = x509::subject(*rootCert);
+  auto rootCertSubj = x509::getSubject(*rootCert);
   ASSERT_TRUE(rootCertSubj);
 
   auto cert = ::so::make_unique(X509_new());
@@ -108,7 +108,7 @@ TEST(X509UT, setGetSubjectAPIIntegrityOK)
 
   // WHEN
   const auto setResult = x509::setSubject(*cert, info);
-  const auto getResult = x509::subject(*cert);
+  const auto getResult = x509::getSubject(*cert);
 
   // THEN
   ASSERT_TRUE(setResult);
@@ -169,7 +169,7 @@ TEST(X509UT, getValidityOK)
   const ::so::x509::Validity expected {notAfter, notBefore};
 
   // WHEN
-  const auto validity = x509::validity(*cert);
+  const auto validity = x509::getValidity(*cert);
 
   // THEN
   ASSERT_TRUE(validity);
@@ -190,7 +190,7 @@ TEST(X509UT, getSetValidityAPIIntegrityOK)
 
   // WHEN
   const auto setResult = x509::setValidity(*cert, expected);
-  const auto maybeValidity = x509::validity(*cert);
+  const auto maybeValidity = x509::getValidity(*cert);
 
   // THEN
   EXPECT_TRUE(setResult);
