@@ -21,7 +21,7 @@ TEST(X509UT, getIssuerOK)
   ASSERT_TRUE(X509_set_issuer_name(cert.get(), issuer.get()));
 
   // WHEN
-  auto actual = x509::issuer(*cert);
+  auto actual = x509::getIssuer(*cert);
 
   // THEN
   ASSERT_TRUE(actual);
@@ -68,7 +68,7 @@ TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
 
   // WHEN
   const auto setResult = x509::setIssuer(*cert, *rootCert);
-  const auto getResult = x509::issuer(*cert);
+  const auto getResult = x509::getIssuer(*cert);
 
   // THEN
   ASSERT_TRUE(setResult);
@@ -88,7 +88,7 @@ TEST(X509UT, setGetIssuerAPIIntegrityOK)
 
   // WHEN
   const auto setResult = x509::setIssuer(*cert, info);
-  const auto getResult = x509::issuer(*cert);
+  const auto getResult = x509::getIssuer(*cert);
 
   // THEN
   ASSERT_TRUE(setResult);
@@ -520,7 +520,7 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
-  const auto maybeSignature = x509::signature(*cert);
+  const auto maybeSignature = x509::getSignature(*cert);
   const auto maybeEcdsaSignature = x509::getEcdsaSignature(*cert);
 
   ASSERT_TRUE(maybeSignature);

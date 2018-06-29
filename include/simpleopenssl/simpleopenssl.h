@@ -403,8 +403,14 @@ namespace x509 {
   SO_API Expected<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
   SO_API Expected<std::vector<CertExtension>> getExtensions(const X509 &cert);
   SO_API Expected<size_t> getExtensionsCount(const X509 &cert);
-  SO_API Expected<Info> issuer(const X509 &cert);
-  SO_API Expected<std::string> issuerString(const X509 &cert);
+  SO_API Expected<Info> getIssuer(const X509 &cert);
+  SO_API Expected<std::string> getIssuerString(const X509 &cert);
+  SO_API Expected<Bytes> getSignature(const X509 &cert);
+  SO_API Expected<Info> subject(const X509 &cert);
+  SO_API Expected<std::string> subjectString(const X509 &cert);
+  SO_API Expected<Validity> validity(const X509 &cert);
+  SO_API Expected<long> version(const X509 &cert);
+  
   SO_API Expected<bool> isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
@@ -412,13 +418,8 @@ namespace x509 {
   SO_API Expected<Bytes> serialNumber(X509 &cert);
   SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
-  SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey);
-  SO_API Expected<Bytes> signature(const X509 &cert);
-  SO_API Expected<Info> subject(const X509 &cert);
-  SO_API Expected<std::string> subjectString(const X509 &cert);
-  SO_API Expected<Validity> validity(const X509 &cert);
+  SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey);  
   SO_API Expected<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
-  SO_API Expected<long> version(const X509 &cert);
 
   SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert);
   SO_API Expected<void> setIssuer(X509 &cert, const Info &commonInfo);
@@ -1191,20 +1192,20 @@ namespace x509 {
     return !(*this == other);
   }
 
-  SO_API Expected<Info> issuer(const X509 &cert)
+  SO_API Expected<Info> getIssuer(const X509 &cert)
   {
     // this is internal ptr and must not be freed
-    X509_NAME *issuer = X509_get_issuer_name(&cert);
-    if(!issuer) return detail::err<Info>();
-    return detail::commonInfo(*issuer); 
+    X509_NAME *getIssuer = X509_get_issuer_name(&cert);
+    if(!getIssuer) return detail::err<Info>();
+    return detail::commonInfo(*getIssuer); 
   }
   
-  SO_API Expected<std::string> issuerString(const X509 &cert)
+  SO_API Expected<std::string> getIssuerString(const X509 &cert)
   {
     // this is internal ptr and must not be freed
-    const X509_NAME *issuer = X509_get_issuer_name(&cert);
-    if(!issuer) return detail::err<std::string>();
-    return detail::nameToString(*issuer);
+    const X509_NAME *getIssuer = X509_get_issuer_name(&cert);
+    if(!getIssuer) return detail::err<std::string>();
+    return detail::nameToString(*getIssuer);
   }
 
   SO_API Expected<bool> isCa(X509 &cert)
@@ -1271,7 +1272,7 @@ namespace x509 {
     return detail::signCert(cert, pkey, EVP_sha384());  
   }
 
-  SO_API Expected<Bytes> signature(const X509 &cert)
+  SO_API Expected<Bytes> getSignature(const X509 &cert)
   {
     // both internal pointers and must not be freed
     const ASN1_BIT_STRING *psig = nullptr;
@@ -1381,9 +1382,9 @@ namespace x509 {
 
   SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert)
   {
-    X509_NAME *issuer = X509_get_subject_name(&rootCert);
-    if(!issuer) return detail::err();
-    if(1 != X509_set_issuer_name(&cert, issuer)) return detail::err();
+    X509_NAME *getIssuer = X509_get_subject_name(&rootCert);
+    if(!getIssuer) return detail::err();
+    if(1 != X509_set_issuer_name(&cert, getIssuer)) return detail::err();
     return detail::ok();
   }
 
@@ -1391,8 +1392,8 @@ namespace x509 {
   {
     auto maybeIssuer = detail::info2X509Name(info);
     if(!maybeIssuer) return detail::err();
-    auto issuer = maybeIssuer.moveValue();
-    if(1 != X509_set_issuer_name(&cert, issuer.get())) return detail::err(); 
+    auto getIssuer = maybeIssuer.moveValue();
+    if(1 != X509_set_issuer_name(&cert, getIssuer.get())) return detail::err(); 
     return detail::ok();
   }
 
