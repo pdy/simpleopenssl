@@ -159,6 +159,7 @@ struct X509Extension
   ID id;
   bool critical;
   std::string name;
+  std::string oidStr;
   Bytes data;
 };
 
@@ -698,11 +699,11 @@ namespace detail {
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
     const int nid = OBJ_obj2nid(asn1Obj);
     const int critical = X509_EXTENSION_get_critical(&ex);
+    const auto oidStr = asn1::objToStr(*asn1Obj);
+    if(!oidStr) return detail::err<RetType>();
 
     if(nid == NID_undef)
-    { 
-      const auto extName = asn1::objToStr(*asn1Obj);
-      if(!extName) return detail::err<RetType>();
+    {  
       const auto val = X509_EXTENSION_get_data(&ex);
 
       Bytes data;
@@ -712,7 +713,8 @@ namespace detail {
       return detail::ok(RetType {
             static_cast<ID>(nid),
             static_cast<bool>(critical),
-            *extName,
+            *oidStr,
+            *oidStr,
             data
       });
     }
@@ -723,13 +725,15 @@ namespace detail {
     {// revocation getExtensions, not yet fully working
       const auto val = X509_EXTENSION_get_data(&ex);
 
-      Bytes data(static_cast<size_t>(val->length));
-      std::copy_n(val->data, val->length, data.begin());
+      Bytes data;
+      data.reserve(static_cast<size_t>(val->length));
+      std::copy_n(val->data, val->length, std::back_inserter(data));
 
       return detail::ok(RetType{
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
+        *oidStr,
         data
       });
     }
@@ -745,6 +749,7 @@ namespace detail {
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
+        *oidStr,
         data
       });
   }
