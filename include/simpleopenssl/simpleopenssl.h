@@ -452,7 +452,8 @@ namespace x509 {
   
   SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
-  SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey);  
+  SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey); 
+  SO_API Expected<size_t> signSha512(X509 &cert, EVP_PKEY &pkey);  
   SO_API Expected<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
  
 } // namespace x509
@@ -1302,6 +1303,11 @@ namespace x509 {
   SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey)
   {
     return detail::signCert(cert, pkey, EVP_sha384());  
+  }
+
+  SO_API Expected<size_t> signSha512(X509 &cert, EVP_PKEY &pkey)
+  {
+    return detail::signCert(cert, pkey, EVP_sha512());  
   }
 
   SO_API Expected<Bytes> getSignature(const X509 &cert)
