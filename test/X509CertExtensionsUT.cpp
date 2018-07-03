@@ -14,7 +14,14 @@ namespace {
   {
     oss << "Name [" << ext.name << "] oid [" << ext.oidNumerical << "] Data [";
     std::copy(ext.data.begin(), ext.data.end(), std::ostream_iterator<char>(oss, ""));
-    return oss << "]\n";
+    return oss << "] " << "critical [" << ext.critical << "]\n";
+  }
+
+  std::string toString(const so::Bytes &bt)
+  {
+    std::ostringstream ss;
+    std::copy(bt.begin(), bt.end(), std::ostream_iterator<char>(ss, ""));
+    return ss.str();
   }
 }
 
@@ -78,6 +85,10 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsage)
   ASSERT_TRUE(extension);
   std::cout << *extension;
   EXPECT_EQ(x509::CertExtensionId::KEY_USAGE, (*extension).id);
+  EXPECT_EQ(true, (*extension).critical);
+  EXPECT_EQ("X509v3 Key Usage", (*extension).name);
+  EXPECT_EQ("2.5.29.15", (*extension).oidNumerical);
+  EXPECT_EQ("Certificate Sign, CRL Sign", toString((*extension).data));
 }
 
 TEST(X509CertExtensionsUT, getExtensionShouldReturnErrorWhenExtensionDoesNotExists)

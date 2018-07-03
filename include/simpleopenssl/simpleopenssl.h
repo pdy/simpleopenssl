@@ -368,25 +368,37 @@ namespace rand {
 namespace x509 {
   enum class CertExtensionId : int
   {
-    UNDEF                     = NID_undef,
-    BASIC_CONSTRAINTS         = NID_basic_constraints,
-    KEY_USAGE                 = NID_key_usage,
-    EXT_KEY_USAGE             = NID_ext_key_usage,
-    SUBJECT_KEY_IDENTIFIER    = NID_subject_key_identifier,
-    AUTHORITY_KEY_IDENTIFIER  = NID_authority_key_identifier,
-    PRIVATE_KEY_USAGE_PERIOD  = NID_private_key_usage_period,
-    SUBJECT_ALT_NAME          = NID_subject_alt_name,
-    ISSUER_ALT_NAME           = NID_issuer_alt_name,
-    INFO_ACCESS               = NID_info_access,
-    SINFO_ACCESS              = NID_sinfo_access,
-    NAME_CONSTRAINTS          = NID_name_constraints,
-    CERTIFICATE_POLICIES      = NID_certificate_policies,
-    POLICY_MAPPINGS           = NID_policy_mappings,
-    POLICY_CONSTRAINTS        = NID_policy_constraints,
-    INHIBIT_ANY_POLICY        = NID_inhibit_any_policy,
-    TLS_FEATURE               = NID_tlsfeature,
-    STRONG_EXTRANET_ID        = NID_sxnet,
-    PROXY_CERTIFICATE_INFO    = NID_proxyCertInfo
+    // as of https://www.openssl.org/docs/man1.1.0/crypto/X509_REVOKED_add1_ext_i2d.html
+    
+    UNDEF                       = NID_undef,
+    BASIC_CONSTRAINTS           = NID_basic_constraints,
+    KEY_USAGE                   = NID_key_usage,
+    EXT_KEY_USAGE               = NID_ext_key_usage,
+    SUBJECT_KEY_IDENTIFIER      = NID_subject_key_identifier,
+    AUTHORITY_KEY_IDENTIFIER    = NID_authority_key_identifier,
+    PRIVATE_KEY_USAGE_PERIOD    = NID_private_key_usage_period,
+    SUBJECT_ALT_NAME            = NID_subject_alt_name,
+    ISSUER_ALT_NAME             = NID_issuer_alt_name,
+    INFO_ACCESS                 = NID_info_access,
+    SINFO_ACCESS                = NID_sinfo_access,
+    NAME_CONSTRAINTS            = NID_name_constraints,
+    CERTIFICATE_POLICIES        = NID_certificate_policies,
+    POLICY_MAPPINGS             = NID_policy_mappings,
+    POLICY_CONSTRAINTS          = NID_policy_constraints,
+    INHIBIT_ANY_POLICY          = NID_inhibit_any_policy,
+    TLS_FEATURE                 = NID_tlsfeature,
+    
+    NETSCAPE_CERT_TYPE          = NID_netscape_cert_type,
+    NETSCAPE_BASE_URL           = NID_netscape_base_url,
+    NETSCAPE_REVOCATION_URL     = NID_netscape_revocation_url,
+    NETSCAPE_CA_REVOCATION_URL  = NID_netscape_ca_revocation_url,
+    NETSCAPE_RENEWAL_URL        = NID_netscape_renewal_url,
+    NETSCAPE_CA_POLICY_URL      = NID_netscape_ca_policy_url,
+    NETSCAPE_SSL_SERVER_NAME    = NID_netscape_ssl_server_name,
+    NETSCAPE_COMMENT            = NID_netscape_comment,
+    
+    STRONG_EXTRANET_ID          = NID_sxnet,
+    PROXY_CERTIFICATE_INFO      = NID_proxyCertInfo
   };
   
   using CertExtension = detail::X509Extension<CertExtensionId>;
@@ -706,7 +718,7 @@ namespace detail {
     const int nid = OBJ_obj2nid(asn1Obj);
     const int critical = X509_EXTENSION_get_critical(&ex);
     const auto oidStr = asn1::objToStr(*asn1Obj, asn1::Form::NUMERICAL);
-    if(!oidStr) return detail::err<RetType>();
+    if(!oidStr) return detail::err<RetType>(oidStr.errorCode());
 
     if(nid == NID_undef)
     {  
@@ -720,8 +732,8 @@ namespace detail {
             static_cast<ID>(nid),
             static_cast<bool>(critical),
             *oidStr,
-            *oidStr,
-            data
+            std::move(*oidStr),
+            std::move(data)
       });
     }
 
@@ -739,8 +751,8 @@ namespace detail {
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
-        *oidStr,
-        data
+        std::move(*oidStr),
+        std::move(data)
       });
     }
     
@@ -756,8 +768,8 @@ namespace detail {
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
-        *oidStr,
-        data
+        std::move(*oidStr),
+        std::move(data)
       });
   }
 
