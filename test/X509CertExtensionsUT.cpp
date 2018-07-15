@@ -162,7 +162,7 @@ TEST(X509CertExtensionsUT, addCustomExtensionAPIIntegrity)
   EXPECT_EQ(expected, (*getResult).at(0));
 }
 
-TEST(X509CertExtensionsUT, DISABLED_addCustomExtensionToAlreadyExistingStandardExtensions)
+TEST(X509CertExtensionsUT, addCustomExtensionToAlreadyExistingStandardExtensions)
 {
   // GIVEN
   const x509::CertExtension expected {
@@ -187,8 +187,8 @@ TEST(X509CertExtensionsUT, DISABLED_addCustomExtensionToAlreadyExistingStandardE
   // THEN
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
-  ASSERT_EQ(1, (*getResult).size());
-  EXPECT_EQ(expected, (*getResult).at(0));
+  ASSERT_EQ(4, (*getResult).size());
+  EXPECT_EQ(expected, (*getResult).at(3));
 }
 
 }}}
