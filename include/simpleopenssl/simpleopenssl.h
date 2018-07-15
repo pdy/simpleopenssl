@@ -1379,7 +1379,7 @@ namespace x509 {
     if(0 == *extsCount) return detail::ok(RetType{});
     RetType ret;
     ret.reserve(*extsCount);
-    // std::generate(ret.begin(), ret.end(), [&cert, &index]{return getExtension(X509_get_ext(&cert, index++));});
+    
     for(int index = 0; index < static_cast<int>(*extsCount); ++index)
     {
       auto getExtension = detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
@@ -1435,7 +1435,7 @@ namespace x509 {
   SO_API Expected<Version> getVersion(const X509 &cert)
   {
     // TODO: I kept returning Expected<> to keep API
-    // consistent, but I could just return long here....I don't know...
+    // consistent, but I could just return x509::Version here....I don't know...
     return detail::ok(static_cast<Version>(X509_get_version(&cert)));
   }
 

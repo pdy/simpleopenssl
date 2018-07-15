@@ -54,6 +54,30 @@ TEST(X509CertExtensionsUT, getExtensionsCountShouldEqualToThree)
 TEST(X509CertExtensionsUT, getExtensions)
 {
   // GIVEN
+  const std::vector<x509::CertExtension> expected {
+    {
+      x509::CertExtensionId::SUBJECT_KEY_IDENTIFIER,
+      false,
+      "X509v3 Subject Key Identifier",
+      "2.5.29.14",
+      utils::toBytes("75:71:A7:19:48:19:BC:9D:9D:EA:41:47:DF:94:C4:48:77:99:D3:79")
+    },
+    {
+      x509::CertExtensionId::KEY_USAGE,
+      true,
+      "X509v3 Key Usage",
+      "2.5.29.15",
+      utils::toBytes("Certificate Sign, CRL Sign")
+    },
+    {
+      x509::CertExtensionId::BASIC_CONSTRAINTS,
+      true,
+      "X509v3 Basic Constraints",
+      "2.5.29.19",
+      utils::toBytes("CA:TRUE")
+    } 
+  };
+  
   auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
@@ -62,10 +86,15 @@ TEST(X509CertExtensionsUT, getExtensions)
   const auto extCount = x509::getExtensionsCount(*cert);
   const auto extensions = x509::getExtensions(*cert);
   
+
   // THEN
   ASSERT_TRUE(extCount);
   ASSERT_TRUE(extensions);
-  EXPECT_EQ(*extCount, (*extensions).size());
+  for(const auto& ext : *extensions)
+    std::cout << ext << '\n';
+  ASSERT_EQ(*extCount, (*extensions).size());
+  ASSERT_EQ(expected.size(), (*extensions).size());
+  ASSERT_EQ(expected, (*extensions));
 }
 
 TEST(X509CertExtensionsUT, getExtensionKeyUsage)
@@ -88,13 +117,12 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsage)
   
   // THEN
   ASSERT_TRUE(extension);
-  std::cout << *extension;
   EXPECT_EQ(expected, *extension);
 }
 
 TEST(X509CertExtensionsUT, getExtensionShouldReturnErrorWhenExtensionDoesNotExists)
 {
-  // GIVEN
+  // GIVEN 
   auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
