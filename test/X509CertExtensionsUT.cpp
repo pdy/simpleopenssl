@@ -3,29 +3,26 @@
 
 #include <numeric>
 #include <simpleopenssl/simpleopenssl.h>
+
 #include "precalculated.h"
+#include "utils.h"
 
 namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
 namespace {
-  std::ostream& operator<<(std::ostream &oss, const x509::CertExtension &ext)
+
+  inline std::ostream& operator<<(std::ostream &oss, const x509::CertExtension &ext)
   {
     oss << "Name [" << ext.name << "] oid [" << ext.oidNumerical << "] Data [";
     std::copy(ext.data.begin(), ext.data.end(), std::ostream_iterator<char>(oss, ""));
     return oss << "] " << "critical [" << ext.critical << "]\n";
   }
+ 
+} // anonymous namespace 
 
-  std::string toString(const so::Bytes &bt)
-  {
-    std::ostringstream ss;
-    std::copy(bt.begin(), bt.end(), std::ostream_iterator<char>(ss, ""));
-    return ss.str();
-  }
-}
-
-TEST(X509CertExtensionsUT, getExtensionCountShouldEqualToZeor)
+TEST(X509CertExtensionsUT, getExtensionCountShouldEqualToZero)
 {
   // GIVEN
   auto cert = so::make_unique(X509_new());
@@ -74,6 +71,14 @@ TEST(X509CertExtensionsUT, getExtensions)
 TEST(X509CertExtensionsUT, getExtensionKeyUsage)
 {
   // GIVEN
+  const x509::CertExtension expected {
+    x509::CertExtensionId::KEY_USAGE,
+    true,
+    "X509v3 Key Usage",
+    "2.5.29.15",
+    utils::toBytes("Certificate Sign, CRL Sign")
+  };
+
   auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
@@ -84,11 +89,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsage)
   // THEN
   ASSERT_TRUE(extension);
   std::cout << *extension;
-  EXPECT_EQ(x509::CertExtensionId::KEY_USAGE, (*extension).id);
-  EXPECT_EQ(true, (*extension).critical);
-  EXPECT_EQ("X509v3 Key Usage", (*extension).name);
-  EXPECT_EQ("2.5.29.15", (*extension).oidNumerical);
-  EXPECT_EQ("Certificate Sign, CRL Sign", toString((*extension).data));
+  EXPECT_EQ(expected, *extension);
 }
 
 TEST(X509CertExtensionsUT, getExtensionShouldReturnErrorWhenExtensionDoesNotExists)

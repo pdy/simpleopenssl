@@ -119,10 +119,10 @@ TEST(X509UT, setGetSubjectAPIIntegrityOK)
 TEST(X509UT, getVersionOK)
 {
   // GIVEN
-  const long expected = 3;
+  const x509::Version expected = x509::Version::v3;
   auto cert = ::so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-  ASSERT_TRUE(X509_set_version(cert.get(), expected - 1));
+  ASSERT_TRUE(X509_set_version(cert.get(), static_cast<long>(expected)));
 
   // WHEN
   const auto actual = x509::getVersion(*cert);
@@ -132,10 +132,26 @@ TEST(X509UT, getVersionOK)
   EXPECT_EQ(expected, *actual);
 }
 
+TEST(X509UT, getVersionShoulNotBeEqual)
+{
+  // GIVEN
+  const x509::Version expected = x509::Version::v3;
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+  ASSERT_TRUE(X509_set_version(cert.get(), static_cast<long>(expected) - 1));
+
+  // WHEN
+  const auto actual = x509::getVersion(*cert);
+
+  // THEN
+  ASSERT_TRUE(actual);
+  EXPECT_NE(expected, *actual);
+}
+
 TEST(X509UT, getSetVersionApiIntegrityOK)
 {
   // GIVEN
-  const long expected = 3;
+  const x509::Version expected = x509::Version::v3;
   auto cert = ::so::make_unique(X509_new());
   ASSERT_TRUE(cert);
 

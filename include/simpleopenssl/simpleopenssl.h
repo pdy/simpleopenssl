@@ -50,6 +50,7 @@
 #include <cstring>
 #include <ctime>
 #include <chrono>
+#include <tuple>
 
 namespace so {
 
@@ -161,6 +162,17 @@ struct X509Extension
   std::string name;
   std::string oidNumerical;
   Bytes data;
+
+  bool operator==(const X509Extension<ID> &other) const
+  {
+    return std::tie(id, critical, name, oidNumerical, data)
+        == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
+  }
+
+  bool operator!=(const X509Extension<ID> &other) const
+  {
+    return !(*this == other);
+  }
 };
 
 } //namespace detail
@@ -366,6 +378,7 @@ namespace rand {
 } //namespace rand
 
 namespace x509 {
+   
   enum class CertExtensionId : int
   {
     // as of https://www.openssl.org/docs/man1.1.0/crypto/X509_REVOKED_add1_ext_i2d.html
@@ -400,7 +413,7 @@ namespace x509 {
     STRONG_EXTRANET_ID          = NID_sxnet,
     PROXY_CERTIFICATE_INFO      = NID_proxyCertInfo
   };
-  
+ 
   using CertExtension = detail::X509Extension<CertExtensionId>;
 
   struct Info
@@ -424,6 +437,15 @@ namespace x509 {
     inline bool operator !=(const Validity &other) const; 
   };
 
+  enum class Version : long
+  {
+    // Version is zero indexed, thus this light enum
+    // to not bring confusion.
+    v1 = 0,
+    v2 = 1,
+    v3 = 2
+  };
+
   SO_API Expected<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
   SO_API Expected<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
   SO_API Expected<std::vector<CertExtension>> getExtensions(const X509 &cert);
@@ -436,7 +458,7 @@ namespace x509 {
   SO_API Expected<Info> getSubject(const X509 &cert);
   SO_API Expected<std::string> getSubjectString(const X509 &cert);
   SO_API Expected<Validity> getValidity(const X509 &cert);
-  SO_API Expected<long> getVersion(const X509 &cert);
+  SO_API Expected<Version> getVersion(const X509 &cert);
   
   SO_API Expected<bool> isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
@@ -1410,12 +1432,11 @@ namespace x509 {
     return result == 1 ? detail::ok(true) : result == 0 ? detail::ok(false) : detail::err(false);
   }
 
-  SO_API Expected<long> getVersion(const X509 &cert)
+  SO_API Expected<Version> getVersion(const X509 &cert)
   {
     // TODO: I kept returning Expected<> to keep API
     // consistent, but I could just return long here....I don't know...
-    // Version is zero indexed, thus +1
-    return detail::ok(X509_get_version(&cert) + 1);
+    return detail::ok(static_cast<Version>(X509_get_version(&cert)));
   }
 
   SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert)
@@ -1472,10 +1493,11 @@ namespace x509 {
     return detail::ok();
   }
 
-  SO_API Expected<void> setVersion(X509 &cert, long version)
+  SO_API Expected<void> setVersion(X509 &cert, Version version)
   {
-    --version;
-    if(1 != X509_set_version(&cert, version)) return detail::err();
+    if(1 != X509_set_version(&cert, static_cast<long>(version)))
+      return detail::err();
+    
     return detail::ok();
   }
 } // namespace x509
