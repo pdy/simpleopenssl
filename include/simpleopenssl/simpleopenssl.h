@@ -278,7 +278,7 @@ namespace asn1 {
 namespace bignum {
   SO_API Expected<Bytes> bnToBytes(const BIGNUM &bn);
   SO_API Expected<BIGNUM_uptr> bytesToBn(const Bytes &bt);
-  SO_API Expected<size_t> getByteNum(const BIGNUM &bn);
+  SO_API Expected<size_t> getByteLen(const BIGNUM &bn);
 }
 
 namespace ecdsa {
@@ -671,7 +671,7 @@ namespace detail {
     });
   }
 
-  SO_LIB Expected<X509_NAME_uptr> info2X509Name(const x509::Info &info)
+  SO_LIB Expected<X509_NAME_uptr> infoToX509Name(const x509::Info &info)
   {
     auto name = make_unique(X509_NAME_new()); 
 
@@ -879,7 +879,7 @@ namespace asn1 {
 namespace bignum {
   SO_API Expected<Bytes> bnToBytes(const BIGNUM &bn)
   {
-    const auto sz = getByteNum(bn);
+    const auto sz = getByteLen(bn);
     if(!sz) return detail::err<Bytes>(sz.errorCode());
     Bytes ret(*sz);
     BN_bn2bin(&bn, ret.data());
@@ -893,7 +893,7 @@ namespace bignum {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<size_t> getByteNum(const BIGNUM &bn)
+  SO_API Expected<size_t> getByteLen(const BIGNUM &bn)
   {
     const int bnlen = BN_num_bytes(&bn);
     if(bnlen < 0) return detail::err<size_t>();
@@ -1378,8 +1378,7 @@ namespace x509 {
     if(!extsCount) return detail::err<RetType>(extsCount.errorCode());
     if(0 == *extsCount) return detail::ok(RetType{});
     RetType ret;
-    ret.reserve(*extsCount);
-    
+    ret.reserve(*extsCount); 
     for(int index = 0; index < static_cast<int>(*extsCount); ++index)
     {
       auto getExtension = detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
@@ -1449,7 +1448,7 @@ namespace x509 {
 
   SO_API Expected<void> setIssuer(X509 &cert, const Info &info)
   {
-    auto maybeIssuer = detail::info2X509Name(info);
+    auto maybeIssuer = detail::infoToX509Name(info);
     if(!maybeIssuer) return detail::err();
     auto getIssuer = maybeIssuer.moveValue();
     if(1 != X509_set_issuer_name(&cert, getIssuer.get())) return detail::err(); 
@@ -1475,7 +1474,7 @@ namespace x509 {
 
   SO_API Expected<void> setSubject(X509 &cert, const Info &info)
   {
-    auto maybeSubject = detail::info2X509Name(info); 
+    auto maybeSubject = detail::infoToX509Name(info); 
     if(!maybeSubject) return detail::err();
     auto subject = maybeSubject.moveValue();
     if(1 != X509_set_subject_name(&cert, subject.get())) return detail::err();

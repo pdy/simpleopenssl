@@ -11,6 +11,7 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
+/*
 namespace {
 
   inline std::ostream& operator<<(std::ostream &oss, const x509::CertExtension &ext)
@@ -21,6 +22,7 @@ namespace {
   }
  
 } // anonymous namespace 
+*/
 
 TEST(X509CertExtensionsUT, getExtensionCountShouldEqualToZero)
 {
@@ -90,8 +92,6 @@ TEST(X509CertExtensionsUT, getExtensions)
   // THEN
   ASSERT_TRUE(extCount);
   ASSERT_TRUE(extensions);
-  for(const auto& ext : *extensions)
-    std::cout << ext << '\n';
   ASSERT_EQ(*extCount, (*extensions).size());
   ASSERT_EQ(expected.size(), (*extensions).size());
   ASSERT_EQ(expected, (*extensions));
