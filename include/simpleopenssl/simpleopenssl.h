@@ -132,6 +132,7 @@ CUSTOM_DELETER_UNIQUE_POINTER(EVP_PKEY, EVP_PKEY_free);
 CUSTOM_DELETER_UNIQUE_POINTER(RSA, RSA_free);
 CUSTOM_DELETER_UNIQUE_POINTER(X509, X509_free);
 CUSTOM_DELETER_UNIQUE_POINTER(X509_CRL, X509_CRL_free);
+CUSTOM_DELETER_UNIQUE_POINTER(X509_EXTENSION, X509_EXTENSION_free);
 CUSTOM_DELETER_UNIQUE_POINTER(X509_NAME, X509_NAME_free);
 CUSTOM_DELETER_UNIQUE_POINTER(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 
@@ -463,7 +464,10 @@ namespace x509 {
   SO_API Expected<bool> isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
-  
+ 
+
+  SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false); 
+//  SO_API Expected<void> setExtension(X509 &cert, const CertExtension &extension); 
   SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert);
   SO_API Expected<void> setIssuer(X509 &cert, const Info &commonInfo);
   SO_API Expected<void> setPubKey(X509 &cert, EVP_PKEY &pkey);
@@ -754,7 +758,7 @@ namespace detail {
       return detail::ok(RetType {
             static_cast<ID>(nid),
             static_cast<bool>(critical),
-            *oidStr,
+            "",
             std::move(*oidStr),
             std::move(data)
       });
@@ -1437,6 +1441,41 @@ namespace x509 {
     // consistent, but I could just return x509::Version here....I don't know...
     return detail::ok(static_cast<Version>(X509_get_version(&cert)));
   }
+
+  SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical)
+  {
+    auto maybeAsn1Oid = asn1::encodeObject(oidNumerical);
+    if(!maybeAsn1Oid) return detail::err(maybeAsn1Oid.errorCode());
+    auto extension = make_unique(X509_EXTENSION_new());
+    if(!extension) return detail::err();
+
+    if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
+      return detail::err();
+
+    auto asn1Oid = maybeAsn1Oid.moveValue();
+    if(1 != X509_EXTENSION_set_object(extension.get(), asn1Oid.get()))
+      return detail::err();
+
+    if(1 != X509_EXTENSION_set_data(extension.get(), &octet))
+      return detail::err();
+
+    if(1 != X509_add_ext(&cert, extension.get(), -1))
+      return detail::err();
+
+    return detail::ok();
+
+  }
+/*
+  SO_API Expected<void> setExtension(X509 &cert, const CertExtension &extension)
+  {
+    auto maybeData = asn1::encodeOctet(extension.data);
+    if(!maybeData) return detail::err<void>(maybeData.errorCode());
+    auto data = maybeData.moveValue();
+    if(x509::CertExtensionId::UNDEF == extension.id)
+      return setCustomExtension(cert, extension.oidNumerical, *data, extension.critical);
+ 
+  }
+*/
 
   SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert)
   {

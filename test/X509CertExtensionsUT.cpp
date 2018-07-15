@@ -134,4 +134,61 @@ TEST(X509CertExtensionsUT, getExtensionShouldReturnErrorWhenExtensionDoesNotExis
   ASSERT_FALSE(extension);
 }
 
+TEST(X509CertExtensionsUT, addCustomExtensionAPIIntegrity)
+{
+  // GIVEN
+  const x509::CertExtension expected {
+    x509::CertExtensionId::UNDEF,
+    false,
+    "",
+    // intel net adapter found at http://oid-info.com
+    "1.3.6.1.4.1.343.2.7.2",
+    {0xaa, 0xbb}
+  }; 
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+  auto maybeData = so::asn1::encodeOctet(expected.data);
+  ASSERT_TRUE(maybeData);
+  auto data = maybeData.moveValue();
+
+  // WHEN
+  const auto addResult = x509::setCustomExtension(*cert, expected.oidNumerical, *data);
+  auto getResult = x509::getExtensions(*cert);
+
+  // THEN
+  ASSERT_TRUE(addResult);
+  ASSERT_TRUE(getResult);
+  ASSERT_EQ(1, (*getResult).size());
+  EXPECT_EQ(expected, (*getResult).at(0));
+}
+
+TEST(X509CertExtensionsUT, DISABLED_addCustomExtensionToAlreadyExistingStandardExtensions)
+{
+  // GIVEN
+  const x509::CertExtension expected {
+    x509::CertExtensionId::UNDEF,
+    false,
+    "",
+    // intel net adapter found at http://oid-info.com
+    "1.3.6.1.4.1.343.2.7.2",
+    {0xaa, 0xbb}
+  }; 
+  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+  auto maybeData = so::asn1::encodeOctet(expected.data);
+  ASSERT_TRUE(maybeData);
+  auto data = maybeData.moveValue();
+
+  // WHEN
+  const auto addResult = x509::setCustomExtension(*cert, expected.oidNumerical, *data);
+  auto getResult = x509::getExtensions(*cert);
+
+  // THEN
+  ASSERT_TRUE(addResult);
+  ASSERT_TRUE(getResult);
+  ASSERT_EQ(1, (*getResult).size());
+  EXPECT_EQ(expected, (*getResult).at(0));
+}
+
 }}}
