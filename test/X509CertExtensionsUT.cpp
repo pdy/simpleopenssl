@@ -120,6 +120,30 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsage)
   EXPECT_EQ(expected, *extension);
 }
 
+TEST(X509CertExtensionsUT, getExtensionKeyUsageByOidNumerical)
+{
+  // GIVEN
+  const std::string oidToFind = "2.5.29.15";
+  const x509::CertExtension expected {
+    x509::CertExtensionId::KEY_USAGE,
+    true,
+    "X509v3 Key Usage",
+    oidToFind,
+    utils::toBytes("Certificate Sign, CRL Sign")
+  };
+
+  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN
+  const auto extension = x509::getExtension(*cert, oidToFind);
+  
+  // THEN
+  ASSERT_TRUE(extension);
+  EXPECT_EQ(expected, *extension);
+}
+
 TEST(X509CertExtensionsUT, getExtensionShouldReturnErrorWhenExtensionDoesNotExists)
 {
   // GIVEN 
@@ -160,6 +184,34 @@ TEST(X509CertExtensionsUT, addCustomExtensionAPIIntegrity)
   ASSERT_TRUE(getResult);
   ASSERT_EQ(1, (*getResult).size());
   EXPECT_EQ(expected, (*getResult).at(0));
+}
+
+TEST(X509CertExtensionsUT, addCustomExtensionAndGetByOID_APIIntegrity)
+{
+  // GIVEN 
+  // intel net adapter found at http://oid-info.com
+  const std::string oidToFind = "1.3.6.1.4.1.343.2.7.2";
+  const x509::CertExtension expected {
+    x509::CertExtensionId::UNDEF,
+    false,
+    "",
+    oidToFind,
+    {0xaa, 0xbb}
+  }; 
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+  auto maybeData = so::asn1::encodeOctet(expected.data);
+  ASSERT_TRUE(maybeData);
+  auto data = maybeData.moveValue();
+
+  // WHEN
+  const auto addResult = x509::setCustomExtension(*cert, expected.oidNumerical, *data);
+  auto getResult = x509::getExtension(*cert, oidToFind);
+
+  // THEN
+  ASSERT_TRUE(addResult);
+  ASSERT_TRUE(getResult);
+  EXPECT_EQ(expected, (*getResult));
 }
 
 TEST(X509CertExtensionsUT, addCustomExtensionToAlreadyExistingStandardExtensions)

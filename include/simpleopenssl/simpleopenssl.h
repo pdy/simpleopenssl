@@ -271,6 +271,7 @@ namespace asn1 {
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
   SO_API Expected<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
+  SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str);
   SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj, Form form = Form::NAME);
   SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
   SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
@@ -449,6 +450,7 @@ namespace x509 {
 
   SO_API Expected<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
   SO_API Expected<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
+  SO_API Expected<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical);
   SO_API Expected<std::vector<CertExtension>> getExtensions(const X509 &cert);
   SO_API Expected<size_t> getExtensionsCount(const X509 &cert);
   SO_API Expected<Info> getIssuer(const X509 &cert);
@@ -466,8 +468,9 @@ namespace x509 {
   SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
  
 
-  SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false); 
-//  SO_API Expected<void> setExtension(X509 &cert, const CertExtension &extension); 
+  SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false);
+  SO_API Expected<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical = false);
+  SO_API Expected<void> setExtension(X509 &cert, const CertExtension &extension); 
   SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert);
   SO_API Expected<void> setIssuer(X509 &cert, const Info &commonInfo);
   SO_API Expected<void> setPubKey(X509 &cert, EVP_PKEY &pkey);
@@ -845,6 +848,17 @@ namespace asn1 {
       return detail::err<ASN1_OCTET_STRING_uptr>();
 
     return detail::ok(std::move(ret));
+  }
+  
+  SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
+  {
+    Bytes bt;
+    bt.reserve(str.size());
+    std::transform(str.begin(), str.end(), std::back_inserter(bt),
+        [](char chr){ return static_cast<uint8_t>(chr);
+    });
+
+    return encodeOctet(bt);
   }
 
   SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj, Form form)
@@ -1375,6 +1389,16 @@ namespace x509 {
     return detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
   }
 
+  SO_API Expected<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical)
+  {
+    auto maybeObj = asn1::encodeObject(oidNumerical);
+    if(!maybeObj) return detail::err<CertExtension>(maybeObj.errorCode());
+    auto obj = maybeObj.moveValue();
+    const int loc = X509_get_ext_by_OBJ(&cert, obj.get(), -1);
+    if(-1 == loc) return detail::err<CertExtension>();
+    return detail::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
+  }
+
   SO_API Expected<std::vector<CertExtension>> getExtensions(const X509 &cert)
   {
     using RetType = std::vector<CertExtension>;
@@ -1465,7 +1489,30 @@ namespace x509 {
     return detail::ok();
 
   }
-/*
+
+  SO_API Expected<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical)
+  {
+    auto oid = make_unique(OBJ_nid2obj(static_cast<int>(id)));
+    if(!oid) return detail::err();
+    
+    auto extension = make_unique(X509_EXTENSION_new());
+    if(!extension) return detail::err();
+
+    if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
+      return detail::err();
+
+    if(1 != X509_EXTENSION_set_object(extension.get(), oid.get()))
+      return detail::err();
+
+    if(1 != X509_EXTENSION_set_data(extension.get(), &octet))
+      return detail::err();
+
+    if(1 != X509_add_ext(&cert, extension.get(), -1))
+      return detail::err();
+
+    return detail::ok(); 
+  }
+
   SO_API Expected<void> setExtension(X509 &cert, const CertExtension &extension)
   {
     auto maybeData = asn1::encodeOctet(extension.data);
@@ -1473,9 +1520,9 @@ namespace x509 {
     auto data = maybeData.moveValue();
     if(x509::CertExtensionId::UNDEF == extension.id)
       return setCustomExtension(cert, extension.oidNumerical, *data, extension.critical);
- 
+
+    return setExtension(cert, extension.id, *data, extension.critical);
   }
-*/
 
   SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert)
   {
