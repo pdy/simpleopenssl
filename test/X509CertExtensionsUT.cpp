@@ -11,7 +11,7 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
-/*
+
 namespace {
 
   inline std::ostream& operator<<(std::ostream &oss, const x509::CertExtension &ext)
@@ -22,7 +22,7 @@ namespace {
   }
  
 } // anonymous namespace 
-*/
+
 
 TEST(X509CertExtensionsUT, getExtensionCountShouldEqualToZero)
 {
@@ -240,7 +240,67 @@ TEST(X509CertExtensionsUT, addCustomExtensionToAlreadyExistingStandardExtensions
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
   ASSERT_EQ(4, (*getResult).size());
+//  for(const auto &ex : (*getResult))
+//    std::cout << ex << '\n';
   EXPECT_EQ(expected, (*getResult).at(3));
+}
+
+TEST(X509CertExtensionsUT, addBasicConstraintsExtension)
+{
+  // GIVEN 
+  const auto basicConstraints = x509::CertExtensionId::BASIC_CONSTRAINTS;
+  const auto basicConstraintsOid = "2.5.29.19"; 
+  const auto basicConstraintsName = "X509v3 Basic Constraints";
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+  auto maybeData = so::asn1::encodeOctet("CA:TRUE");
+  ASSERT_TRUE(maybeData);
+  auto data = maybeData.moveValue();
+
+  // WHEN
+  const auto addResult = x509::setExtension(*cert, basicConstraints, *data, true);
+  auto getResult = x509::getExtensions(*cert);
+
+  // THEN
+  ASSERT_TRUE(addResult);
+  ASSERT_TRUE(getResult);
+  ASSERT_EQ(1, (*getResult).size());
+  
+  const auto &ext = (*getResult).at(0);
+  EXPECT_EQ(basicConstraints, ext.id);
+  EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
+  EXPECT_EQ(basicConstraintsName, ext.name);
+  EXPECT_EQ(true, ext.critical);
+  EXPECT_EQ("CA:TRUE", utils::toString(ext.data));
+}
+
+
+TEST(X509CertExtensionsUT, addBasicConstraintsExtensionSingleExtraction)
+{
+  // GIVEN 
+  const auto basicConstraints = x509::CertExtensionId::BASIC_CONSTRAINTS;
+  const auto basicConstraintsOid = "2.5.29.19"; 
+  const auto basicConstraintsName = "X509v3 Basic Constraints";
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+  auto maybeData = so::asn1::encodeOctet("CA:TRUE");
+  ASSERT_TRUE(maybeData);
+  auto data = maybeData.moveValue();
+
+  // WHEN
+  const auto addResult = x509::setExtension(*cert, basicConstraints, *data, true);
+  auto getResult = x509::getExtension(*cert, x509::CertExtensionId::BASIC_CONSTRAINTS);
+
+  // THEN
+  ASSERT_TRUE(addResult);
+  ASSERT_TRUE(getResult);
+  
+  const auto &ext = (*getResult);
+  EXPECT_EQ(basicConstraints, ext.id);
+  EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
+  EXPECT_EQ(basicConstraintsName, ext.name);
+  EXPECT_EQ(true, ext.critical);
+  EXPECT_EQ("CA:TRUE", utils::toString(ext.data));
 }
 
 }}}
