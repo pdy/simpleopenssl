@@ -465,8 +465,7 @@ namespace x509 {
   
   SO_API Expected<bool> isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
-  SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert);
- 
+  SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert); 
 
   SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false);
   SO_API Expected<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical = false);
@@ -791,7 +790,6 @@ namespace detail {
 
     Bytes data;
     data.reserve(static_cast<size_t>(bptr->length));
-//    std::copy_if(bptr->data, bptr->data + bptr->length, std::back_inserter(data), [](uint8_t chr){ return chr != '\r' && chr != '\n'; });
     std::copy_n(bptr->data, bptr->length, std::back_inserter(data));
 
     return detail::ok(RetType{
