@@ -228,7 +228,7 @@ private:
   friend detail::AddValueRef<T, Expected<T>, typename detail::is_uptr<T>::type>;
 
   T m_value;
-  const unsigned long m_opensslErrCode;
+  unsigned long m_opensslErrCode;
 };
 
 template<>
