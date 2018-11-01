@@ -153,8 +153,6 @@ template<typename T, typename TSelf>
 class AddValueRef<T, TSelf, std::true_type>
 {};
 
-SO_PRV std::string errCodeToString(unsigned long errCode);
-
 template<typename ID>
 struct X509Extension
 {
@@ -175,6 +173,9 @@ struct X509Extension
     return !(*this == other);
   }
 };
+
+
+SO_PRV std::string errCodeToString(unsigned long errCode);
 
 } //namespace detail
 
@@ -210,7 +211,7 @@ public:
 
   bool hasValue() const noexcept
   { 
-    return 0 == m_opensslErrCode;
+    return !hasError(); 
   }
 
   bool hasError() const noexcept
@@ -240,7 +241,7 @@ public:
  
   operator bool() const noexcept
   {
-    return 0 == m_opensslErrCode;
+    return !hasError();
   }
 
   bool hasError() const noexcept
@@ -255,8 +256,16 @@ public:
   }
 
 private:
-  const unsigned long m_opensslErrCode;
+  unsigned long m_opensslErrCode;
 };
+
+
+/////////////////////////////////////////////////////////////////////////////////
+//
+//                           API 
+//
+/////////////////////////////////////////////////////////////////////////////////
+
 
 SO_API void init();
 SO_API void cleanUp();
@@ -496,7 +505,7 @@ namespace x509 {
 namespace detail {
   SO_PRV std::string errCodeToString(unsigned long errCode)
   {
-    constexpr size_t SIZE = 1024;
+    static constexpr size_t SIZE = 1024;
     char buff[SIZE];
     std::memset(buff, 0x00, SIZE);
     ERR_error_string_n(errCode, buff, SIZE);
@@ -862,7 +871,7 @@ namespace asn1 {
   SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj, Form form)
   {
     // according to documentation, size of 80 should be more than enough
-    constexpr size_t size = 1024;
+    static constexpr size_t size = 1024;
     char extname[size];
     std::memset(extname, 0x00, size);
     const int charsWritten = OBJ_obj2txt(extname, size, &obj, static_cast<int>(form));
