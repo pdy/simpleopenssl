@@ -57,7 +57,7 @@ namespace so {
 using Bytes = std::vector<uint8_t>;
 
 #define SO_API static inline
-#define SO_LIB static
+#define SO_PRV static
 
 namespace detail {
   template<typename T>
@@ -153,7 +153,7 @@ template<typename T, typename TSelf>
 class AddValueRef<T, TSelf, std::true_type>
 {};
 
-SO_LIB std::string errCodeToString(unsigned long errCode);
+SO_PRV std::string errCodeToString(unsigned long errCode);
 
 template<typename ID>
 struct X509Extension
@@ -494,7 +494,7 @@ namespace x509 {
 /////////////////////////////////////////////////////////////////////////////////
 
 namespace detail {
-  SO_LIB std::string errCodeToString(unsigned long errCode)
+  SO_PRV std::string errCodeToString(unsigned long errCode)
   {
     constexpr size_t SIZE = 1024;
     char buff[SIZE];
@@ -510,7 +510,7 @@ namespace detail {
   };
 
   template<typename T>
-  SO_LIB Expected<T> err(T &&val)
+  SO_PRV Expected<T> err(T &&val)
   {
     return Expected<T>(ERR_get_error(), std::move(val));
   }
@@ -520,7 +520,7 @@ namespace detail {
     typename T,
     typename = typename std::enable_if<!detail::is_uptr<T>::value>::type
   >
-  SO_LIB Expected<T> err()
+  SO_PRV Expected<T> err()
   {
     return detail::err<T>({});
   }
@@ -531,40 +531,40 @@ namespace detail {
     typename T_ = T, // TODO: T_ is placeholder to avoid of 'reassining default template param' error, I should use some smarter solution
     typename = typename std::enable_if<detail::is_uptr<T>::value>::type
   >
-  SO_LIB Expected<T> err()
+  SO_PRV Expected<T> err()
   {
     auto tmp = make_unique<typename uptr_underlying_type<T>::type>(nullptr);
     return detail::err(std::move(tmp));
   }
 
   template<typename T>
-  SO_LIB Expected<T> err(unsigned long errCode)
+  SO_PRV Expected<T> err(unsigned long errCode)
   { 
     return Expected<T>(errCode);
   }
 
-  SO_LIB Expected<void> err()
+  SO_PRV Expected<void> err()
   {
     return Expected<void>(ERR_get_error());
   }
 
-  SO_LIB Expected<void> err(unsigned long errCode)
+  SO_PRV Expected<void> err(unsigned long errCode)
   {
     return Expected<void>(errCode);
   }
 
   template<typename T>
-  SO_LIB Expected<T> ok(T &&val)
+  SO_PRV Expected<T> ok(T &&val)
   {
     return Expected<T>(0, std::move(val));
   }
 
-  SO_LIB Expected<void> ok()
+  SO_PRV Expected<void> ok()
   {
     return Expected<void>(0);
   }
 
-  SO_LIB Expected<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
+  SO_PRV Expected<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
   {
     auto mdCtx = make_unique(EVP_MD_CTX_new());
     if(!mdCtx) return detail::err<Bytes>();
@@ -587,7 +587,7 @@ namespace detail {
     return detail::ok(std::move(signature));
   }
 
-  SO_LIB Expected<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
+  SO_PRV Expected<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
   {
     auto ctx = make_unique(EVP_MD_CTX_new());
     if (!ctx) return detail::err(false);
@@ -602,7 +602,7 @@ namespace detail {
     return result == 1 ? detail::ok(true) : result == 0 ? detail::ok(false) : detail::err<bool>();
   }
   
-  SO_LIB Expected<std::string> nameEntry2String(X509_NAME &name, int nid)
+  SO_PRV Expected<std::string> nameEntry2String(X509_NAME &name, int nid)
   {
     // X509_NAME_get_text_by_NID() is considered legacy and with limitations, we'll
     // use more safe option
@@ -641,7 +641,7 @@ namespace detail {
     return detail::ok(std::move(ret)); 
   }
 
-  SO_LIB Expected<std::string> nameToString(const X509_NAME &name, unsigned long flags = XN_FLAG_RFC2253)
+  SO_PRV Expected<std::string> nameToString(const X509_NAME &name, unsigned long flags = XN_FLAG_RFC2253)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(0 > X509_NAME_print_ex(bio.get(), &name, 0, flags))
@@ -654,7 +654,7 @@ namespace detail {
     return detail::ok(std::string(dataStart, static_cast<size_t>(nameLength)));
   }
 
-  SO_LIB Expected<x509::Info> commonInfo(X509_NAME &name)
+  SO_PRV Expected<x509::Info> commonInfo(X509_NAME &name)
   {
     const auto error = [](unsigned long errCode){ return detail::err<x509::Info>(errCode); }; 
     const auto commonName = nameEntry2String(name, NID_commonName);
@@ -677,7 +677,7 @@ namespace detail {
     });
   }
 
-  SO_LIB Expected<X509_NAME_uptr> infoToX509Name(const x509::Info &info)
+  SO_PRV Expected<X509_NAME_uptr> infoToX509Name(const x509::Info &info)
   {
     auto name = make_unique(X509_NAME_new()); 
 
@@ -696,14 +696,14 @@ namespace detail {
     return detail::ok(std::move(name));
   }
 
-  SO_LIB Expected<size_t> signCert(X509 &cert, EVP_PKEY &key, const EVP_MD *md)
+  SO_PRV Expected<size_t> signCert(X509 &cert, EVP_PKEY &key, const EVP_MD *md)
   {
     const int sigLen = X509_sign(&cert, &key, md);
     if(sigLen == 0) return detail::err<size_t>();
     return detail::ok(static_cast<size_t>(sigLen));
   }
 
-  SO_LIB Expected<Bytes> ecdsaSign(const Bytes &dg, EC_KEY &key)
+  SO_PRV Expected<Bytes> ecdsaSign(const Bytes &dg, EC_KEY &key)
   {
     const int sigLen = ECDSA_size(&key);
     if(0 >= sigLen) return detail::err<Bytes>();
@@ -724,7 +724,7 @@ namespace detail {
     return detail::ok(std::move(signature));
   }
 
-  SO_LIB Expected<bool> ecdsaVerifySignature(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
+  SO_PRV Expected<bool> ecdsaVerifySignature(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
   {
     if(1 != ECDSA_verify(0,
           dg.data(),
@@ -740,7 +740,7 @@ namespace detail {
   }
 
   template<typename ID>
-  SO_LIB Expected<detail::X509Extension<ID>> getExtension(X509_EXTENSION &ex)
+  SO_PRV Expected<detail::X509Extension<ID>> getExtension(X509_EXTENSION &ex)
   {
     using RetType = detail::X509Extension<ID>;
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
