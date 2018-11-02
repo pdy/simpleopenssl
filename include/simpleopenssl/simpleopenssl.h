@@ -262,7 +262,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////////
 //
-//                           API 
+//                           MAIN API 
 //
 /////////////////////////////////////////////////////////////////////////////////
 
@@ -889,7 +889,7 @@ namespace asn1 {
 
   SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time)
   {
-    // TODO: If we're extremly unlucky, we can be off by whole second.
+    // TODO: If we're extremly unlucky, we can be off by one second.
     // Despite tests didn't fail once, I should consider just straight string parsing here.
     static_assert(sizeof(std::time_t) >= sizeof(int64_t), "std::time_t size too small, the dates may overflow");
     static constexpr int64_t SECONDS_IN_A_DAY = 24 * 60 * 60;
