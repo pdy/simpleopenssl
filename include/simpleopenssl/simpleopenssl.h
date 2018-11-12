@@ -568,6 +568,12 @@ namespace detail {
     return Expected<T>(errCode);
   }
 
+  template<typename T>
+  SO_PRV Expected<T> ok(T &&val)
+  {
+    return Expected<T>(0, std::move(val));
+  }
+
   SO_PRV Expected<void> err()
   {
     return Expected<void>(ERR_get_error());
@@ -576,12 +582,6 @@ namespace detail {
   SO_PRV Expected<void> err(unsigned long errCode)
   {
     return Expected<void>(errCode);
-  }
-
-  template<typename T>
-  SO_PRV Expected<T> ok(T &&val)
-  {
-    return Expected<T>(0, std::move(val));
   }
 
   SO_PRV Expected<void> ok()
