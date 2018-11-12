@@ -330,6 +330,21 @@ namespace ecdsa {
   {
     Bytes r;
     Bytes s;
+    
+    bool operator ==(const Signature &other) const
+    {
+      return r.size() == other.r.size() &&
+        s.size() == other.s.size() &&
+        std::equal(r.begin(), r.end(), other.r.begin()) && 
+        std::equal(s.begin(), s.end(), other.s.begin());
+
+    }
+
+
+    bool operator !=(const Signature &other) const
+    {
+      return !(*this == other);
+    }
   };
 
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey);
@@ -343,6 +358,7 @@ namespace ecdsa {
   SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub);
  
   SO_API Expected<Bytes> signatureToDer(const Signature &signature);
+  SO_API Expected<Signature> derToSignature(const Bytes &derSigBytes);
  
   SO_API Expected<Bytes> signSha1(const Bytes &message, EC_KEY &key);
   SO_API Expected<Bytes> signSha224(const Bytes &message, EC_KEY &key);
@@ -970,6 +986,25 @@ namespace ecdsa {
     auto *derIt = ret.data();
     if(!i2d_ECDSA_SIG(sig.get(), &derIt)) return detail::err<Bytes>();
     return detail::ok(std::move(ret));
+  }
+
+  SO_API Expected<Signature> derToSignature(const Bytes &derSigBytes)
+  {
+    auto *derIt = derSigBytes.data();
+    auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigBytes.size())));
+    if(!sig) return detail::err<Signature>();
+    const BIGNUM *r,*s;
+    ECDSA_SIG_get0(sig.get(), &r, &s);
+
+    auto maybeR = bignum::bnToBytes(*r);
+    if(!maybeR) return detail::err<Signature>();
+    auto maybeS = bignum::bnToBytes(*s);
+    if(!maybeS) return detail::err<Signature>();
+    
+    return detail::ok(Signature{
+      maybeR.moveValue(),
+      maybeS.moveValue(),
+    });
   }
 
   SO_API Expected<EC_KEY_uptr> getPublic(const EC_KEY &key)
