@@ -1,5 +1,5 @@
-#ifndef SEVERALGH_SO_PRECALCULATED_H_
-#define SEVERALGH_SO_PRECALCULATED_H_
+#ifndef PDY_SO_PRECALCULATED_H_
+#define PDY_SO_PRECALCULATED_H_
 
 #include <string>
 #include <vector>

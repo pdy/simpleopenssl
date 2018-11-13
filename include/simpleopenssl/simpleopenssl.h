@@ -1,5 +1,5 @@
-#ifndef SEVERALGH_SIMPLEOPENSSL_H_
-#define SEVERALGH_SIMPLEOPENSSL_H_
+#ifndef PDY_SIMPLEOPENSSL_H_
+#define PDY_SIMPLEOPENSSL_H_
 
 /*
 * Copyright (c) 2018 Pawel Drzycimski
