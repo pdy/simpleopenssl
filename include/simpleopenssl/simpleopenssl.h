@@ -239,7 +239,7 @@ public:
   explicit Expected(unsigned long opensslErrorCode)
     : m_opensslErrCode{opensslErrorCode} {}
  
-  operator bool() const noexcept
+  explicit operator bool() const noexcept
   {
     return !hasError();
   }
