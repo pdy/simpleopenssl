@@ -272,10 +272,10 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
    */
 
   // 1.
-  auto maybePriv = ::so::evp::pemToPrivateKey(data::secp256k1PrivKeyPem);
+  auto maybePriv = ::so::evp::convertPemToPrivKey(data::secp256k1PrivKeyPem);
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
-  auto maybePub = ::so::evp::pemToPublicKey(data::secp256PubKeyPem);
+  auto maybePub = ::so::evp::convertPemToPubKey(data::secp256PubKeyPem);
   ASSERT_TRUE(maybePub);
   auto pub = maybePub.moveValue();
 

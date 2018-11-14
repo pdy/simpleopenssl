@@ -354,8 +354,8 @@ namespace ecdsa {
   SO_API Expected<EC_KEY_uptr> getPublic(const EC_KEY &key);
   SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &key);
   
-  SO_API Expected<EC_KEY_uptr> pemToPrivateKey(const std::string &pemPriv);
-  SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub);
+  SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
+  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub);
  
   SO_API Expected<Bytes> signatureToDer(const Signature &signature);
   SO_API Expected<Signature> derToSignature(const Bytes &derSigBytes);
@@ -374,8 +374,8 @@ namespace ecdsa {
 } // namespace ecdsa
 
 namespace evp {
-  SO_API Expected<EVP_PKEY_uptr> pemToPrivateKey(const std::string &pemPriv);
-  SO_API Expected<EVP_PKEY_uptr> pemToPublicKey(const std::string &pemPub);
+  SO_API Expected<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
+  SO_API Expected<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
   
   SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   SO_API Expected<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
@@ -1034,7 +1034,7 @@ namespace ecdsa {
     return detail::ok(std::move(evpKey));
   }
 
-  SO_API Expected<EC_KEY_uptr> pemToPublicKey(const std::string &pemPub)
+  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
     if(!bio) return detail::err<EC_KEY_uptr>();
@@ -1043,7 +1043,7 @@ namespace ecdsa {
     return detail::ok(make_unique(rawKey));
   }
 
-  SO_API Expected<EC_KEY_uptr> pemToPrivateKey(const std::string &pemPriv)
+  SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
     if(!bio) return detail::err<EC_KEY_uptr>();
@@ -1133,7 +1133,7 @@ namespace ecdsa {
 } //namespace ecdsa
 
 namespace evp {
-  SO_API Expected<EVP_PKEY_uptr> pemToPublicKey(const std::string &pemPub)
+  SO_API Expected<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
@@ -1142,7 +1142,7 @@ namespace evp {
     return detail::ok(make_unique(rawKey));
   }
 
-  SO_API Expected<EVP_PKEY_uptr> pemToPrivateKey(const std::string &pemPriv)
+  SO_API Expected<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
     if(!bio) return detail::err<EVP_PKEY_uptr>(); 
