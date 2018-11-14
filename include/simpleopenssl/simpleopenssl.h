@@ -277,18 +277,20 @@ namespace asn1 {
     NUMERICAL = 1
   };
 
+  SO_API Expected<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form = Form::NAME);
+  SO_API Expected<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time);
+  SO_API Expected<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time);
+
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
   SO_API Expected<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
-  SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str);
-  SO_API Expected<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form = Form::NAME);
-  SO_API Expected<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time);
-  SO_API Expected<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time);
+  SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
 } // namepsace asn1
 
-namespace bignum {
-  SO_API Expected<Bytes> convertToBytes(const BIGNUM &bn);
+namespace bignum { 
   SO_API Expected<BIGNUM_uptr> convertToBignum(const Bytes &bt);
+  SO_API Expected<Bytes> convertToBytes(const BIGNUM &bn);
+  
   SO_API Expected<size_t> getByteLen(const BIGNUM &bn);
 }
 
@@ -347,17 +349,17 @@ namespace ecdsa {
     }
   };
 
+  SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
+  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub); 
+  SO_API Expected<Bytes> convertToDer(const Signature &signature); 
+  SO_API Expected<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
+  SO_API Expected<Signature> convertToSignature(const Bytes &derSigBytes);
+
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey);
   SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
   SO_API Expected<Curve> getCurve(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> getPublic(const EC_KEY &key);
-
-  SO_API Expected<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
-  SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
-  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub); 
-  SO_API Expected<Bytes> convertToDer(const Signature &signature);
-  SO_API Expected<Signature> convertToSignature(const Bytes &derSigBytes);
  
   SO_API Expected<Bytes> signSha1(const Bytes &message, EC_KEY &key);
   SO_API Expected<Bytes> signSha224(const Bytes &message, EC_KEY &key);
@@ -847,6 +849,38 @@ SO_API void cleanUp()
 }
 
 namespace asn1 {
+  SO_API Expected<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form)
+  {
+    // according to documentation, size of 80 should be more than enough
+    static constexpr size_t size = 1024;
+    char extname[size];
+    std::memset(extname, 0x00, size);
+    const int charsWritten = OBJ_obj2txt(extname, size, &obj, static_cast<int>(form));
+    if(0 > charsWritten) return detail::err<std::string>();
+    if(0 == charsWritten) return detail::ok(std::string{});
+    return detail::ok(std::string(extname));
+  }
+
+  SO_API Expected<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time)
+  {
+    auto ret = make_unique(ASN1_TIME_set(nullptr, time));
+    if(!ret) return detail::err<ASN1_TIME_uptr>();
+    return detail::ok(std::move(ret));
+  }
+
+  SO_API Expected<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time)
+  {
+    // TODO: If we're extremly unlucky, we can be off by one second.
+    // Despite tests didn't fail once, I should consider just straight string parsing here.
+    static_assert(sizeof(std::time_t) >= sizeof(int64_t), "std::time_t size too small, the dates may overflow");
+    static constexpr int64_t SECONDS_IN_A_DAY = 24 * 60 * 60;
+    using sysClock = std::chrono::system_clock;
+
+    int pday, psec;
+    if(1 != ASN1_TIME_diff(&pday, &psec, nullptr, &asn1Time)) return detail::err<std::time_t>(); 
+    return detail::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
+  }
+  
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
   {
     auto maybeBn = bignum::convertToBignum(bt);
@@ -883,38 +917,6 @@ namespace asn1 {
     });
 
     return encodeOctet(bt);
-  }
-
-  SO_API Expected<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form)
-  {
-    // according to documentation, size of 80 should be more than enough
-    static constexpr size_t size = 1024;
-    char extname[size];
-    std::memset(extname, 0x00, size);
-    const int charsWritten = OBJ_obj2txt(extname, size, &obj, static_cast<int>(form));
-    if(0 > charsWritten) return detail::err<std::string>();
-    if(0 == charsWritten) return detail::ok(std::string{});
-    return detail::ok(std::string(extname));
-  }
-
-  SO_API Expected<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time)
-  {
-    auto ret = make_unique(ASN1_TIME_set(nullptr, time));
-    if(!ret) return detail::err<ASN1_TIME_uptr>();
-    return detail::ok(std::move(ret));
-  }
-
-  SO_API Expected<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time)
-  {
-    // TODO: If we're extremly unlucky, we can be off by one second.
-    // Despite tests didn't fail once, I should consider just straight string parsing here.
-    static_assert(sizeof(std::time_t) >= sizeof(int64_t), "std::time_t size too small, the dates may overflow");
-    static constexpr int64_t SECONDS_IN_A_DAY = 24 * 60 * 60;
-    using sysClock = std::chrono::system_clock;
-
-    int pday, psec;
-    if(1 != ASN1_TIME_diff(&pday, &psec, nullptr, &asn1Time)) return detail::err<std::time_t>(); 
-    return detail::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
   } 
 } // namespace asn1
 
