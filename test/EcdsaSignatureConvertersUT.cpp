@@ -14,7 +14,7 @@ TEST(ecdsa, derSignatureBytesToSignatureStruct)
   const ecdsa::Signature expected { data::signature_sha256_R, data::signature_sha256_S };
 
   // WHEN
-  auto maybeSig = ecdsa::derToSignature(data::signature_sha256);
+  auto maybeSig = ecdsa::convertToSignature(data::signature_sha256);
   ASSERT_TRUE(maybeSig);
   
   auto sig = maybeSig.moveValue();
@@ -30,7 +30,7 @@ TEST(ecdsa, signatureStructToDerBytes)
   const ecdsa::Signature sig { data::signature_sha256_R, data::signature_sha256_S };
 
   // WHEN
-  auto maybeDer = ecdsa::signatureToDer(sig);
+  auto maybeDer = ecdsa::convertToDer(sig);
   ASSERT_TRUE(maybeDer);
 
   auto der = maybeDer.moveValue();

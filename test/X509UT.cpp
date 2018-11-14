@@ -231,10 +231,10 @@ TEST(X509UT, getSetPubKeyWithGeneratedKey)
   auto key = maybeKey.moveValue();
   auto maybePub = ::so::ecdsa::getPublic(*key);
   ASSERT_TRUE(maybePub);
-  auto maybeEvpPubKey = ::so::ecdsa::keyToEvp(*maybePub.moveValue());
+  auto maybeEvpPubKey = ::so::ecdsa::convertToEvp(*maybePub.moveValue());
   ASSERT_TRUE(maybeEvpPubKey);
   auto evpPubKey = maybeEvpPubKey.moveValue();
-  auto maybePriv = ::so::ecdsa::keyToEvp(*key);
+  auto maybePriv = ::so::ecdsa::convertToEvp(*key);
   ASSERT_TRUE(maybePriv);
   auto evpPrivKey = maybePriv.moveValue();
   
@@ -318,7 +318,7 @@ TEST(X509UT, certSignSha256VerifyAPIIntegrity)
   ASSERT_TRUE(x509::setIssuer(*cert, name));
   auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
   ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::keyToEvp(*maybeEcKey.moveValue());
+  auto maybeKey = ::so::ecdsa::convertToEvp(*maybeEcKey.moveValue());
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
 
@@ -343,7 +343,7 @@ TEST(X509UT, certSignSha1VerifyAPIIntegrity)
   ASSERT_TRUE(x509::setIssuer(*cert, name));
   auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
   ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::keyToEvp(*maybeEcKey.moveValue());
+  auto maybeKey = ::so::ecdsa::convertToEvp(*maybeEcKey.moveValue());
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
 
@@ -368,7 +368,7 @@ TEST(X509UT, certSignSha384VerifyAPIIntegrity)
   ASSERT_TRUE(x509::setIssuer(*cert, name));
   auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::sect193r1);
   ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::keyToEvp(*maybeEcKey.moveValue());
+  auto maybeKey = ::so::ecdsa::convertToEvp(*maybeEcKey.moveValue());
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
 
@@ -542,7 +542,7 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
   ASSERT_TRUE(maybeSignature);
   ASSERT_TRUE(maybeEcdsaSignature);
 
-  const auto der = ecdsa::signatureToDer(*maybeEcdsaSignature);
+  const auto der = ecdsa::convertToDer(*maybeEcdsaSignature);
   ASSERT_TRUE(der);
 
   EXPECT_EQ(maybeSignature.value().size(), der.value().size());

@@ -74,7 +74,7 @@ TEST_P(EvpSignVerifyUT, signVerify_ShouldSignAndVerifyWithEcdsaGeneratedKeys)
   ASSERT_TRUE(key);
 
   auto keyUptr = key.moveValue();
-  auto maybeEvp = ecdsa::keyToEvp(*keyUptr);
+  auto maybeEvp = ecdsa::convertToEvp(*keyUptr);
   ASSERT_TRUE(maybeEvp);
   auto evpKey = maybeEvp.moveValue();
   

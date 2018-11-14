@@ -13,12 +13,12 @@ TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
   std::vector<uint8_t> buffer(SIZE);
   std::iota(buffer.begin(), buffer.end(), 0x7f);
 
-  auto maybeBignum = bignum::bytesToBn(buffer);
+  auto maybeBignum = bignum::convertToBignum(buffer);
   ASSERT_TRUE(maybeBignum);
   auto bignum = maybeBignum.moveValue();
   ASSERT_EQ(SIZE, *bignum::getByteLen(*bignum));
 
-  auto maybeReturnedBuffer = bignum::bnToBytes(*bignum);
+  auto maybeReturnedBuffer = bignum::convertToBytes(*bignum);
   ASSERT_TRUE(maybeReturnedBuffer);
   auto returnedBuffer = *maybeReturnedBuffer;
   ASSERT_EQ(SIZE, returnedBuffer.size());

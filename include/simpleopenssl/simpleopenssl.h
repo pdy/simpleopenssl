@@ -281,14 +281,14 @@ namespace asn1 {
   SO_API Expected<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str);
-  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj, Form form = Form::NAME);
-  SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time);
-  SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time);
+  SO_API Expected<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form = Form::NAME);
+  SO_API Expected<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time);
+  SO_API Expected<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time);
 } // namepsace asn1
 
 namespace bignum {
-  SO_API Expected<Bytes> bnToBytes(const BIGNUM &bn);
-  SO_API Expected<BIGNUM_uptr> bytesToBn(const Bytes &bt);
+  SO_API Expected<Bytes> convertToBytes(const BIGNUM &bn);
+  SO_API Expected<BIGNUM_uptr> convertToBignum(const Bytes &bt);
   SO_API Expected<size_t> getByteLen(const BIGNUM &bn);
 }
 
@@ -352,13 +352,12 @@ namespace ecdsa {
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve);
   SO_API Expected<Curve> getCurve(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> getPublic(const EC_KEY &key);
-  SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &key);
-  
+
+  SO_API Expected<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
   SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
-  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub);
- 
-  SO_API Expected<Bytes> signatureToDer(const Signature &signature);
-  SO_API Expected<Signature> derToSignature(const Bytes &derSigBytes);
+  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub); 
+  SO_API Expected<Bytes> convertToDer(const Signature &signature);
+  SO_API Expected<Signature> convertToSignature(const Bytes &derSigBytes);
  
   SO_API Expected<Bytes> signSha1(const Bytes &message, EC_KEY &key);
   SO_API Expected<Bytes> signSha224(const Bytes &message, EC_KEY &key);
@@ -771,7 +770,7 @@ namespace detail {
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
     const int nid = OBJ_obj2nid(asn1Obj);
     const int critical = X509_EXTENSION_get_critical(&ex);
-    const auto oidStr = asn1::objToStr(*asn1Obj, asn1::Form::NUMERICAL);
+    const auto oidStr = asn1::convertObjToStr(*asn1Obj, asn1::Form::NUMERICAL);
     if(!oidStr) return detail::err<RetType>(oidStr.errorCode());
 
     if(nid == NID_undef)
@@ -848,7 +847,7 @@ SO_API void cleanUp()
 namespace asn1 {
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
   {
-    auto maybeBn = bignum::bytesToBn(bt);
+    auto maybeBn = bignum::convertToBignum(bt);
     if(!maybeBn) return detail::err<ASN1_INTEGER_uptr>(); 
     auto bn = maybeBn.moveValue();
     auto integer = make_unique(BN_to_ASN1_INTEGER(bn.get(), nullptr));
@@ -884,7 +883,7 @@ namespace asn1 {
     return encodeOctet(bt);
   }
 
-  SO_API Expected<std::string> objToStr(const ASN1_OBJECT &obj, Form form)
+  SO_API Expected<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form)
   {
     // according to documentation, size of 80 should be more than enough
     static constexpr size_t size = 1024;
@@ -896,14 +895,14 @@ namespace asn1 {
     return detail::ok(std::string(extname));
   }
 
-  SO_API Expected<ASN1_TIME_uptr> stdTimeToTime(std::time_t time)
+  SO_API Expected<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time)
   {
     auto ret = make_unique(ASN1_TIME_set(nullptr, time));
     if(!ret) return detail::err<ASN1_TIME_uptr>();
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<std::time_t> timeToStdTime(const ASN1_TIME &asn1Time)
+  SO_API Expected<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time)
   {
     // TODO: If we're extremly unlucky, we can be off by one second.
     // Despite tests didn't fail once, I should consider just straight string parsing here.
@@ -918,7 +917,7 @@ namespace asn1 {
 } // namespace asn1
 
 namespace bignum {
-  SO_API Expected<Bytes> bnToBytes(const BIGNUM &bn)
+  SO_API Expected<Bytes> convertToBytes(const BIGNUM &bn)
   {
     const auto sz = getByteLen(bn);
     if(!sz) return detail::err<Bytes>(sz.errorCode());
@@ -927,7 +926,7 @@ namespace bignum {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<BIGNUM_uptr> bytesToBn(const Bytes &bt)
+  SO_API Expected<BIGNUM_uptr> convertToBignum(const Bytes &bt)
   {
     auto ret = make_unique(BN_bin2bn(bt.data(), static_cast<int>(bt.size()), nullptr));
     if(!ret) return detail::err<BIGNUM_uptr>();
@@ -965,11 +964,11 @@ namespace ecdsa {
     return detail::ok(static_cast<Curve>(nid)); 
   }
 
-  SO_API Expected<Bytes> signatureToDer(const Signature &signature)
+  SO_API Expected<Bytes> convertToDer(const Signature &signature)
   {
-    auto maybeR = bignum::bytesToBn(signature.r);
+    auto maybeR = bignum::convertToBignum(signature.r);
     if(!maybeR) return detail::err<Bytes>(maybeR.errorCode());
-    auto maybeS = bignum::bytesToBn(signature.s);
+    auto maybeS = bignum::convertToBignum(signature.s);
     if(!maybeS) return detail::err<Bytes>(maybeS.errorCode());
 
     auto r = maybeR.moveValue();
@@ -988,7 +987,7 @@ namespace ecdsa {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<Signature> derToSignature(const Bytes &derSigBytes)
+  SO_API Expected<Signature> convertToSignature(const Bytes &derSigBytes)
   {
     auto *derIt = derSigBytes.data();
     auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigBytes.size())));
@@ -996,9 +995,9 @@ namespace ecdsa {
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
 
-    auto maybeR = bignum::bnToBytes(*r);
+    auto maybeR = bignum::convertToBytes(*r);
     if(!maybeR) return detail::err<Signature>();
-    auto maybeS = bignum::bnToBytes(*s);
+    auto maybeS = bignum::convertToBytes(*s);
     if(!maybeS) return detail::err<Signature>();
     
     return detail::ok(Signature{
@@ -1019,7 +1018,7 @@ namespace ecdsa {
     return detail::ok(std::move(ret));
   }
 
-  SO_API Expected<EVP_PKEY_uptr> keyToEvp(const EC_KEY &ecKey)
+  SO_API Expected<EVP_PKEY_uptr> convertToEvp(const EC_KEY &ecKey)
   {
     // I can keep const in arguments by doing this copy
     auto copy = make_unique(EC_KEY_dup(&ecKey));
@@ -1369,7 +1368,7 @@ namespace x509 {
     if(!serialNumber) return detail::err<Bytes>();
     const BIGNUM *bn = ASN1_INTEGER_to_BN(serialNumber, nullptr);
     if(!bn) return detail::err<Bytes>();
-    return bignum::bnToBytes(*bn);
+    return bignum::convertToBytes(*bn);
   }
 
   SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey)
@@ -1421,7 +1420,7 @@ namespace x509 {
     // internal pointers
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
-    return detail::ok(ecdsa::Signature{ *bignum::bnToBytes(*r), *bignum::bnToBytes(*s) });
+    return detail::ok(ecdsa::Signature{ *bignum::convertToBytes(*r), *bignum::convertToBytes(*s) });
   }
 
   SO_API Expected<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId)
@@ -1488,9 +1487,9 @@ namespace x509 {
     if(!notAfter) return detail::err<Validity>();
     const auto notBefore = X509_get0_notBefore(&cert);
     if(!notBefore) return detail::err<Validity>();
-    auto notBeforeTime = asn1::timeToStdTime(*notBefore);
+    auto notBeforeTime = asn1::convertToStdTime(*notBefore);
     if(!notBeforeTime) return detail::err<Validity>(notBeforeTime.errorCode());
-    auto notAfterTime = asn1::timeToStdTime(*notAfter);
+    auto notAfterTime = asn1::convertToStdTime(*notAfter);
     if(!notAfterTime) return detail::err<Validity>(notAfterTime.errorCode());
     return detail::ok(Validity{*notAfterTime, *notBeforeTime});
   }

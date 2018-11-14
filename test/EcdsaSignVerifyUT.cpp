@@ -102,7 +102,7 @@ TEST_P(EcdsaSignVerifyUT, signVerify_IntegrityWithEvp)
   const auto verResult = input.verifier(*sig, data, *keyUptr);
 
   // WHEN
-  auto evpKey = ecdsa::keyToEvp(*keyUptr);
+  auto evpKey = ecdsa::convertToEvp(*keyUptr);
   const auto evpVerResult = input.evpVerifier(*sig, data, *evpKey.moveValue());
   
   // THEN

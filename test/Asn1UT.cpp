@@ -16,7 +16,7 @@ TEST(Asn1UT, asn1TimeToStdTimeOK)
   ASN1_TIME_set(time.get(), now);
 
   // WHEN
-  auto actual = asn1::timeToStdTime(*time);
+  auto actual = asn1::convertToStdTime(*time);
 
   // THEN
   ASSERT_TRUE(actual);
@@ -29,10 +29,10 @@ TEST(Asn1UT, asn1ApiTimeConvertersIntegrityOK)
   auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
 
   // WHEN
-  auto maybeAsn1Time = asn1::stdTimeToTime(now);
+  auto maybeAsn1Time = asn1::convertToAsn1Time(now);
   ASSERT_TRUE(maybeAsn1Time);
   auto asn1Time = maybeAsn1Time.moveValue();
-  const auto stdTime = asn1::timeToStdTime(*asn1Time);
+  const auto stdTime = asn1::convertToStdTime(*asn1Time);
   ASSERT_TRUE(stdTime);
 
   // THEN
@@ -51,7 +51,7 @@ TEST_P(Asn1ObjectEncodeUT, encodeDecodeApiIntegrity)
   auto maybeEncoded = asn1::encodeObject(input);
   ASSERT_TRUE(maybeEncoded);
   auto encoded = maybeEncoded.moveValue();
-  auto actual = asn1::objToStr(*encoded);
+  auto actual = asn1::convertObjToStr(*encoded);
   
   // THEN
   ASSERT_TRUE(actual);
