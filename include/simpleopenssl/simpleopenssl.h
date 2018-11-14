@@ -472,6 +472,8 @@ namespace x509 {
     v3 = 2
   };
 
+  SO_API Expected<X509_uptr> convertPemToX509(const std::string &pemCert); 
+
   SO_API Expected<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
   SO_API Expected<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
   SO_API Expected<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical);
@@ -489,7 +491,6 @@ namespace x509 {
   
   SO_API Expected<bool> isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
-  SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert); 
 
   SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false);
   SO_API Expected<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical = false);
@@ -506,6 +507,7 @@ namespace x509 {
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha384(X509 &cert, EVP_PKEY &pkey); 
   SO_API Expected<size_t> signSha512(X509 &cert, EVP_PKEY &pkey);  
+  
   SO_API Expected<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
  
 } // namespace x509
@@ -1342,7 +1344,7 @@ namespace x509 {
     return detail::err<bool>(lastErr);
   }
 
-  SO_API Expected<X509_uptr> pemToX509(const std::string &pemCert)
+  SO_API Expected<X509_uptr> convertPemToX509(const std::string &pemCert)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 

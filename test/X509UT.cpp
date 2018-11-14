@@ -58,7 +58,7 @@ TEST(X509UT, getSubjectOK)
 TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
 {
   // GIVEN
-  auto maybeRootCert = x509::pemToX509(data::meaninglessValidPemCert);
+  auto maybeRootCert = x509::convertPemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeRootCert);
   auto rootCert = maybeRootCert.moveValue();
   auto rootCertSubj = x509::getSubject(*rootCert);
@@ -387,7 +387,7 @@ TEST(X509UT, getSerialNumberWithPrecalculatedData)
   // GIVEN
   const std::vector<uint8_t> expected {0x1f, 0x47, 0xaf, 0xaa, 0x62, 0x00, 0x70, 0x50, 0x54, 0x4c, 0x01, 0x9e, 0x9b, 0x63, 0x99, 0x2a};
 
-  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -471,7 +471,7 @@ TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
 TEST(X509UT, getEcdsaSignature)
 {
   // GIVEN
-  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -532,7 +532,7 @@ TEST(X509UT, isSelfSignedShouldBeFalse)
 
 TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
 {
-  auto maybeCert = x509::pemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
