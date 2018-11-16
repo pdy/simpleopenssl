@@ -333,20 +333,8 @@ namespace ecdsa {
     Bytes r;
     Bytes s;
     
-    bool operator ==(const Signature &other) const
-    {
-      return r.size() == other.r.size() &&
-        s.size() == other.s.size() &&
-        std::equal(r.begin(), r.end(), other.r.begin()) && 
-        std::equal(s.begin(), s.end(), other.s.begin());
-
-    }
-
-
-    bool operator !=(const Signature &other) const
-    {
-      return !(*this == other);
-    }
+    inline bool operator ==(const Signature &other) const;
+    inline bool operator !=(const Signature &other) const; 
   };
 
   SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
@@ -946,6 +934,20 @@ namespace bignum {
 }// namespace bignum
 
 namespace ecdsa {
+  inline bool Signature::operator ==(const Signature &other) const
+  {
+    return r.size() == other.r.size() &&
+      s.size() == other.s.size() &&
+      std::equal(r.begin(), r.end(), other.r.begin()) && 
+      std::equal(s.begin(), s.end(), other.s.begin());
+
+  }
+  
+  inline bool Signature::operator !=(const Signature &other) const
+  {
+    return !(*this == other);
+  }
+
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey)
   {
     if(1 != EC_KEY_check_key(&ecKey)) return detail::err(false);
