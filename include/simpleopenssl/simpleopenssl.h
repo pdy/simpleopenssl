@@ -393,6 +393,24 @@ namespace rand {
   SO_API Expected<Bytes> bytes(unsigned short numOfBytes);
 } //namespace rand
 
+namespace rsa {
+  SO_API Expected<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
+  SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
+  SO_API Expected<bool> checkKey(RSA &rsa);
+  
+  SO_API Expected<Bytes> signSha1(const Bytes &message, RSA &privateKey);
+  /*SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey);
+  SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey);
+  SO_API Expected<Bytes> signSha384(const Bytes &msg, RSA &privKey);
+  SO_API Expected<Bytes> signSha512(const Bytes &msg, RSA &privKey);*/
+  
+  SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  /*SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);*/
+} // namespace rsa
+
 namespace x509 {
    
   enum class CertExtensionId : int
@@ -1043,18 +1061,18 @@ namespace ecdsa {
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
     if(!bio) return detail::err<EC_KEY_uptr>();
-    EC_KEY *rawKey = PEM_read_bio_EC_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
-    if(!rawKey) return detail::err<EC_KEY_uptr>(); 
-    return detail::ok(make_unique(rawKey));
+    auto key = make_unique(PEM_read_bio_EC_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
+    if(!key) return detail::err<EC_KEY_uptr>(); 
+    return detail::ok(std::move(key));
   }
 
   SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
     if(!bio) return detail::err<EC_KEY_uptr>();
-    EC_KEY *rawKey = PEM_read_bio_ECPrivateKey(bio.get(), nullptr, nullptr, nullptr);
-    if(!rawKey) return detail::err<EC_KEY_uptr>();
-    return detail::ok(make_unique(rawKey));
+    auto key= make_unique(PEM_read_bio_ECPrivateKey(bio.get(), nullptr, nullptr, nullptr));
+    if(!key) return detail::err<EC_KEY_uptr>();
+    return detail::ok(std::move(key));
   }
 
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve)
@@ -1289,6 +1307,33 @@ namespace rand {
     return detail::ok(std::move(ret));
   }
 } // namespace rand
+
+namespace rsa {
+  SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub)
+  {
+    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+    if(!bio) return detail::err<RSA_uptr>();
+    auto key = make_unique(PEM_read_bio_RSA_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
+    if(!key) return detail::err<RSA_uptr>(); 
+    return detail::ok(std::move(key));
+  }
+
+  SO_API Expected<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv)
+  {
+    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+    if(!bio) return detail::err<RSA_uptr>();
+    auto key = make_unique(PEM_read_bio_RSAPrivateKey(bio.get(), nullptr, nullptr, nullptr));
+    if(!key) return detail::err<RSA_uptr>();
+    return detail::ok(std::move(key));
+  }
+  
+  SO_API Expected<bool> checkKey(RSA &rsa)
+  {
+    const int result = RSA_check_key(&rsa);
+    if(-1 == result) return detail::err(false);
+    return detail::ok(static_cast<bool>(result));
+  }
+} // namespace rsa
 
 namespace x509 {
   inline bool Info::operator ==(const Info &other) const
