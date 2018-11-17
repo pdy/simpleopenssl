@@ -491,7 +491,7 @@ namespace x509 {
   SO_API Expected<void> setSerial(X509 &cert, const Bytes &bytes);
   SO_API Expected<void> setSubject(X509 &cert, const Info &commonInfo);
   SO_API Expected<void> setValidity(X509 &cert, const Validity &validity);
-  SO_API Expected<void> setVersion(X509 &cert, long version);
+  SO_API Expected<void> setVersion(X509 &cert, Version version);
   
   SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);

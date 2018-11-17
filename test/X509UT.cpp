@@ -532,6 +532,7 @@ TEST(X509UT, isSelfSignedShouldBeFalse)
 
 TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
 {
+  // GIVEN
   auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
@@ -542,11 +543,30 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
   ASSERT_TRUE(maybeSignature);
   ASSERT_TRUE(maybeEcdsaSignature);
 
+  // WHEN
   const auto der = ecdsa::convertToDer(*maybeEcdsaSignature);
   ASSERT_TRUE(der);
 
+  // THEN
   EXPECT_EQ(maybeSignature.value().size(), der.value().size());
   ASSERT_TRUE(std::equal(maybeSignature.value().begin(), maybeSignature.value().end(), der.value().begin()));
+}
+
+TEST(X509UT, setGetVersionTest)
+{
+  // GIVEN
+  const x509::Version expected = x509::Version::v2;
+  auto cert = so::make_unique(X509_new());
+  ASSERT_TRUE(cert);
+
+  // WHEN
+  auto setResult = x509::setVersion(*cert, expected);
+  ASSERT_TRUE(setResult);
+  auto getResult = x509::getVersion(*cert);
+
+  // THEN
+  ASSERT_TRUE(getResult);
+  EXPECT_EQ(expected, *getResult);
 }
 
 }}}
