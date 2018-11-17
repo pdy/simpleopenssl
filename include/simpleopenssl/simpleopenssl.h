@@ -393,11 +393,29 @@ namespace rand {
   SO_API Expected<Bytes> bytes(unsigned short numOfBytes);
 } //namespace rand
 
-namespace rsa {
+namespace rsa { 
+  // OPENSSL_RSA_MAX_MODULUS_BITS 16384
+  enum class KeySize : int
+  {
+    _1024_ = 1024,
+    _2048_ = 2048,
+    _3072_ = 3072,
+    _4096_ = 4096
+  };
+
+  enum class Exponent : unsigned long
+  {
+    _3_ = RSA_3,
+    _17_ = 0x11L,
+    _65537_ = RSA_F4
+  };
+
   SO_API Expected<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
   SO_API Expected<bool> checkKey(RSA &rsa);
-  
+ 
+  SO_API Expected<RSA_uptr> generateKey(KeySize keySize, Exponent exponent = Exponent::_65537_);
+
   SO_API Expected<Bytes> signSha1(const Bytes &message, RSA &privateKey);
   /*SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey);
   SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey);
@@ -1329,9 +1347,22 @@ namespace rsa {
   
   SO_API Expected<bool> checkKey(RSA &rsa)
   {
-    const int result = RSA_check_key(&rsa);
+    const int result = RSA_check_key_ex(&rsa, nullptr);
     if(-1 == result) return detail::err(false);
     return detail::ok(static_cast<bool>(result));
+  }
+
+  SO_API Expected<RSA_uptr> generateKey(KeySize keySize, Exponent exponent)
+  {
+    auto bnE = make_unique(BN_new());
+    if(1 != BN_set_word(bnE.get(), static_cast<unsigned long>(exponent)))
+      return detail::err<RSA_uptr>();
+
+    auto rsa = make_unique(RSA_new());
+    if(1 != RSA_generate_key_ex(rsa.get(), static_cast<int>(keySize), bnE.get(), nullptr))
+      return detail::err<RSA_uptr>();
+
+    return detail::ok(std::move(rsa));
   }
 } // namespace rsa
 
