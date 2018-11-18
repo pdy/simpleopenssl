@@ -1433,6 +1433,18 @@ namespace rsa {
     return detail::ok(static_cast<KeyBits>(RSA_bits(&rsa)));
   }
 
+  SO_API Expected<RSA_uptr> getPublic(RSA &rsa)
+  {
+    auto bio = make_unique(BIO_new(BIO_s_mem())); 
+    if(0 >= i2d_RSAPublicKey_bio(bio.get(), &rsa))
+      return detail::err<RSA_uptr>();
+ 
+    auto retRsa = make_unique(d2i_RSAPublicKey_bio(bio.get(), nullptr));
+    if(!retRsa) return detail::err<RSA_uptr>();
+
+    return detail::ok(std::move(retRsa));
+  }
+
   SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha256(msg);

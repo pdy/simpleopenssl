@@ -70,13 +70,11 @@ TEST(RsaKeyUT, pem2PrivKeyConversion_shouldFailWithPubKey)
   // THEN
   EXPECT_FALSE(maybeKey);
 }
-/*
-
 
 TEST(RsaKeyUT, extractPublicKeyOK)
 {
   // GIVEN
-  auto maybePriv = rsa::generateKey(rsa::Curve::secp160r2);
+  auto maybePriv = rsa::generateKey(rsa::KeyBits::_2048_);
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
@@ -90,16 +88,15 @@ TEST(RsaKeyUT, extractPublicKeyOK)
   const auto signResult = rsa::signSha256(data, *priv);
   ASSERT_TRUE(signResult);
   const auto verResult = rsa::verifySha256Signature(*signResult, data, *pub);
-
   // THEN
   ASSERT_TRUE(verResult);
   EXPECT_TRUE(*verResult);
 }
 
-TEST(RsaKeyUT, extractedPublicKeyCantBeUsedForSign)
+TEST(RsaKeyUT, DISABLED_extractedPublicKeyCantBeUsedForSign)
 {
   // GIVEN
-  auto maybePriv = rsa::generateKey(rsa::Curve::secp160r2);
+  auto maybePriv = rsa::generateKey(rsa::KeyBits::_2048_);
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
@@ -115,7 +112,6 @@ TEST(RsaKeyUT, extractedPublicKeyCantBeUsedForSign)
   // THEN
   EXPECT_FALSE(signResult);
 }
-*/
 
 TEST(RsaKeyUT, checkKeyOK)
 {
