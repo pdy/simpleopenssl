@@ -415,22 +415,24 @@ namespace rsa {
 
   SO_API Expected<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
+  SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
   SO_API Expected<bool> checkKey(RSA &rsa);
  
   SO_API Expected<RSA_uptr> generateKey(KeyBits keySize, Exponent exponent = Exponent::_65537_);
   SO_API Expected<KeyBits> getKeyBits(const RSA &rsa);
+  SO_API Expected<RSA_uptr> getPublic(RSA &rsa);
 
-  SO_API Expected<Bytes> signSha1(const Bytes &message, RSA &privateKey);
-  /*SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey);
+  //SO_API Expected<Bytes> signSha1(const Bytes &message, RSA &privateKey);
+  //SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey);
   SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey);
-  SO_API Expected<Bytes> signSha384(const Bytes &msg, RSA &privKey);
-  SO_API Expected<Bytes> signSha512(const Bytes &msg, RSA &privKey);*/
+  //SO_API Expected<Bytes> signSha384(const Bytes &msg, RSA &privKey);
+  //SO_API Expected<Bytes> signSha512(const Bytes &msg, RSA &privKey);
   
-  SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  /*SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  //SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  //SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);*/
+  //SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  //SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
 } // namespace rsa
 
 namespace x509 {
@@ -776,6 +778,9 @@ namespace detail {
       return detail::err<Bytes>();
     }
 
+    if(finalSigLen == static_cast<unsigned>(sigLen))
+      return detail::ok(std::move(tmpSig));
+
     Bytes signature(tmpSig.begin(), std::next(tmpSig.begin(), finalSigLen));
     return detail::ok(std::move(signature));
   }
@@ -789,9 +794,47 @@ namespace detail {
           static_cast<int>(signature.size()),
           &publicKey))
     {
-      return detail::err<bool>();
+      return detail::err(false);
     }
 
+    return detail::ok(true);
+  }
+
+  SO_PRV Expected<Bytes> rsaSign(int digestNid, const Bytes &digest, RSA &privKey)
+  {
+    const int sz = RSA_size(&privKey);
+    if(0 > sz) return detail::err<Bytes>();
+    Bytes firstSignature(static_cast<size_t>(sz));
+    unsigned finalSigLen = 0;
+    if(1 != RSA_sign(digestNid,
+          digest.data(),
+          static_cast<unsigned>(digest.size()),
+          firstSignature.data(),
+          &finalSigLen,
+          &privKey))
+    {
+      return detail::err<Bytes>();
+    }
+
+    if(finalSigLen == static_cast<unsigned>(sz))
+      return detail::ok(std::move(firstSignature));
+
+    Bytes finalSig(firstSignature.begin(), std::next(firstSignature.begin(), finalSigLen));
+    return detail::ok(std::move(finalSig));
+  }
+
+  SO_PRV Expected<bool> rsaVerify(int hashNid, const Bytes &signature, const Bytes &digest, RSA &pubKey)
+  {
+    if(1 != RSA_verify(hashNid,
+          digest.data(),
+          static_cast<unsigned int>(digest.size()),
+          signature.data(),
+          static_cast<unsigned int>(signature.size()),
+          &pubKey))
+    {
+      return detail::err(false);
+    }
+    
     return detail::ok(true);
   }
 
@@ -1350,6 +1393,17 @@ namespace rsa {
     return detail::ok(std::move(key));
   }
   
+  SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa)
+  {
+    EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
+    if (!evpKey) return detail::err<EVP_PKEY_uptr>();
+
+    if (1 != EVP_PKEY_set1_RSA(evpKey.get(), &rsa))
+        return detail::err<EVP_PKEY_uptr>();
+    
+    return detail::ok(std::move(evpKey));
+  }
+
   SO_API Expected<bool> checkKey(RSA &rsa)
   {
     if(1 != RSA_check_key_ex(&rsa, nullptr))
@@ -1377,6 +1431,20 @@ namespace rsa {
     // I kept returning Expected<> to keep API consistent,
     // but I could just return rsa::KeySize here....I don't know...
     return detail::ok(static_cast<KeyBits>(RSA_bits(&rsa)));
+  }
+
+  SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey)
+  {
+    const auto digest = hash::sha256(msg);
+    if(!digest) return detail::err<Bytes>(digest.errorCode());
+    return detail::rsaSign(NID_sha256, digest.value(), privKey); 
+  }
+
+  SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  {
+    const auto digest = hash::sha256(message);
+    if(!digest) return detail::err<bool>(digest.errorCode());
+    return detail::rsaVerify(NID_sha256, signature, digest.value(), pubKey); 
   }
 } // namespace rsa
 
