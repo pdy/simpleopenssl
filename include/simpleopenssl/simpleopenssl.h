@@ -395,12 +395,15 @@ namespace rand {
 
 namespace rsa { 
   // OPENSSL_RSA_MAX_MODULUS_BITS 16384
-  enum class KeySize : int
+  enum class KeyBits : int
   {
     _1024_ = 1024,
     _2048_ = 2048,
     _3072_ = 3072,
-    _4096_ = 4096
+    _4096_ = 4096,
+    _5120_ = 5120,
+    _6144_ = 6144,
+    _7168_ = 7168
   };
 
   enum class Exponent : unsigned long
@@ -414,7 +417,8 @@ namespace rsa {
   SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
   SO_API Expected<bool> checkKey(RSA &rsa);
  
-  SO_API Expected<RSA_uptr> generateKey(KeySize keySize, Exponent exponent = Exponent::_65537_);
+  SO_API Expected<RSA_uptr> generateKey(KeyBits keySize, Exponent exponent = Exponent::_65537_);
+  SO_API Expected<KeyBits> getKeyBits(const RSA &rsa);
 
   SO_API Expected<Bytes> signSha1(const Bytes &message, RSA &privateKey);
   /*SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey);
@@ -894,7 +898,8 @@ namespace asn1 {
 
   SO_API Expected<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time)
   {
-    // TODO: If we're extremly unlucky, we can be off by one second.
+    // TODO:
+    // If we're extremly unlucky, we can be off by one second.
     // Despite tests didn't fail once, I should consider just straight string parsing here.
     static_assert(sizeof(std::time_t) >= sizeof(int64_t), "std::time_t size too small, the dates may overflow");
     static constexpr int64_t SECONDS_IN_A_DAY = 24 * 60 * 60;
@@ -1347,12 +1352,13 @@ namespace rsa {
   
   SO_API Expected<bool> checkKey(RSA &rsa)
   {
-    const int result = RSA_check_key_ex(&rsa, nullptr);
-    if(-1 == result) return detail::err(false);
-    return detail::ok(static_cast<bool>(result));
+    if(1 != RSA_check_key_ex(&rsa, nullptr))
+      return detail::err(false);
+    
+    return detail::ok(true);
   }
 
-  SO_API Expected<RSA_uptr> generateKey(KeySize keySize, Exponent exponent)
+  SO_API Expected<RSA_uptr> generateKey(KeyBits keySize, Exponent exponent)
   {
     auto bnE = make_unique(BN_new());
     if(1 != BN_set_word(bnE.get(), static_cast<unsigned long>(exponent)))
@@ -1363,6 +1369,14 @@ namespace rsa {
       return detail::err<RSA_uptr>();
 
     return detail::ok(std::move(rsa));
+  }
+
+  SO_API Expected<KeyBits> getKeyBits(const RSA &rsa)
+  {
+    // TODO:
+    // I kept returning Expected<> to keep API consistent,
+    // but I could just return rsa::KeySize here....I don't know...
+    return detail::ok(static_cast<KeyBits>(RSA_bits(&rsa)));
   }
 } // namespace rsa
 
@@ -1584,7 +1598,8 @@ namespace x509 {
 
   SO_API Expected<Version> getVersion(const X509 &cert)
   {
-    // TODO: I kept returning Expected<> to keep API
+    // TODO:
+    // I kept returning Expected<> to keep API
     // consistent, but I could just return x509::Version here....I don't know...
     return detail::ok(static_cast<Version>(X509_get_version(&cert)));
   }

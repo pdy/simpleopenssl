@@ -20,17 +20,6 @@ TEST(RsaKeyUT, pem2PubKeyConversion_shouldSuccess)
   EXPECT_TRUE(maybeKey);
 }
 
-/*TEST(RsaKeyUT, copyKey_shouldSuccess)
-{
-  // WHEN
-  auto maybeKey = rsa::convertPemToPubKey(data::rsa3072PubKeyPem);
-  ASSERT_TRUE(maybeKey);
-
-  auto key = maybeKey.moveValue();
-  auto copied = rsa::copyKey(*key);
-  EXPECT_TRUE(copied);
-}*/
-
 TEST(RsaKeyUT, pem2PubKeyConversion_shouldFailWithInvalidPemFormat)
 {
   // GIVEN
@@ -82,19 +71,7 @@ TEST(RsaKeyUT, pem2PrivKeyConversion_shouldFailWithPubKey)
   EXPECT_FALSE(maybeKey);
 }
 /*
-TEST(RsaKeyUT, curveOf_AgainstPrecalculatedData)
-{
-  // GIVEN
-  auto maybePriv = rsa::convertPemToPrivKey(data::secp256k1PrivKeyPem);
-  ASSERT_TRUE(maybePriv);
-  auto priv = maybePriv.moveValue();
 
-  // WHEN
-  const auto actual = rsa::getSize(*priv);
-
-  //THEN
-  EXPECT_EQ(rsa::Curve::secp256k1, *actual);
-}
 
 TEST(RsaKeyUT, extractPublicKeyOK)
 {
@@ -138,25 +115,60 @@ TEST(RsaKeyUT, extractedPublicKeyCantBeUsedForSign)
   // THEN
   EXPECT_FALSE(signResult);
 }
+*/
 
 TEST(RsaKeyUT, checkKeyOK)
 {
   // GIVEN
-  auto maybeKey = rsa::generateKey(rsa::Curve::secp112r1);
+  auto maybeKey = rsa::generateKey(rsa::KeyBits::_2048_);
+  ASSERT_TRUE(maybeKey);
+  auto key = maybeKey.moveValue();
+ 
+  // WHEN
+  const auto result = rsa::checkKey(*key);
+
+  // THEN
+  EXPECT_TRUE(result);
+}
+
+TEST(RsaKeyUT, checkKeyOnPrecalculatedPrivKeyOK)
+{
+  // GIVEN
+  auto maybeKey = rsa::convertPemToPrivKey(data::rsa3072PrivKeyPem);
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
   
-  // WHEN/THEN
-  EXPECT_TRUE(rsa::checkKey(*key));
+  // WHEN
+  const auto result = rsa::checkKey(*key);
+
+  // THEN
+  ASSERT_TRUE(result);
 }
 
-TEST(RsaKeyUT, checkKeyFail)
+TEST(RsaKeyUT, checkKeyOnPrecalculatedPubKeyShouldFail)
 {
   // GIVEN
-  auto key = ::so::make_unique(EC_KEY_new());
+  auto maybeKey = rsa::convertPemToPubKey(data::rsa3072PubKeyPem);
+  ASSERT_TRUE(maybeKey);
+  auto key = maybeKey.moveValue();
   
-  // WHEN/THEN
-  EXPECT_FALSE(rsa::checkKey(*key));
+  // WHEN
+  const auto result = rsa::checkKey(*key);
+
+  // THEN
+  EXPECT_FALSE(result);
 }
-*/
+
+TEST(RsaKeyUT, checkKeyOnNewlyCreatedStructureShouldFail)
+{
+  // GIVEN
+  auto key = ::so::make_unique(RSA_new());
+ 
+  // WHEN
+  auto result = rsa::checkKey(*key);
+
+  //THEN
+  EXPECT_FALSE(result);
+}
+
 }}} // namespace so { namespace ut { namespace rsa {
