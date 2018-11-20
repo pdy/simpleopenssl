@@ -113,7 +113,28 @@ TEST_P(RsaSignVerifyUT, signVerify_IntegrityWithEvp)
 }
 
 const auto testCases = ::testing::Values(
-    
+  SignVerifyInput {
+    "Sign/Verify with SHA1",
+    data::rsa3072PrivKeyPem,
+    data::rsa3072PubKeyPem,
+    data::signedTextBytes,
+    data::signature_rsa_sha1,
+    &::so::rsa::signSha1,
+    &::so::rsa::verifySha1Signature,
+    &::so::evp::verifySha1Signature
+  },
+
+  SignVerifyInput {
+    "Sign/Verify with SHA224",
+    data::rsa3072PrivKeyPem,
+    data::rsa3072PubKeyPem,
+    data::signedTextBytes,
+    data::signature_rsa_sha224,
+    &::so::rsa::signSha224,
+    &::so::rsa::verifySha224Signature,
+    &::so::evp::verifySha224Signature
+  },
+
   SignVerifyInput {
     "Sign/Verify with SHA256",
     data::rsa3072PrivKeyPem,

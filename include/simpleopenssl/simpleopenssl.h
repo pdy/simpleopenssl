@@ -422,14 +422,14 @@ namespace rsa {
   SO_API Expected<KeyBits> getKeyBits(const RSA &rsa);
   SO_API Expected<RSA_uptr> getPublic(RSA &rsa);
 
-  //SO_API Expected<Bytes> signSha1(const Bytes &message, RSA &privateKey);
-  //SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey);
+  SO_API Expected<Bytes> signSha1(const Bytes &message, RSA &privateKey);
+  SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey);
   SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey);
   //SO_API Expected<Bytes> signSha384(const Bytes &msg, RSA &privKey);
   //SO_API Expected<Bytes> signSha512(const Bytes &msg, RSA &privKey);
   
-  //SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  //SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
   //SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
   //SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
@@ -1445,11 +1445,39 @@ namespace rsa {
     return detail::ok(std::move(retRsa));
   }
 
+  SO_API Expected<Bytes> signSha1(const Bytes &msg, RSA &privKey)
+  {
+    const auto digest = hash::sha1(msg);
+    if(!digest) return detail::err<Bytes>(digest.errorCode());
+    return detail::rsaSign(NID_sha1, digest.value(), privKey); 
+  }
+
+  SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey)
+  {
+    const auto digest = hash::sha224(msg);
+    if(!digest) return detail::err<Bytes>(digest.errorCode());
+    return detail::rsaSign(NID_sha224, digest.value(), privKey); 
+  }
+
   SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha256(msg);
     if(!digest) return detail::err<Bytes>(digest.errorCode());
     return detail::rsaSign(NID_sha256, digest.value(), privKey); 
+  }
+
+  SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  {
+    const auto digest = hash::sha1(message);
+    if(!digest) return detail::err<bool>(digest.errorCode());
+    return detail::rsaVerify(NID_sha1, signature, digest.value(), pubKey); 
+  }
+  
+  SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  {
+    const auto digest = hash::sha224(message);
+    if(!digest) return detail::err<bool>(digest.errorCode());
+    return detail::rsaVerify(NID_sha224, signature, digest.value(), pubKey); 
   }
 
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
