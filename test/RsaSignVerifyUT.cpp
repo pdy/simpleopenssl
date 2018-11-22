@@ -144,7 +144,30 @@ const auto testCases = ::testing::Values(
     &::so::rsa::signSha256,
     &::so::rsa::verifySha256Signature,
     &::so::evp::verifySha256Signature
-  }  
+  },
+
+  SignVerifyInput {
+    "Sign/Verify with SHA384",
+    data::rsa3072PrivKeyPem,
+    data::rsa3072PubKeyPem,
+    data::signedTextBytes,
+    data::signature_rsa_sha384,
+    &::so::rsa::signSha384,
+    &::so::rsa::verifySha384Signature,
+    &::so::evp::verifySha384Signature
+  },
+
+  SignVerifyInput {
+    "Sign/Verify with SHA512",
+    data::rsa3072PrivKeyPem,
+    data::rsa3072PubKeyPem,
+    data::signedTextBytes,
+    data::signature_rsa_sha512,
+    &::so::rsa::signSha512,
+    &::so::rsa::verifySha512Signature,
+    &::so::evp::verifySha512Signature
+  }
+
 );
 
 INSTANTIATE_TEST_CASE_P(
