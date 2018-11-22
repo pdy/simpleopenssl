@@ -425,14 +425,14 @@ namespace rsa {
   SO_API Expected<Bytes> signSha1(const Bytes &message, RSA &privateKey);
   SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey);
   SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey);
-  //SO_API Expected<Bytes> signSha384(const Bytes &msg, RSA &privKey);
-  //SO_API Expected<Bytes> signSha512(const Bytes &msg, RSA &privKey);
+  SO_API Expected<Bytes> signSha384(const Bytes &msg, RSA &privKey);
+  SO_API Expected<Bytes> signSha512(const Bytes &msg, RSA &privKey);
   
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
   SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  //SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  //SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
 } // namespace rsa
 
 namespace x509 {
@@ -1466,6 +1466,20 @@ namespace rsa {
     return detail::rsaSign(NID_sha256, digest.value(), privKey); 
   }
 
+  SO_API Expected<Bytes> signSha384(const Bytes &msg, RSA &privKey)
+  {
+    const auto digest = hash::sha384(msg);
+    if(!digest) return detail::err<Bytes>(digest.errorCode());
+    return detail::rsaSign(NID_sha384, digest.value(), privKey); 
+  }
+  
+  SO_API Expected<Bytes> signSha512(const Bytes &msg, RSA &privKey)
+  {
+    const auto digest = hash::sha512(msg);
+    if(!digest) return detail::err<Bytes>(digest.errorCode());
+    return detail::rsaSign(NID_sha512, digest.value(), privKey); 
+  }
+  
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha1(message);
@@ -1485,6 +1499,20 @@ namespace rsa {
     const auto digest = hash::sha256(message);
     if(!digest) return detail::err<bool>(digest.errorCode());
     return detail::rsaVerify(NID_sha256, signature, digest.value(), pubKey); 
+  }
+
+  SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  {
+    const auto digest = hash::sha384(message);
+    if(!digest) return detail::err<bool>(digest.errorCode());
+    return detail::rsaVerify(NID_sha384, signature, digest.value(), pubKey); 
+  }
+
+  SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  {
+    const auto digest = hash::sha512(message);
+    if(!digest) return detail::err<bool>(digest.errorCode());
+    return detail::rsaVerify(NID_sha512, signature, digest.value(), pubKey); 
   }
 } // namespace rsa
 
