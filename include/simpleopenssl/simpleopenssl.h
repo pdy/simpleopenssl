@@ -621,45 +621,7 @@ namespace detail {
   {
     return Expected<void>(0);
   }
-
-  SO_PRV Expected<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
-  {
-    auto mdCtx = make_unique(EVP_MD_CTX_new());
-    if(!mdCtx) return detail::err<Bytes>();
-    
-    const int initStatus = EVP_DigestSignInit(mdCtx.get(), nullptr, evpMd, nullptr, &privateKey);
-    if(1 != initStatus) return detail::err<Bytes>();
-    
-    const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
-    if(1 != updateStatus) return detail::err<Bytes>();
-    
-    size_t sigLen = 0;
-    int signStatus = EVP_DigestSignFinal(mdCtx.get(), nullptr, &sigLen);
-    if(1 != signStatus) return detail::err<Bytes>();
  
-    Bytes tmp(sigLen);
-    signStatus = EVP_DigestSignFinal(mdCtx.get(), tmp.data(), &sigLen);
-    if(1 != signStatus) return detail::err<Bytes>();
-        
-    Bytes signature(tmp.begin(), std::next(tmp.begin(), static_cast<long>(sigLen))); 
-    return detail::ok(std::move(signature));
-  }
-
-  SO_PRV Expected<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
-  {
-    auto ctx = make_unique(EVP_MD_CTX_new());
-    if (!ctx) return detail::err(false);
-
-    if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey))
-      return detail::err(false);
-    
-    if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.data(), msg.size()))
-      return detail::err(false); 
-   
-    const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
-    return result == 1 ? detail::ok(true) : result == 0 ? detail::ok(false) : detail::err<bool>();
-  }
-  
   SO_PRV Expected<std::string> nameEntry2String(X509_NAME &name, int nid)
   {
     // X509_NAME_get_text_by_NID() is considered legacy and with limitations, we'll
@@ -785,7 +747,7 @@ namespace detail {
     return detail::ok(std::move(signature));
   }
 
-  SO_PRV Expected<bool> ecdsaVerifySignature(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
+  SO_PRV Expected<bool> ecdsaVerify(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
   {
     if(1 != ECDSA_verify(0,
           dg.data(),
@@ -798,6 +760,44 @@ namespace detail {
     }
 
     return detail::ok(true);
+  }
+  
+  SO_PRV Expected<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
+  {
+    auto mdCtx = make_unique(EVP_MD_CTX_new());
+    if(!mdCtx) return detail::err<Bytes>();
+    
+    const int initStatus = EVP_DigestSignInit(mdCtx.get(), nullptr, evpMd, nullptr, &privateKey);
+    if(1 != initStatus) return detail::err<Bytes>();
+    
+    const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
+    if(1 != updateStatus) return detail::err<Bytes>();
+    
+    size_t sigLen = 0;
+    int signStatus = EVP_DigestSignFinal(mdCtx.get(), nullptr, &sigLen);
+    if(1 != signStatus) return detail::err<Bytes>();
+ 
+    Bytes tmp(sigLen);
+    signStatus = EVP_DigestSignFinal(mdCtx.get(), tmp.data(), &sigLen);
+    if(1 != signStatus) return detail::err<Bytes>();
+        
+    Bytes signature(tmp.begin(), std::next(tmp.begin(), static_cast<long>(sigLen))); 
+    return detail::ok(std::move(signature));
+  }
+
+  SO_PRV Expected<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
+  {
+    auto ctx = make_unique(EVP_MD_CTX_new());
+    if (!ctx) return detail::err(false);
+
+    if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey))
+      return detail::err(false);
+    
+    if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.data(), msg.size()))
+      return detail::err(false); 
+   
+    const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
+    return result == 1 ? detail::ok(true) : result == 0 ? detail::ok(false) : detail::err<bool>();
   }
 
   SO_PRV Expected<Bytes> rsaSign(int digestNid, const Bytes &digest, RSA &privKey)
@@ -1189,35 +1189,35 @@ namespace ecdsa {
   {
     const auto digest = hash::sha1(message);
     if(!digest) return detail::err<bool>(digest.errorCode());
-    return detail::ecdsaVerifySignature(signature, *digest, publicKey);
+    return detail::ecdsaVerify(signature, *digest, publicKey);
   }
 
   SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha224(message);
     if(!digest) return detail::err<bool>(digest.errorCode());
-    return detail::ecdsaVerifySignature(signature, *digest, publicKey);
+    return detail::ecdsaVerify(signature, *digest, publicKey);
   }
 
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha256(message);
     if(!digest) return detail::err<bool>(digest.errorCode());
-    return detail::ecdsaVerifySignature(signature, *digest, publicKey);
+    return detail::ecdsaVerify(signature, *digest, publicKey);
   }
 
   SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha384(message);
     if(!digest) return detail::err<bool>(digest.errorCode());
-    return detail::ecdsaVerifySignature(signature, *digest, publicKey);
+    return detail::ecdsaVerify(signature, *digest, publicKey);
   }
 
   SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha512(message);
     if(!digest) return detail::err<bool>(digest.errorCode());
-    return detail::ecdsaVerifySignature(signature, *digest, publicKey);
+    return detail::ecdsaVerify(signature, *digest, publicKey);
   }
 } //namespace ecdsa
 
