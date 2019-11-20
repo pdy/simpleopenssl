@@ -52,8 +52,10 @@ OBJS_UT := $(OBJ)/Asn1UT.o $(OBJ)/EcdsaSignVerifyUT.o $(OBJ)/EvpSignVerifyUT.o $
 	$(OBJ)/RsaKeyUT.o $(OBJ)/RsaKeyGenUT.o $(OBJ)/RsaSignVerifyUT.o
 
 $(DESTBIN)/UnitTests: $(OBJS_UT)
-	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
+	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
+	@echo "$<"
 
 $(OBJ)/%.o: ./test/%.cpp
-	$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@echo "$<"
 
