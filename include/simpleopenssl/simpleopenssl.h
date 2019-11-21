@@ -719,7 +719,7 @@ namespace internal {
   SO_PRV Expected<size_t> signCert(X509 &cert, EVP_PKEY &key, const EVP_MD *md)
   {
     const int sigLen = X509_sign(&cert, &key, md);
-    if(sigLen == 0) return internal::err<size_t>();
+    if(0 >= sigLen) return internal::err<size_t>();
     return internal::ok(static_cast<size_t>(sigLen));
   }
 
@@ -1012,7 +1012,7 @@ namespace bignum {
   SO_API Expected<size_t> getByteLen(const BIGNUM &bn)
   {
     const int bnlen = BN_num_bytes(&bn);
-    if(bnlen < 0) return internal::err<size_t>();
+    if(0 > bnlen) return internal::err<size_t>();
     return internal::ok(static_cast<size_t>(bnlen));
   }
 }// namespace bignum
@@ -1153,35 +1153,35 @@ namespace ecdsa {
   SO_API Expected<Bytes> signSha1(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha1(message);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest;
     return internal::ecdsaSign(*digest, key);
   }
 
   SO_API Expected<Bytes> signSha224(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha224(message);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest; 
     return internal::ecdsaSign(*digest, key);
   }
 
   SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha256(message);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest; 
     return internal::ecdsaSign(*digest, key);
   }
 
   SO_API Expected<Bytes> signSha384(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha384(message);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest;
     return internal::ecdsaSign(*digest, key);
   }
   
   SO_API Expected<Bytes> signSha512(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha512(message);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest;
     return internal::ecdsaSign(*digest, key);
   }
 
@@ -1448,35 +1448,35 @@ namespace rsa {
   SO_API Expected<Bytes> signSha1(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha1(msg);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest;
     return internal::rsaSign(NID_sha1, digest.value(), privKey); 
   }
 
   SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha224(msg);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest;
     return internal::rsaSign(NID_sha224, digest.value(), privKey); 
   }
 
   SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha256(msg);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest;
     return internal::rsaSign(NID_sha256, digest.value(), privKey); 
   }
 
   SO_API Expected<Bytes> signSha384(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha384(msg);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest;
     return internal::rsaSign(NID_sha384, digest.value(), privKey); 
   }
   
   SO_API Expected<Bytes> signSha512(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha512(msg);
-    if(!digest) return internal::err<Bytes>(digest.errorCode());
+    if(!digest) return digest;
     return internal::rsaSign(NID_sha512, digest.value(), privKey); 
   }
   
@@ -1790,7 +1790,7 @@ namespace x509 {
   SO_API Expected<void> setExtension(X509 &cert, const CertExtension &extension)
   {
     auto maybeData = asn1::encodeOctet(extension.data);
-    if(!maybeData) return internal::err<void>(maybeData.errorCode());
+    if(!maybeData) return internal::err(maybeData.errorCode());
     auto data = maybeData.moveValue();
     if(x509::CertExtensionId::UNDEF == extension.id)
       return setCustomExtension(cert, extension.oidNumerical, *data, extension.critical);
@@ -1809,7 +1809,7 @@ namespace x509 {
   SO_API Expected<void> setIssuer(X509 &cert, const Info &info)
   {
     auto maybeIssuer = internal::infoToX509Name(info);
-    if(!maybeIssuer) return internal::err();
+    if(!maybeIssuer) return internal::err(maybeIssuer.errorCode());
     auto getIssuer = maybeIssuer.moveValue();
     if(1 != X509_set_issuer_name(&cert, getIssuer.get())) return internal::err(); 
     return internal::ok();
@@ -1835,7 +1835,7 @@ namespace x509 {
   SO_API Expected<void> setSubject(X509 &cert, const Info &info)
   {
     auto maybeSubject = internal::infoToX509Name(info); 
-    if(!maybeSubject) return internal::err();
+    if(!maybeSubject) return internal::err(maybeSubject.errorCode());
     auto subject = maybeSubject.moveValue();
     if(1 != X509_set_subject_name(&cert, subject.get())) return internal::err();
     return internal::ok();
