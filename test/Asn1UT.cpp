@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <gmock/gmock.h>
+//#include <gmock/gmock.h>
 
 #include <simpleopenssl/simpleopenssl.h>
 #include <chrono>
