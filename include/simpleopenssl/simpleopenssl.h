@@ -204,7 +204,7 @@ public:
     return std::move(m_value);
   }
 
-  unsigned long errorCode() const
+  unsigned long errorCode() const noexcept
   {
     return m_opensslErrCode;
   }
@@ -247,6 +247,11 @@ public:
   bool hasError() const noexcept
   {
     return 0 != m_opensslErrCode;
+  }
+
+  unsigned long errorCode() const noexcept
+  {
+    return m_opensslErrCode;
   }
 
   std::string msg() const
@@ -900,6 +905,18 @@ namespace internal {
       });
   }
 
+  template<typename CTX, typename INIT, typename UPDATE, typename FINAL>
+  SO_PRV Expected<Bytes> doHash(const Bytes &data, unsigned long digestLen, INIT init, UPDATE update, FINAL final)
+  {
+    Bytes hash(digestLen);
+    CTX ctx;
+    if(1 != init(&ctx)) return internal::err<Bytes>();
+    if(1 != update(&ctx, data.data(), data.size())) return internal::err<Bytes>();
+    if(1 != final(hash.data(), &ctx)) return internal::err<Bytes>(); 
+
+    return internal::ok(std::move(hash));
+  }
+
 } //namespace internal
 
 SO_API void init()
@@ -1294,72 +1311,37 @@ namespace evp {
 namespace hash {
   SO_API Expected<Bytes> md4(const Bytes &data)
   {
-    Bytes hash(MD4_DIGEST_LENGTH);
-    MD4_CTX ctx;
-    if(1 != MD4_Init(&ctx)) return internal::err<Bytes>();
-    if(1 != MD4_Update(&ctx, data.data(), data.size())) return internal::err<Bytes>();
-    if(1 != MD4_Final(hash.data(), &ctx)) return internal::err<Bytes>();
-    return internal::ok(std::move(hash));
+    return internal::doHash<MD4_CTX>(data, MD4_DIGEST_LENGTH, MD4_Init, MD4_Update, MD4_Final);
   }
 
   SO_API Expected<Bytes> md5(const Bytes &data)
   {
-    Bytes hash(MD5_DIGEST_LENGTH);
-    MD5_CTX ctx;
-    if(1 != MD5_Init(&ctx)) return internal::err<Bytes>();
-    if(1 != MD5_Update(&ctx, data.data(), data.size())) return internal::err<Bytes>();
-    if(1 != MD5_Final(hash.data(), &ctx)) return internal::err<Bytes>();
-    return internal::ok(std::move(hash));
+    return internal::doHash<MD5_CTX>(data, MD5_DIGEST_LENGTH, MD5_Init, MD5_Update, MD5_Final);
   }
 
   SO_API Expected<Bytes> sha1(const Bytes &data)
-  {
-    Bytes hash(SHA_DIGEST_LENGTH);
-    SHA_CTX ctx;
-    if(1 != SHA1_Init(&ctx)) return internal::err<Bytes>();
-    if(1 != SHA1_Update(&ctx, data.data(), data.size())) return internal::err<Bytes>();
-    if(1 != SHA1_Final(hash.data(), &ctx)) return internal::err<Bytes>();
-    return internal::ok(std::move(hash));
+  {    
+    return internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
   }
   
   SO_API Expected<Bytes> sha224(const Bytes &data)
   {
-    Bytes hash(SHA224_DIGEST_LENGTH);
-    SHA256_CTX ctx;
-    if(1 != SHA224_Init(&ctx)) return internal::err<Bytes>();
-    if(1 != SHA224_Update(&ctx, data.data(), data.size())) return internal::err<Bytes>();
-    if(1 != SHA224_Final(hash.data(), &ctx)) return internal::err<Bytes>();
-    return internal::ok(std::move(hash));
+    return internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
   }
 
   SO_API Expected<Bytes> sha256(const Bytes &data)
   {
-    Bytes hash(SHA256_DIGEST_LENGTH);
-    SHA256_CTX ctx;
-    if(1 != SHA256_Init(&ctx)) return internal::err<Bytes>();
-    if(1 != SHA256_Update(&ctx, data.data(), data.size())) return internal::err<Bytes>();
-    if(1 != SHA256_Final(hash.data(), &ctx)) return internal::err<Bytes>();
-    return internal::ok(std::move(hash));
+    return internal::doHash<SHA256_CTX>(data, SHA256_DIGEST_LENGTH, SHA256_Init, SHA256_Update, SHA256_Final);
   }
 
   SO_API Expected<Bytes> sha384(const Bytes &data)
   {
-    Bytes hash(SHA384_DIGEST_LENGTH);
-    SHA512_CTX ctx;
-    if(1 != SHA384_Init(&ctx)) return internal::err<Bytes>();
-    if(1 != SHA384_Update(&ctx, data.data(), data.size())) return internal::err<Bytes>();
-    if(1 != SHA384_Final(hash.data(), &ctx)) return internal::err<Bytes>();
-    return internal::ok(std::move(hash));
+    return internal::doHash<SHA512_CTX>(data, SHA384_DIGEST_LENGTH, SHA384_Init, SHA384_Update, SHA384_Final);
   }
 
   SO_API Expected<Bytes> sha512(const Bytes &data)
   {
-    Bytes hash(SHA512_DIGEST_LENGTH);
-    SHA512_CTX ctx;
-    if(1 != SHA512_Init(&ctx)) return internal::err<Bytes>();
-    if(1 != SHA512_Update(&ctx, data.data(), data.size())) return internal::err<Bytes>();
-    if(1 != SHA512_Final(hash.data(), &ctx)) return internal::err<Bytes>();
-    return internal::ok(std::move(hash));
+    return internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
   }
 } // namespace hash
 
