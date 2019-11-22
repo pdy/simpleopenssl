@@ -221,7 +221,9 @@ public:
 
   std::string msg() const
   {
-    if(0 == m_opensslErrCode) return "OK";
+    if(0 == m_opensslErrCode)
+      return "OK";
+
     return internal::errCodeToString(m_opensslErrCode); 
   }
 
@@ -256,7 +258,9 @@ public:
 
   std::string msg() const
   {
-    if(0 == m_opensslErrCode) return "OK";
+    if(0 == m_opensslErrCode)
+      return "OK";
+
     return internal::errCodeToString(m_opensslErrCode); 
   }
 
@@ -634,25 +638,33 @@ namespace internal {
     // all returned pointers here are internal openssl
     // pointers so they must not be freed
     const int entriesCount = X509_NAME_entry_count(&name);
-    if(entriesCount < 0) return internal::err<std::string>();
-    if(entriesCount == 0) return internal::ok<std::string>("");
+    if(entriesCount < 0)
+      return internal::err<std::string>();
+
+    if(entriesCount == 0)
+      return internal::ok<std::string>("");
 
     const int position = X509_NAME_get_index_by_NID(&name, nid, -1);
     // if position == -2 then nid is invalid
-    if(position == -2) return internal::err<std::string>();
+    if(position == -2)
+      return internal::err<std::string>();
+
     // item not found, it's not lib error, user should decide if value that is not there
     // is an error or not
-    if(position == -1) return internal::ok<std::string>("");
+    if(position == -1)
+      return internal::ok<std::string>("");
     
     const X509_NAME_ENTRY *entry = X509_NAME_get_entry(&name, position);
     // previously we found correct index, if we got nullptr here it
     // means sth went wrong
-    if(!entry) return internal::err<std::string>();
+    if(!entry)
+      return internal::err<std::string>();
     
     // internal pointer
     const ASN1_STRING *asn1 = X509_NAME_ENTRY_get_data(entry);
     const int asn1EstimatedStrLen = ASN1_STRING_length(asn1);
-    if(asn1EstimatedStrLen <= 0) return internal::ok<std::string>("");
+    if(asn1EstimatedStrLen <= 0)
+      return internal::ok<std::string>("");
 
     const auto freeOpenssl = [](unsigned char *ptr) { OPENSSL_free(ptr); };
     unsigned char *ptr; // we need to call OPENSSL_free on this
@@ -674,8 +686,9 @@ namespace internal {
 
     char *dataStart;
     const long nameLength = BIO_get_mem_data(bio.get(), &dataStart);
-    if(nameLength < 0) return internal::err<std::string>();
-    
+    if(nameLength < 0)
+      return internal::err<std::string>();
+ 
     return internal::ok(std::string(dataStart, static_cast<size_t>(nameLength)));
   }
 
@@ -683,15 +696,24 @@ namespace internal {
   {
     const auto error = [](unsigned long errCode){ return internal::err<x509::Info>(errCode); }; 
     const auto commonName = nameEntry2String(name, NID_commonName);
-    if(!commonName) return error(commonName.errorCode());
+    if(!commonName)
+      return error(commonName.errorCode());
+
     const auto countryName = nameEntry2String(name, NID_countryName);
-    if(!countryName) return error(countryName.errorCode());
+    if(!countryName)
+      return error(countryName.errorCode());
+
     const auto organizationName = nameEntry2String(name, NID_organizationName);
-    if(!organizationName) return error(organizationName.errorCode());
+    if(!organizationName)
+      return error(organizationName.errorCode());
+
     const auto localityName = nameEntry2String(name, NID_localityName);
-    if(!localityName) return error(localityName.errorCode());
+    if(!localityName)
+      return error(localityName.errorCode());
+
     const auto stateOrProvinceName = nameEntry2String(name, NID_stateOrProvinceName);
-    if(!stateOrProvinceName) return error(stateOrProvinceName.errorCode());
+    if(!stateOrProvinceName)
+      return error(stateOrProvinceName.errorCode());
 
     return internal::ok<x509::Info>({ 
         *commonName,
@@ -711,12 +733,23 @@ namespace internal {
       return val.empty() || X509_NAME_add_entry_by_NID(nm, nid, MBSTRING_ASC, reinterpret_cast<const unsigned char*>(val.c_str()), -1, -1, 0);
     };
 
-    if(!name) return err();
-    if(!append(name.get(), NID_commonName, info.commonName)) return err();
-    if(!append(name.get(), NID_countryName, info.countryName)) return err();
-    if(!append(name.get(), NID_localityName, info.localityName)) return err();
-    if(!append(name.get(), NID_organizationName, info.organizationName)) return err();
-    if(!append(name.get(), NID_stateOrProvinceName, info.stateOrProvinceName)) return err();
+    if(!name)
+      return err();
+
+    if(!append(name.get(), NID_commonName, info.commonName))
+      return err();
+
+    if(!append(name.get(), NID_countryName, info.countryName))
+      return err();
+
+    if(!append(name.get(), NID_localityName, info.localityName))
+      return err();
+
+    if(!append(name.get(), NID_organizationName, info.organizationName))
+      return err();
+
+    if(!append(name.get(), NID_stateOrProvinceName, info.stateOrProvinceName))
+      return err();
 
     return internal::ok(std::move(name));
   }
@@ -724,14 +757,17 @@ namespace internal {
   SO_PRV Expected<size_t> signCert(X509 &cert, EVP_PKEY &key, const EVP_MD *md)
   {
     const int sigLen = X509_sign(&cert, &key, md);
-    if(0 >= sigLen) return internal::err<size_t>();
+    if(0 >= sigLen)
+      return internal::err<size_t>();
+
     return internal::ok(static_cast<size_t>(sigLen));
   }
 
   SO_PRV Expected<Bytes> ecdsaSign(const Bytes &dg, EC_KEY &key)
   {
     const int sigLen = ECDSA_size(&key);
-    if(0 >= sigLen) return internal::err<Bytes>();
+    if(0 >= sigLen)
+      return internal::err<Bytes>();
 
     Bytes tmpSig(static_cast<size_t>(sigLen));
     unsigned int finalSigLen = 0;
@@ -770,21 +806,27 @@ namespace internal {
   SO_PRV Expected<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
   {
     auto mdCtx = make_unique(EVP_MD_CTX_new());
-    if(!mdCtx) return internal::err<Bytes>();
+    if(!mdCtx)
+      return internal::err<Bytes>();
     
     const int initStatus = EVP_DigestSignInit(mdCtx.get(), nullptr, evpMd, nullptr, &privateKey);
-    if(1 != initStatus) return internal::err<Bytes>();
+    if(1 != initStatus)
+      return internal::err<Bytes>();
+
     
     const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
-    if(1 != updateStatus) return internal::err<Bytes>();
+    if(1 != updateStatus)
+      return internal::err<Bytes>();
     
     size_t sigLen = 0;
     int signStatus = EVP_DigestSignFinal(mdCtx.get(), nullptr, &sigLen);
-    if(1 != signStatus) return internal::err<Bytes>();
+    if(1 != signStatus)
+      return internal::err<Bytes>();
  
     Bytes tmp(sigLen);
     signStatus = EVP_DigestSignFinal(mdCtx.get(), tmp.data(), &sigLen);
-    if(1 != signStatus) return internal::err<Bytes>();
+    if(1 != signStatus)
+      return internal::err<Bytes>();
         
     Bytes signature(tmp.begin(), std::next(tmp.begin(), static_cast<long>(sigLen))); 
     return internal::ok(std::move(signature));
@@ -793,7 +835,8 @@ namespace internal {
   SO_PRV Expected<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
   {
     auto ctx = make_unique(EVP_MD_CTX_new());
-    if (!ctx) return internal::err(false);
+    if (!ctx)
+      return internal::err(false);
 
     if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey))
       return internal::err(false);
@@ -808,7 +851,9 @@ namespace internal {
   SO_PRV Expected<Bytes> rsaSign(int digestNid, const Bytes &digest, RSA &privKey)
   {
     const int sz = RSA_size(&privKey);
-    if(0 > sz) return internal::err<Bytes>();
+    if(0 > sz)
+      return internal::err<Bytes>();
+
     Bytes firstSignature(static_cast<size_t>(sz));
     unsigned finalSigLen = 0;
     if(1 != RSA_sign(digestNid,
@@ -851,7 +896,8 @@ namespace internal {
     const int nid = OBJ_obj2nid(asn1Obj);
     const int critical = X509_EXTENSION_get_critical(&ex);
     const auto oidStr = asn1::convertObjToStr(*asn1Obj, asn1::Form::NUMERICAL);
-    if(!oidStr) return internal::err<RetType>(oidStr.errorCode());
+    if(!oidStr)
+      return internal::err<RetType>(oidStr.errorCode());
 
     if(nid == NID_undef)
     {  
@@ -910,9 +956,14 @@ namespace internal {
   {
     Bytes hash(digestLen);
     CTX ctx;
-    if(1 != init(&ctx)) return internal::err<Bytes>();
-    if(1 != update(&ctx, data.data(), data.size())) return internal::err<Bytes>();
-    if(1 != final(hash.data(), &ctx)) return internal::err<Bytes>(); 
+    if(1 != init(&ctx))
+      return internal::err<Bytes>();
+
+    if(1 != update(&ctx, data.data(), data.size()))
+      return internal::err<Bytes>();
+
+    if(1 != final(hash.data(), &ctx))
+      return internal::err<Bytes>(); 
 
     return internal::ok(std::move(hash));
   }
@@ -944,15 +995,21 @@ namespace asn1 {
     char extname[size];
     std::memset(extname, 0x00, size);
     const int charsWritten = OBJ_obj2txt(extname, size, &obj, static_cast<int>(form));
-    if(0 > charsWritten) return internal::err<std::string>();
-    if(0 == charsWritten) return internal::ok(std::string{});
+    if(0 > charsWritten)
+      return internal::err<std::string>();
+
+    if(0 == charsWritten)
+      return internal::ok(std::string{});
+
     return internal::ok(std::string(extname));
   }
 
   SO_API Expected<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time)
   {
     auto ret = make_unique(ASN1_TIME_set(nullptr, time));
-    if(!ret) return internal::err<ASN1_TIME_uptr>();
+    if(!ret)
+      return internal::err<ASN1_TIME_uptr>();
+
     return internal::ok(std::move(ret));
   }
 
@@ -966,31 +1023,41 @@ namespace asn1 {
     using sysClock = std::chrono::system_clock;
 
     int pday, psec;
-    if(1 != ASN1_TIME_diff(&pday, &psec, nullptr, &asn1Time)) return internal::err<std::time_t>(); 
+    if(1 != ASN1_TIME_diff(&pday, &psec, nullptr, &asn1Time))
+      return internal::err<std::time_t>(); 
+
     return internal::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
   }
   
   SO_API Expected<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
   {
     auto maybeBn = bignum::convertToBignum(bt);
-    if(!maybeBn) return internal::err<ASN1_INTEGER_uptr>(); 
+    if(!maybeBn)
+      return internal::err<ASN1_INTEGER_uptr>(); 
+
     auto bn = maybeBn.moveValue();
     auto integer = make_unique(BN_to_ASN1_INTEGER(bn.get(), nullptr));
-    if(!integer) return internal::err<ASN1_INTEGER_uptr>();
+    if(!integer)
+      return internal::err<ASN1_INTEGER_uptr>();
+
     return internal::ok(std::move(integer)); 
   }
  
   SO_API Expected<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical)
   {
     auto ret = make_unique(OBJ_txt2obj(nameOrNumerical.c_str(), 0));
-    if(!ret) return internal::err<ASN1_OBJECT_uptr>();
+    if(!ret)
+      return internal::err<ASN1_OBJECT_uptr>();
+
     return internal::ok(std::move(ret));
   }
 
   SO_API Expected<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
   {
     auto ret = make_unique(ASN1_OCTET_STRING_new());
-    if(!ret) return internal::err<ASN1_OCTET_STRING_uptr>();
+    if(!ret)
+      return internal::err<ASN1_OCTET_STRING_uptr>();
+
     if(1 != ASN1_OCTET_STRING_set(ret.get(), bt.data(), static_cast<int>(bt.size())))
       return internal::err<ASN1_OCTET_STRING_uptr>();
 
@@ -1013,7 +1080,9 @@ namespace bignum {
   SO_API Expected<Bytes> convertToBytes(const BIGNUM &bn)
   {
     const auto sz = getByteLen(bn);
-    if(!sz) return internal::err<Bytes>(sz.errorCode());
+    if(!sz)
+      return internal::err<Bytes>(sz.errorCode());
+
     Bytes ret(*sz);
     BN_bn2bin(&bn, ret.data());
     return internal::ok(std::move(ret));
@@ -1022,14 +1091,18 @@ namespace bignum {
   SO_API Expected<BIGNUM_uptr> convertToBignum(const Bytes &bt)
   {
     auto ret = make_unique(BN_bin2bn(bt.data(), static_cast<int>(bt.size()), nullptr));
-    if(!ret) return internal::err<BIGNUM_uptr>();
+    if(!ret)
+      return internal::err<BIGNUM_uptr>();
+
     return internal::ok(std::move(ret));
   }
 
   SO_API Expected<size_t> getByteLen(const BIGNUM &bn)
   {
     const int bnlen = BN_num_bytes(&bn);
-    if(0 > bnlen) return internal::err<size_t>();
+    if(0 > bnlen)
+      return internal::err<size_t>();
+
     return internal::ok(static_cast<size_t>(bnlen));
   }
 }// namespace bignum
@@ -1051,46 +1124,62 @@ namespace ecdsa {
 
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey)
   {
-    if(1 != EC_KEY_check_key(&ecKey)) return internal::err(false);
+    if(1 != EC_KEY_check_key(&ecKey))
+      return internal::err(false);
+
     return internal::ok(true);
   }
   
   SO_API Expected<EC_KEY_uptr> copyKey(const EC_KEY &ecKey)
   {
     auto copy = make_unique(EC_KEY_dup(&ecKey));
-    if(!copy) return internal::err<EC_KEY_uptr>();
+    if(!copy)
+      return internal::err<EC_KEY_uptr>();
+
     return internal::ok(std::move(copy));
   }
 
   SO_API Expected<Curve> getCurve(const EC_KEY &key)
   {
     const EC_GROUP* group = EC_KEY_get0_group(&key);
-    if(!group) return internal::err<Curve>();
+    if(!group)
+      return internal::err<Curve>();
+
     const int nid = EC_GROUP_get_curve_name(group);
-    if(0 == nid) return internal::err<Curve>();
+    if(0 == nid)
+      return internal::err<Curve>();
+
     return internal::ok(static_cast<Curve>(nid)); 
   }
 
   SO_API Expected<Bytes> convertToDer(const Signature &signature)
   {
     auto maybeR = bignum::convertToBignum(signature.r);
-    if(!maybeR) return internal::err<Bytes>(maybeR.errorCode());
+    if(!maybeR)
+      return internal::err<Bytes>(maybeR.errorCode());
+
     auto maybeS = bignum::convertToBignum(signature.s);
-    if(!maybeS) return internal::err<Bytes>(maybeS.errorCode());
+    if(!maybeS)
+      return internal::err<Bytes>(maybeS.errorCode());
 
     auto r = maybeR.moveValue();
     auto s = maybeS.moveValue();
     auto sig = make_unique(ECDSA_SIG_new()); 
-    if(!sig) return internal::err<Bytes>();
+    if(!sig)
+      return internal::err<Bytes>();
+
     if(1 != ECDSA_SIG_set0(sig.get(), r.release(), s.release()))
       return internal::err<Bytes>();
 
     const int derLen = i2d_ECDSA_SIG(sig.get(), nullptr); 
-    if(0 == derLen) return internal::err<Bytes>();
-    
+    if(0 == derLen)
+      return internal::err<Bytes>();
+ 
     Bytes ret(static_cast<size_t>(derLen));
     auto *derIt = ret.data();
-    if(!i2d_ECDSA_SIG(sig.get(), &derIt)) return internal::err<Bytes>();
+    if(!i2d_ECDSA_SIG(sig.get(), &derIt))
+      return internal::err<Bytes>();
+
     return internal::ok(std::move(ret));
   }
 
@@ -1098,15 +1187,20 @@ namespace ecdsa {
   {
     auto *derIt = derSigBytes.data();
     auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigBytes.size())));
-    if(!sig) return internal::err<Signature>();
+    if(!sig)
+      return internal::err<Signature>();
+
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
 
     auto maybeR = bignum::convertToBytes(*r);
-    if(!maybeR) return internal::err<Signature>();
+    if(!maybeR)
+      return internal::err<Signature>();
+
     auto maybeS = bignum::convertToBytes(*s);
-    if(!maybeS) return internal::err<Signature>();
-    
+    if(!maybeS)
+      return internal::err<Signature>();
+ 
     return internal::ok(Signature{
       maybeR.moveValue(),
       maybeS.moveValue(),
@@ -1116,12 +1210,17 @@ namespace ecdsa {
   SO_API Expected<EC_KEY_uptr> getPublic(const EC_KEY &key)
   {
     auto ret = make_unique(EC_KEY_new());
-    if(!ret) return internal::err<EC_KEY_uptr>();
+    if(!ret)
+      return internal::err<EC_KEY_uptr>();
+
     const EC_GROUP *group = EC_KEY_get0_group(&key);
-    if(1 != EC_KEY_set_group(ret.get(), group)) return internal::err<EC_KEY_uptr>();
+    if(1 != EC_KEY_set_group(ret.get(), group))
+      return internal::err<EC_KEY_uptr>();
 
     const EC_POINT* pubPoint = EC_KEY_get0_public_key(&key);
-    if(1 != EC_KEY_set_public_key(ret.get(), pubPoint)) return internal::err<EC_KEY_uptr>();
+    if(1 != EC_KEY_set_public_key(ret.get(), pubPoint))
+      return internal::err<EC_KEY_uptr>();
+
     return internal::ok(std::move(ret));
   }
 
@@ -1129,10 +1228,12 @@ namespace ecdsa {
   {
     // I can keep const in arguments by doing this copy
     auto copy = make_unique(EC_KEY_dup(&ecKey));
-    if(!copy) return internal::err<EVP_PKEY_uptr>();
+    if(!copy)
+      return internal::err<EVP_PKEY_uptr>();
 
     EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
-    if (!evpKey) return internal::err<EVP_PKEY_uptr>();
+    if (!evpKey)
+      return internal::err<EVP_PKEY_uptr>();
 
     if (1 != EVP_PKEY_set1_EC_KEY(evpKey.get(), copy.get()))
         return internal::err<EVP_PKEY_uptr>();
@@ -1143,18 +1244,26 @@ namespace ecdsa {
   SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
-    if(!bio) return internal::err<EC_KEY_uptr>();
+    if(!bio)
+      return internal::err<EC_KEY_uptr>();
+
     auto key = make_unique(PEM_read_bio_EC_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
-    if(!key) return internal::err<EC_KEY_uptr>(); 
+    if(!key)
+      return internal::err<EC_KEY_uptr>(); 
+
     return internal::ok(std::move(key));
   }
 
   SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
-    if(!bio) return internal::err<EC_KEY_uptr>();
+    if(!bio)
+      return internal::err<EC_KEY_uptr>();
+
     auto key= make_unique(PEM_read_bio_ECPrivateKey(bio.get(), nullptr, nullptr, nullptr));
-    if(!key) return internal::err<EC_KEY_uptr>();
+    if(!key)
+      return internal::err<EC_KEY_uptr>();
+
     return internal::ok(std::move(key));
   }
 
@@ -1162,78 +1271,102 @@ namespace ecdsa {
   {
     const int nidCurve = static_cast<int>(curve);
     auto key = make_unique(EC_KEY_new_by_curve_name(nidCurve));
-    if(!key) return internal::err<EC_KEY_uptr>();
-    if(!EC_KEY_generate_key(key.get())) return internal::err<EC_KEY_uptr>();
+    if(!key)
+      return internal::err<EC_KEY_uptr>();
+
+    if(!EC_KEY_generate_key(key.get()))
+      return internal::err<EC_KEY_uptr>();
+
     return internal::ok(std::move(key));
   }
 
   SO_API Expected<Bytes> signSha1(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha1(message);
-    if(!digest) return digest;
+    if(!digest)
+      return digest;
+
     return internal::ecdsaSign(*digest, key);
   }
 
   SO_API Expected<Bytes> signSha224(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha224(message);
-    if(!digest) return digest; 
+    if(!digest)
+      return digest; 
+
     return internal::ecdsaSign(*digest, key);
   }
 
   SO_API Expected<Bytes> signSha256(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha256(message);
-    if(!digest) return digest; 
+    if(!digest)
+      return digest; 
+
     return internal::ecdsaSign(*digest, key);
   }
 
   SO_API Expected<Bytes> signSha384(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha384(message);
-    if(!digest) return digest;
+    if(!digest)
+      return digest;
+
     return internal::ecdsaSign(*digest, key);
   }
   
   SO_API Expected<Bytes> signSha512(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha512(message);
-    if(!digest) return digest;
+    if(!digest)
+      return digest;
+
     return internal::ecdsaSign(*digest, key);
   }
 
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha1(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::ecdsaVerify(signature, *digest, publicKey);
   }
 
   SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha224(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::ecdsaVerify(signature, *digest, publicKey);
   }
 
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha256(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::ecdsaVerify(signature, *digest, publicKey);
   }
 
   SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha384(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::ecdsaVerify(signature, *digest, publicKey);
   }
 
   SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha512(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::ecdsaVerify(signature, *digest, publicKey);
   }
 } //namespace ecdsa
@@ -1242,18 +1375,26 @@ namespace evp {
   SO_API Expected<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
-    if(!bio) return internal::err<EVP_PKEY_uptr>(); 
+    if(!bio)
+      return internal::err<EVP_PKEY_uptr>(); 
+
     EVP_PKEY *rawKey = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
-    if(!rawKey) return internal::err<EVP_PKEY_uptr>();
+    if(!rawKey)
+      return internal::err<EVP_PKEY_uptr>();
+
     return internal::ok(make_unique(rawKey));
   }
 
   SO_API Expected<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
-    if(!bio) return internal::err<EVP_PKEY_uptr>(); 
+    if(!bio)
+      return internal::err<EVP_PKEY_uptr>(); 
+
     EVP_PKEY *rawKey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
-    if(!rawKey) return internal::err<EVP_PKEY_uptr>();
+    if(!rawKey)
+      return internal::err<EVP_PKEY_uptr>();
+
     return internal::ok(make_unique(rawKey));
   }
 
@@ -1360,25 +1501,34 @@ namespace rsa {
   SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
-    if(!bio) return internal::err<RSA_uptr>();
+    if(!bio)
+      return internal::err<RSA_uptr>();
+
     auto key = make_unique(PEM_read_bio_RSA_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
-    if(!key) return internal::err<RSA_uptr>(); 
+    if(!key)
+      return internal::err<RSA_uptr>(); 
+
     return internal::ok(std::move(key));
   }
 
   SO_API Expected<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
     auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
-    if(!bio) return internal::err<RSA_uptr>();
+    if(!bio)
+      return internal::err<RSA_uptr>();
+
     auto key = make_unique(PEM_read_bio_RSAPrivateKey(bio.get(), nullptr, nullptr, nullptr));
-    if(!key) return internal::err<RSA_uptr>();
+    if(!key)
+      return internal::err<RSA_uptr>();
+
     return internal::ok(std::move(key));
   }
   
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa)
   {
     EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
-    if (!evpKey) return internal::err<EVP_PKEY_uptr>();
+    if (!evpKey)
+      return internal::err<EVP_PKEY_uptr>();
 
     if (1 != EVP_PKEY_set1_RSA(evpKey.get(), &rsa))
         return internal::err<EVP_PKEY_uptr>();
@@ -1422,7 +1572,8 @@ namespace rsa {
       return internal::err<RSA_uptr>();
  
     auto retRsa = make_unique(d2i_RSAPublicKey_bio(bio.get(), nullptr));
-    if(!retRsa) return internal::err<RSA_uptr>();
+    if(!retRsa)
+      return internal::err<RSA_uptr>();
 
     return internal::ok(std::move(retRsa));
   }
@@ -1430,70 +1581,90 @@ namespace rsa {
   SO_API Expected<Bytes> signSha1(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha1(msg);
-    if(!digest) return digest;
+    if(!digest)
+      return digest;
+
     return internal::rsaSign(NID_sha1, digest.value(), privKey); 
   }
 
   SO_API Expected<Bytes> signSha224(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha224(msg);
-    if(!digest) return digest;
+    if(!digest)
+      return digest;
+
     return internal::rsaSign(NID_sha224, digest.value(), privKey); 
   }
 
   SO_API Expected<Bytes> signSha256(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha256(msg);
-    if(!digest) return digest;
+    if(!digest)
+      return digest;
+
     return internal::rsaSign(NID_sha256, digest.value(), privKey); 
   }
 
   SO_API Expected<Bytes> signSha384(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha384(msg);
-    if(!digest) return digest;
+    if(!digest)
+      return digest;
+
     return internal::rsaSign(NID_sha384, digest.value(), privKey); 
   }
   
   SO_API Expected<Bytes> signSha512(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha512(msg);
-    if(!digest) return digest;
+    if(!digest)
+      return digest;
+
     return internal::rsaSign(NID_sha512, digest.value(), privKey); 
   }
   
   SO_API Expected<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha1(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::rsaVerify(NID_sha1, signature, digest.value(), pubKey); 
   }
   
   SO_API Expected<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha224(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::rsaVerify(NID_sha224, signature, digest.value(), pubKey); 
   }
 
   SO_API Expected<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha256(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::rsaVerify(NID_sha256, signature, digest.value(), pubKey); 
   }
 
   SO_API Expected<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha384(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::rsaVerify(NID_sha384, signature, digest.value(), pubKey); 
   }
 
   SO_API Expected<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha512(message);
-    if(!digest) return internal::err<bool>(digest.errorCode());
+    if(!digest)
+      return internal::err<bool>(digest.errorCode());
+
     return internal::rsaVerify(NID_sha512, signature, digest.value(), pubKey); 
   }
 } // namespace rsa
@@ -1524,7 +1695,9 @@ namespace x509 {
   {
     // this is internal ptr and must not be freed
     X509_NAME *getIssuer = X509_get_issuer_name(&cert);
-    if(!getIssuer) return internal::err<Info>();
+    if(!getIssuer)
+      return internal::err<Info>();
+
     return internal::commonInfo(*getIssuer); 
   }
   
@@ -1532,7 +1705,9 @@ namespace x509 {
   {
     // this is internal ptr and must not be freed
     const X509_NAME *getIssuer = X509_get_issuer_name(&cert);
-    if(!getIssuer) return internal::err<std::string>();
+    if(!getIssuer)
+      return internal::err<std::string>();
+
     return internal::nameToString(*getIssuer);
   }
 
@@ -1540,7 +1715,9 @@ namespace x509 {
   {
     if(0 == X509_check_ca(&cert)){
       const auto lastErr = ERR_get_error();
-      if(0 == lastErr) return internal::ok(false);
+      if(0 == lastErr)
+        return internal::ok(false);
+
       return internal::err<bool>(lastErr);
     }
     return internal::ok(true);
@@ -1552,7 +1729,9 @@ namespace x509 {
       return internal::ok(true);
     
     const auto lastErr = ERR_get_error();
-    if(0 == lastErr) return internal::ok(false);
+    if(0 == lastErr)
+      return internal::ok(false);
+
     return internal::err<bool>(lastErr);
   }
 
@@ -1564,14 +1743,18 @@ namespace x509 {
       return internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
-    if(!ret) return internal::err<X509_uptr>();
+    if(!ret)
+      return internal::err<X509_uptr>();
+
     return internal::ok(std::move(ret));
   }
 
   SO_API Expected<EVP_PKEY_uptr> getPubKey(X509 &cert)
   { 
     auto pkey = make_unique(X509_get_pubkey(&cert));
-    if(!pkey) return internal::err<EVP_PKEY_uptr>();
+    if(!pkey)
+      return internal::err<EVP_PKEY_uptr>();
+
     return internal::ok(std::move(pkey));
   }
 
@@ -1579,9 +1762,13 @@ namespace x509 {
   {
     // both internal pointers, must not be freed
     const ASN1_INTEGER *serialNumber = X509_get_serialNumber(&cert);
-    if(!serialNumber) return internal::err<Bytes>();
+    if(!serialNumber)
+      return internal::err<Bytes>();
+
     const BIGNUM *bn = ASN1_INTEGER_to_BN(serialNumber, nullptr);
-    if(!bn) return internal::err<Bytes>();
+    if(!bn)
+      return internal::err<Bytes>();
+
     return bignum::convertToBytes(*bn);
   }
 
@@ -1611,7 +1798,8 @@ namespace x509 {
     const ASN1_BIT_STRING *psig = nullptr;
     const X509_ALGOR *palg = nullptr;
     X509_get0_signature(&psig, &palg, &cert);
-    if(!palg || !psig) return internal::err<Bytes>();
+    if(!palg || !psig)
+      return internal::err<Bytes>();
 
     Bytes rawDerSequence(static_cast<size_t>(psig->length));
     std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
@@ -1625,11 +1813,13 @@ namespace x509 {
     const ASN1_BIT_STRING *psig = nullptr;
     const X509_ALGOR *palg = nullptr;
     X509_get0_signature(&psig, &palg, &cert);
-    if(!palg || !psig) return internal::err<ecdsa::Signature>();
+    if(!palg || !psig)
+      return internal::err<ecdsa::Signature>();
 
     const unsigned char *it = psig->data;
     const auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &it, static_cast<long>(psig->length)));
-    if(!sig) return internal::err<ecdsa::Signature>();
+    if(!sig)
+      return internal::err<ecdsa::Signature>();
 
     // internal pointers
     const BIGNUM *r,*s;
@@ -1640,17 +1830,23 @@ namespace x509 {
   SO_API Expected<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId)
   {
     const int loc = X509_get_ext_by_NID(&cert, static_cast<int>(getExtensionId), -1);
-    if(-1 == loc) return internal::err<CertExtension>();
+    if(-1 == loc)
+      return internal::err<CertExtension>();
+
     return internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
   }
 
   SO_API Expected<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical)
   {
     auto maybeObj = asn1::encodeObject(oidNumerical);
-    if(!maybeObj) return internal::err<CertExtension>(maybeObj.errorCode());
+    if(!maybeObj)
+      return internal::err<CertExtension>(maybeObj.errorCode());
+
     auto obj = maybeObj.moveValue();
     const int loc = X509_get_ext_by_OBJ(&cert, obj.get(), -1);
-    if(-1 == loc) return internal::err<CertExtension>();
+    if(-1 == loc)
+      return internal::err<CertExtension>();
+
     return internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
   }
 
@@ -1658,14 +1854,20 @@ namespace x509 {
   {
     using RetType = std::vector<CertExtension>;
     const auto extsCount = getExtensionsCount(cert);
-    if(!extsCount) return internal::err<RetType>(extsCount.errorCode());
-    if(0 == *extsCount) return internal::ok(RetType{});
+    if(!extsCount)
+      return internal::err<RetType>(extsCount.errorCode());
+
+    if(0 == *extsCount)
+      return internal::ok(RetType{});
+
     RetType ret;
     ret.reserve(*extsCount); 
     for(int index = 0; index < static_cast<int>(*extsCount); ++index)
     {
       auto getExtension = internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
-      if(!getExtension) return internal::err<RetType>(getExtension.errorCode());
+      if(!getExtension)
+        return internal::err<RetType>(getExtension.errorCode());
+
       ret.push_back(getExtension.moveValue());
     }
 
@@ -1675,7 +1877,9 @@ namespace x509 {
   SO_API Expected<size_t> getExtensionsCount(const X509 &cert)
   {
     const int extsCount = X509_get_ext_count(&cert);
-    if(extsCount < 0) return internal::err<size_t>(); 
+    if(extsCount < 0)
+      return internal::err<size_t>(); 
+
     return internal::ok(static_cast<size_t>(extsCount));
   }
 
@@ -1683,7 +1887,9 @@ namespace x509 {
   {
     // this is internal ptr and must not be freed
     X509_NAME *subject = X509_get_subject_name(&cert);
-    if(!subject) return internal::err<Info>();
+    if(!subject)
+      return internal::err<Info>();
+
     return internal::commonInfo(*subject); 
   }
 
@@ -1691,20 +1897,30 @@ namespace x509 {
   {
     // this is internal ptr and must not be freed
     const X509_NAME *subject = X509_get_subject_name(&cert);
-    if(!subject) return internal::err<std::string>();
+    if(!subject)
+      return internal::err<std::string>();
+
     return internal::nameToString(*subject);
   }
 
   SO_API Expected<Validity> getValidity(const X509 &cert)
   {
     const auto notAfter = X509_get0_notAfter(&cert);
-    if(!notAfter) return internal::err<Validity>();
+    if(!notAfter)
+      return internal::err<Validity>();
+
     const auto notBefore = X509_get0_notBefore(&cert);
-    if(!notBefore) return internal::err<Validity>();
+    if(!notBefore)
+      return internal::err<Validity>();
+
     auto notBeforeTime = asn1::convertToStdTime(*notBefore);
-    if(!notBeforeTime) return internal::err<Validity>(notBeforeTime.errorCode());
+    if(!notBeforeTime)
+      return internal::err<Validity>(notBeforeTime.errorCode());
+
     auto notAfterTime = asn1::convertToStdTime(*notAfter);
-    if(!notAfterTime) return internal::err<Validity>(notAfterTime.errorCode());
+    if(!notAfterTime)
+      return internal::err<Validity>(notAfterTime.errorCode());
+
     return internal::ok(Validity{*notAfterTime, *notBeforeTime});
   }
 
@@ -1725,9 +1941,12 @@ namespace x509 {
   SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical)
   {
     auto maybeAsn1Oid = asn1::encodeObject(oidNumerical);
-    if(!maybeAsn1Oid) return internal::err(maybeAsn1Oid.errorCode());
+    if(!maybeAsn1Oid)
+      return internal::err(maybeAsn1Oid.errorCode());
+
     auto extension = make_unique(X509_EXTENSION_new());
-    if(!extension) return internal::err();
+    if(!extension)
+      return internal::err();
 
     if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
       return internal::err();
@@ -1749,10 +1968,12 @@ namespace x509 {
   SO_API Expected<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical)
   {
     auto oid = make_unique(OBJ_nid2obj(static_cast<int>(id)));
-    if(!oid) return internal::err();
-    
+    if(!oid)
+      return internal::err();
+ 
     auto extension = make_unique(X509_EXTENSION_new());
-    if(!extension) return internal::err();
+    if(!extension)
+      return internal::err();
 
     if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
       return internal::err();
@@ -1772,7 +1993,9 @@ namespace x509 {
   SO_API Expected<void> setExtension(X509 &cert, const CertExtension &extension)
   {
     auto maybeData = asn1::encodeOctet(extension.data);
-    if(!maybeData) return internal::err(maybeData.errorCode());
+    if(!maybeData)
+      return internal::err(maybeData.errorCode());
+
     auto data = maybeData.moveValue();
     if(x509::CertExtensionId::UNDEF == extension.id)
       return setCustomExtension(cert, extension.oidNumerical, *data, extension.critical);
@@ -1783,30 +2006,42 @@ namespace x509 {
   SO_API Expected<void> setIssuer(X509 &cert, const X509 &rootCert)
   {
     X509_NAME *getIssuer = X509_get_subject_name(&rootCert);
-    if(!getIssuer) return internal::err();
-    if(1 != X509_set_issuer_name(&cert, getIssuer)) return internal::err();
+    if(!getIssuer)
+      return internal::err();
+
+    if(1 != X509_set_issuer_name(&cert, getIssuer))
+      return internal::err();
+
     return internal::ok();
   }
 
   SO_API Expected<void> setIssuer(X509 &cert, const Info &info)
   {
     auto maybeIssuer = internal::infoToX509Name(info);
-    if(!maybeIssuer) return internal::err(maybeIssuer.errorCode());
+    if(!maybeIssuer)
+      return internal::err(maybeIssuer.errorCode());
+
     auto getIssuer = maybeIssuer.moveValue();
-    if(1 != X509_set_issuer_name(&cert, getIssuer.get())) return internal::err(); 
+    if(1 != X509_set_issuer_name(&cert, getIssuer.get()))
+      return internal::err(); 
+
     return internal::ok();
   }
 
   SO_API Expected<void> setPubKey(X509 &cert, EVP_PKEY &pkey)
   {
-    if(1 != X509_set_pubkey(&cert, &pkey)) return internal::err();
+    if(1 != X509_set_pubkey(&cert, &pkey))
+      return internal::err();
+
     return internal::ok();
   }
  
   SO_API Expected<void> setSerial(X509 &cert, const Bytes &bytes)
   {
     auto maybeInt = asn1::encodeInteger(bytes);
-    if(!maybeInt) return internal::err(maybeInt.errorCode());
+    if(!maybeInt)
+      return internal::err(maybeInt.errorCode());
+
     auto integer = maybeInt.moveValue();
     if(1 != X509_set_serialNumber(&cert, integer.get()))
       return internal::err();
@@ -1817,20 +2052,32 @@ namespace x509 {
   SO_API Expected<void> setSubject(X509 &cert, const Info &info)
   {
     auto maybeSubject = internal::infoToX509Name(info); 
-    if(!maybeSubject) return internal::err(maybeSubject.errorCode());
+    if(!maybeSubject)
+      return internal::err(maybeSubject.errorCode());
+
     auto subject = maybeSubject.moveValue();
-    if(1 != X509_set_subject_name(&cert, subject.get())) return internal::err();
+    if(1 != X509_set_subject_name(&cert, subject.get()))
+      return internal::err();
+
     return internal::ok();
   }
 
   SO_API Expected<void> setValidity(X509 &cert, const Validity &validity)
   {
     ASN1_TIME_uptr notAfterTime = make_unique(ASN1_TIME_set(nullptr, validity.notAfter));
-    if(!notAfterTime) return internal::err();
+    if(!notAfterTime)
+      return internal::err();
+
     ASN1_TIME_uptr notBeforeTime = make_unique(ASN1_TIME_set(nullptr, validity.notBefore));
-    if(!notBeforeTime) return internal::err();
-    if(1 != X509_set1_notBefore(&cert, notBeforeTime.get())) return internal::err();
-    if(1 != X509_set1_notAfter(&cert, notAfterTime.get())) return internal::err();
+    if(!notBeforeTime)
+      return internal::err();
+
+    if(1 != X509_set1_notBefore(&cert, notBeforeTime.get()))
+      return internal::err();
+
+    if(1 != X509_set1_notAfter(&cert, notAfterTime.get()))
+      return internal::err();
+
     return internal::ok();
   }
 
