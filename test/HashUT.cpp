@@ -29,10 +29,9 @@ class HashUT: public ::testing::TestWithParam<HashTestInput>
 
 TEST_P(HashUT, hash)
 {
-  const auto input { GetParam() };
-  
-  ::so::Bytes data(input.plaintext.size());
-  std::transform(input.plaintext.begin(), input.plaintext.end(), data.begin(), [](char chr){return static_cast<uint8_t>(chr);});
+  // GIVEN
+  const auto input { GetParam() };  
+  const auto data = utils::toBytes(input.plaintext);
 
   // WHEN
   const auto btHash = input.hasher(data);
