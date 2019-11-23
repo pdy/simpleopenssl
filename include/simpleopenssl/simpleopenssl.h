@@ -403,6 +403,14 @@ namespace hash {
   SO_API Expected<Bytes> sha384(const std::string &str);
   SO_API Expected<Bytes> sha512(const Bytes &data);
   SO_API Expected<Bytes> sha512(const std::string &str);
+
+  SO_API Expected<Bytes> fileMD4(const std::string &path);
+  SO_API Expected<Bytes> fileMD5(const std::string &path);
+  SO_API Expected<Bytes> fileSHA1(const std::string &path);
+  SO_API Expected<Bytes> fileSHA224(const std::string &path);
+  SO_API Expected<Bytes> fileSHA256(const std::string &path);
+  SO_API Expected<Bytes> fileSHA384(const std::string &path);
+  SO_API Expected<Bytes> fileSHA512(const std::string &path);
 } // namespace hash
 
 namespace rand {
@@ -975,6 +983,43 @@ namespace internal {
     return internal::ok(std::move(hash));
   }
 
+  SO_PRV Expected<Bytes> doHashFile(const std::string &path, const EVP_MD *evpMd)
+  {    
+    auto bioRaw = BIO_new_file(path.c_str(), "rb");
+    if(!bioRaw)
+      return internal::err<Bytes>();
+
+    // mdtmp will be freed with bio
+    BIO *mdtmp = BIO_new(BIO_f_md());
+    if(!mdtmp)
+      return internal::err<Bytes>();
+
+    // WTF OpenSSL?
+    // Every EVP_<digest>() function returns const pointer, but
+    // BIO_set_md which supposed to consume this pointer takes.... non const!
+    // WTF OpenSSL?
+    BIO_set_md(mdtmp, const_cast<EVP_MD*>(evpMd));
+    auto bio = make_unique(BIO_push(mdtmp, bioRaw));
+    if(!bio)
+      return internal::err<Bytes>();
+
+    {
+      char buf[1024];
+      int rdlen;
+      do {
+        char *bufFirstPos = buf;
+        rdlen = BIO_read(bio.get(), bufFirstPos, sizeof(buf));
+      } while (rdlen > 0);
+    }
+
+
+    uint8_t mdbuf[EVP_MAX_MD_SIZE];
+    const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
+
+    Bytes ret(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen));
+    return internal::ok<Bytes>(std::move(ret));
+  }
+
 } //namespace internal
 
 SO_API void init()
@@ -1486,7 +1531,7 @@ namespace hash {
   {    
     return internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
   }
-
+  
   SO_API Expected<Bytes> sha224(const Bytes &data)
   {
     return internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
@@ -1525,6 +1570,41 @@ namespace hash {
   SO_API Expected<Bytes> sha512(const std::string &data)
   {
     return internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
+  }
+  
+  SO_API Expected<Bytes> fileMD4(const std::string &path)
+  {
+    return internal::doHashFile(path, EVP_md4());
+  }
+  
+  SO_API Expected<Bytes> fileMD5(const std::string &path)
+  {
+    return internal::doHashFile(path, EVP_md5());
+  }
+  
+  SO_API Expected<Bytes> fileSHA1(const std::string &path)
+  {
+    return internal::doHashFile(path, EVP_sha1());
+  }
+
+  SO_API Expected<Bytes> fileSHA224(const std::string &path)
+  {
+    return internal::doHashFile(path, EVP_sha224());
+  }
+
+  SO_API Expected<Bytes> fileSHA256(const std::string &path)
+  {
+    return internal::doHashFile(path, EVP_sha256());
+  }
+
+  SO_API Expected<Bytes> fileSHA384(const std::string &path)
+  {
+    return internal::doHashFile(path, EVP_sha384());
+  }
+
+  SO_API Expected<Bytes> fileSHA512(const std::string &path)
+  {
+    return internal::doHashFile(path, EVP_sha512());
   }
 }// namespace hash
 
