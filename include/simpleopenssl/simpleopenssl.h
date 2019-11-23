@@ -390,12 +390,19 @@ namespace evp {
 
 namespace hash {
   SO_API Expected<Bytes> md4(const Bytes &data);
+  SO_API Expected<Bytes> md4(const std::string &str);
   SO_API Expected<Bytes> md5(const Bytes &data);
+  SO_API Expected<Bytes> md5(const std::string &str);
   SO_API Expected<Bytes> sha1(const Bytes &data);
+  SO_API Expected<Bytes> sha1(const std::string &str);
   SO_API Expected<Bytes> sha224(const Bytes &data);
+  SO_API Expected<Bytes> sha224(const std::string &str);
   SO_API Expected<Bytes> sha256(const Bytes &data);
+  SO_API Expected<Bytes> sha256(const std::string &str);
   SO_API Expected<Bytes> sha384(const Bytes &data);
+  SO_API Expected<Bytes> sha384(const std::string &str);
   SO_API Expected<Bytes> sha512(const Bytes &data);
+  SO_API Expected<Bytes> sha512(const std::string &str);
 } // namespace hash
 
 namespace rand {
@@ -951,8 +958,8 @@ namespace internal {
       });
   }
 
-  template<typename CTX, typename INIT, typename UPDATE, typename FINAL>
-  SO_PRV Expected<Bytes> doHash(const Bytes &data, unsigned long digestLen, INIT init, UPDATE update, FINAL final)
+  template<typename CTX, typename DATA, typename INIT, typename UPDATE, typename FINAL>
+  SO_PRV Expected<Bytes> doHash(const DATA &data, unsigned long digestLen, INIT init, UPDATE update, FINAL final)
   {
     Bytes hash(digestLen);
     CTX ctx;
@@ -1451,7 +1458,12 @@ namespace evp {
 
 namespace hash {
   SO_API Expected<Bytes> md4(const Bytes &data)
-  {
+  {  
+    return internal::doHash<MD4_CTX>(data, MD4_DIGEST_LENGTH, MD4_Init, MD4_Update, MD4_Final);
+  }
+
+  SO_API Expected<Bytes> md4(const std::string &data)
+  {    
     return internal::doHash<MD4_CTX>(data, MD4_DIGEST_LENGTH, MD4_Init, MD4_Update, MD4_Final);
   }
 
@@ -1460,12 +1472,27 @@ namespace hash {
     return internal::doHash<MD5_CTX>(data, MD5_DIGEST_LENGTH, MD5_Init, MD5_Update, MD5_Final);
   }
 
+  SO_API Expected<Bytes> md5(const std::string &data)
+  {
+    return internal::doHash<MD5_CTX>(data, MD5_DIGEST_LENGTH, MD5_Init, MD5_Update, MD5_Final);
+  }
+
   SO_API Expected<Bytes> sha1(const Bytes &data)
   {    
     return internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
   }
-  
+
+  SO_API Expected<Bytes> sha1(const std::string &data)
+  {    
+    return internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
+  }
+
   SO_API Expected<Bytes> sha224(const Bytes &data)
+  {
+    return internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
+  }
+
+  SO_API Expected<Bytes> sha224(const std::string &data)
   {
     return internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
   }
@@ -1475,7 +1502,17 @@ namespace hash {
     return internal::doHash<SHA256_CTX>(data, SHA256_DIGEST_LENGTH, SHA256_Init, SHA256_Update, SHA256_Final);
   }
 
+  SO_API Expected<Bytes> sha256(const std::string &data)
+  {
+    return internal::doHash<SHA256_CTX>(data, SHA256_DIGEST_LENGTH, SHA256_Init, SHA256_Update, SHA256_Final);
+  }
+
   SO_API Expected<Bytes> sha384(const Bytes &data)
+  {
+    return internal::doHash<SHA512_CTX>(data, SHA384_DIGEST_LENGTH, SHA384_Init, SHA384_Update, SHA384_Final);
+  }
+
+  SO_API Expected<Bytes> sha384(const std::string &data)
   {
     return internal::doHash<SHA512_CTX>(data, SHA384_DIGEST_LENGTH, SHA384_Init, SHA384_Update, SHA384_Final);
   }
@@ -1484,7 +1521,12 @@ namespace hash {
   {
     return internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
   }
-} // namespace hash
+
+  SO_API Expected<Bytes> sha512(const std::string &data)
+  {
+    return internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
+  }
+}// namespace hash
 
 namespace rand {
   SO_API Expected<Bytes> bytes(unsigned short numOfBytes)
