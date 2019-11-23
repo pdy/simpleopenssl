@@ -5,6 +5,7 @@
 #include <sstream>
 #include <vector>
 #include <iterator>
+#include <fstream>
 
 #include "simpleopenssl/simpleopenssl.h"
 
@@ -34,6 +35,23 @@ inline so::Bytes toBytes(const std::string &str)
   std::transform(str.begin(), str.end(), std::back_inserter(ret), [](char chr){
       return static_cast<uint8_t>(chr);
   });
+
+  return ret;
+}
+
+inline so::Bytes readBinaryFile(const std::string &filePath)
+{
+  std::ifstream input(filePath.c_str(), std::ios::binary);
+  if(!input.is_open())
+    return {};
+
+  input.seekg(0, std::ios::end);
+  const auto size = input.tellg();
+  input.seekg(0, std::ios::beg);
+
+  so::Bytes ret(static_cast<size_t>(size));
+  input.read(reinterpret_cast<char*>(ret.data()), size);
+  input.close();
 
   return ret;
 }
