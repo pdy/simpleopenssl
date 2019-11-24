@@ -10,6 +10,7 @@ myFlags = [
     '-Wno-c++98-compat-pedantic',
     '-Wno-global-constructors',
     '-Wno-exit-time-destructors',
+    '-Wno-padded',
     '-std=c++14',
     '-stdlib=libstdc++',
     '-x','c++',
