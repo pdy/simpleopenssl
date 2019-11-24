@@ -22,13 +22,15 @@ const static std::string secp256k1PrivKeyPem = R"(-----BEGIN EC PRIVATE KEY-----
 MHQCAQEEILN0LpgGaItTy9e/Jxmat+lHS8NgONqTylUVQ8LxhuD1oAcGBSuBBAAK
 oUQDQgAEOJb9wq5BOGI4rD1fbAkHqc+cgHmDJWTDq5zmfaSwYoVXisJw72JuYpLC
 TCkP8FeSbd4CvfFmG9L4n9RBcDE1bA==
------END EC PRIVATE KEY-----)";
+-----END EC PRIVATE KEY-----
+)";
 
 // openssl ec -in secp256k1-key.pem -pubout -out public.pem
 const static std::string secp256PubKeyPem = R"(-----BEGIN PUBLIC KEY-----
 MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEOJb9wq5BOGI4rD1fbAkHqc+cgHmDJWTD
 q5zmfaSwYoVXisJw72JuYpLCTCkP8FeSbd4CvfFmG9L4n9RBcDE1bA==
------END PUBLIC KEY-----)";
+-----END PUBLIC KEY-----
+)";
 
 //openssl genrsa -out private.pem 3072 
 const static std::string rsa3072PrivKeyPem = R"(-----BEGIN RSA PRIVATE KEY-----
@@ -69,7 +71,8 @@ YAQiaAub9KdkLuV1p28ngtqo+I6tmUUXmm/quM4MZwK+vNdqfazziw3a2ZxvBH5X
 dqRtTYH2XXmscRFxJScH7ZWgafZweUfe5Gllcr46cT5tUNrltbvI+ANUvEpsllNe
 Y2kbAg8eJAZvFEQgvaQWLivUBWUZLkGzA9X074r01zabgSs7HV9arJ+a0QK9a0pP
 wRD+npnS9L4rG/qFzu8/lzkzthfJPV2o3O2WBQhDz8Kup56LB8Iuxg==
------END RSA PRIVATE KEY-----)";
+-----END RSA PRIVATE KEY-----
+)";
 
 // openssl rsa -in private.pem -outform PEM -pubout -out public.pem
 const static std::string rsa3072PubKeyPem = R"(-----BEGIN PUBLIC KEY-----
@@ -82,7 +85,8 @@ H6Fd4hEiApvDfopfNt+UPI4AdPZEBB2slL9h5RZO0M/oVzZ856/jKrqrAE3B6/GG
 sHipWmo7WRsR8xRRQgu63uYdMIwFqhHpJvlWFk1GNanqODsxXwhp3IWJWa8OF4DX
 wCRhlQSS+6HbgJLr8iXPtNonEgYKW4Fy3UKficPgZKAr4v0q3mAaQO6ySNiJbORP
 JOVVJ6VY64Mn+iKgPJaiVcSnLnuzlOGbSvkDu6Y2w9PPAgMBAAE=
------END PUBLIC KEY-----)";
+-----END PUBLIC KEY-----
+)";
 
 // openssl dgst -sha256 -sign secp256k1-key.pem -out sha256_out.txt test_test_foobar.txt
 const static std::vector<uint8_t> signature_sha256 = {
