@@ -439,6 +439,7 @@ namespace rsa {
 
   SO_API Expected<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
+  //SO_API Expected<std::string> convertPrivKeyToPem(RSA &rsa);
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
   SO_API Expected<bool> checkKey(RSA &rsa);
  
@@ -865,6 +866,9 @@ namespace internal {
 
   SO_PRV Expected<Bytes> rsaSign(int digestNid, const Bytes &digest, RSA &privKey)
   {
+    if(1 != RSA_check_key_ex(&privKey, nullptr))
+      return internal::err<Bytes>();
+      
     const int sz = RSA_size(&privKey);
     if(0 > sz)
       return internal::err<Bytes>();
@@ -1699,7 +1703,7 @@ namespace rsa {
 
     return internal::ok(std::move(retRsa));
   }
-
+ 
   SO_API Expected<Bytes> signSha1(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha1(msg);

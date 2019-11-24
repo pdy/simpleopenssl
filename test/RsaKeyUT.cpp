@@ -93,7 +93,7 @@ TEST(RsaKeyUT, extractPublicKeyOK)
   EXPECT_TRUE(*verResult);
 }
 
-TEST(RsaKeyUT, DISABLED_extractedPublicKeyCantBeUsedForSign)
+TEST(RsaKeyUT, extractedPublicKeyCantBeUsedForSign)
 {
   // GIVEN
   auto maybePriv = rsa::generateKey(rsa::KeyBits::_2048_);
