@@ -71,6 +71,24 @@ TEST(RsaKeyUT, pem2PrivKeyConversion_shouldFailWithPubKey)
   EXPECT_FALSE(maybeKey);
 }
 
+TEST(RsaKeyUT, privKey2PemConversion_ok)
+{
+  // GIVEN
+  const auto pemPriv= data::rsa3072PrivKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_RSAPrivateKey(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto maybePemPriv = rsa::convertPrivKeyToPem(*key);
+
+  // THEN
+  ASSERT_TRUE(maybePemPriv);
+  EXPECT_EQ(pemPriv, *maybePemPriv); 
+}
+
 TEST(RsaKeyUT, extractPublicKeyOK)
 {
   // GIVEN
