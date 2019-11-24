@@ -30,11 +30,11 @@ endif
 
 OBJ := $(BUILD)/obj
 
-.PHONY: all clean
+.PHONY: all clean runTests
 
 DESTBIN := $(BUILD)/bin
 
-all: dist $(DESTBIN)/UnitTests strip
+all: dist $(DESTBIN)/UnitTests copydata strip
 debug: all
 
 dist:
@@ -43,13 +43,19 @@ dist:
 clean:
 	@rm -r $(BUILD) $(ROOT_BUILD)
 
+copydata:
+	@cp -r ./test/data $(DESTBIN)/
+
 strip:
-	$(STRIP) $(DESTBIN)/*
+	$(STRIP) $(DESTBIN)/UnitTests
+
+runTests:
+	@cd $(DESTBIN)/ && ./UnitTests && cd -
 
 OBJS_UT := $(OBJ)/Asn1UT.o $(OBJ)/EcdsaSignVerifyUT.o $(OBJ)/EvpSignVerifyUT.o $(OBJ)/EcdsaKeyUT.o \
 	$(OBJ)/EcdsaKeyUT.o $(OBJ)/EcdsaKeyGenUT.o $(OBJ)/EcdsaSignatureConvertersUT.o $(OBJ)/EvpKeyUT.o \
-	$(OBJ)/HashUT.o $(OBJ)/X509UT.o $(OBJ)/X509PemUT.o $(OBJ)/X509CertExtensionsUT.o $(OBJ)/BignumUT.o \
-	$(OBJ)/RsaKeyUT.o $(OBJ)/RsaKeyGenUT.o $(OBJ)/RsaSignVerifyUT.o
+	$(OBJ)/HashUT.o $(OBJ)/HashBytesUT.o $(OBJ)/HashFileUT.o $(OBJ)/X509UT.o $(OBJ)/X509PemUT.o  \
+	$(OBJ)/X509CertExtensionsUT.o $(OBJ)/BignumUT.o $(OBJ)/RsaKeyUT.o $(OBJ)/RsaKeyGenUT.o $(OBJ)/RsaSignVerifyUT.o
 
 $(DESTBIN)/UnitTests: $(OBJS_UT)
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
