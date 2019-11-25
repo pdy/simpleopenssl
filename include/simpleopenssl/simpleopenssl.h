@@ -2,7 +2,7 @@
 #define PDY_SIMPLEOPENSSL_H_
 
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2019 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -440,7 +440,7 @@ namespace rsa {
   SO_API Expected<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
   SO_API Expected<std::string> convertPrivKeyToPem(RSA &rsa);
-  //SO_API Expected<std::string> convertPubKeyToPem(RSA &rsa);
+  SO_API Expected<std::string> convertPubKeyToPem(RSA &rsa);
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
   SO_API Expected<bool> checkKey(RSA &rsa);
  
@@ -1650,8 +1650,7 @@ namespace rsa {
 
     return internal::ok(std::move(key));
   }
-
-  
+ 
   SO_API Expected<std::string> convertPrivKeyToPem(RSA &rsa)
   {
     
@@ -1695,13 +1694,37 @@ namespace rsa {
   
     return internal::ok(std::move(ret));
   }
-
-  /*
-  SO_API Expected<std::string> convertPubKeyToPem(RSA &rsa)
+ 
+  SO_API Expected<std::string> convertPubKeyToPem(RSA &pubKey)
   {
-  }
-  */
+    auto bio = make_unique(BIO_new(BIO_s_mem()));
+    if(!bio)
+      return internal::err<std::string>();
 
+    if(1 != PEM_write_bio_RSA_PUBKEY(bio.get(), &pubKey))
+      return internal::err<std::string>();
+
+    const auto keyBits = rsa::getKeyBits(pubKey);
+    if(!keyBits)
+      return internal::err<std::string>(keyBits.errorCode());
+    
+    const int readBufSize = static_cast<int>(*keyBits) * 2 + 1;
+    std::unique_ptr<char[]> readBuf (new char[static_cast<unsigned long>(readBufSize)]);
+    int charsRead = 0;
+    std::string ret;
+    ret.reserve(static_cast<size_t>(*keyBits));
+    do {
+      std::memset(readBuf.get(), 0x00, static_cast<size_t>(readBufSize));
+      char *ptr = readBuf.get();
+      charsRead = BIO_read(bio.get(), ptr, readBufSize - 1);
+      if(charsRead)
+        ret += readBuf.get();
+
+    } while(charsRead > 0);
+  
+    return internal::ok(std::move(ret));
+  }
+  
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa)
   {
     EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
