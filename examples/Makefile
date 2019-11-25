@@ -36,7 +36,7 @@ clean:
 strip:
 	$(STRIP) $(BUILD)/*
 
-PROGRAMS: $(BUILD)/hashfile $(BUILD)/rsa
+PROGRAMS: $(BUILD)/hashfile $(BUILD)/rsakeygen
 
 $(BUILD)/%: ./%.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LD_FLAGS) $(LD_LIBS)
