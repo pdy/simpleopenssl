@@ -1021,8 +1021,7 @@ namespace internal {
     uint8_t mdbuf[EVP_MAX_MD_SIZE];
     const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
 
-    Bytes ret(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen));
-    return internal::ok<Bytes>(std::move(ret));
+    return internal::ok(Bytes(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen)));
   }
 
 } //namespace internal
