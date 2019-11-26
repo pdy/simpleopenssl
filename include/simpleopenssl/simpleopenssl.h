@@ -347,7 +347,9 @@ namespace ecdsa {
   };
 
   SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
-  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub); 
+  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub);
+//  SO_API Expected<std::string> convertPrivKeyToPem(EC_KEY &ec);
+//  SO_API Expected<std::string> convertPubKeyToPem(EC_KEY &ec);
   SO_API Expected<Bytes> convertToDer(const Signature &signature); 
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
   SO_API Expected<Signature> convertToSignature(const Bytes &derSigBytes);
@@ -1299,7 +1301,7 @@ namespace ecdsa {
 
   SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+    auto bio = make_unique(BIO_new_mem_buf(pemPub.c_str(), static_cast<int>(pemPub.size())));
     if(!bio)
       return internal::err<EC_KEY_uptr>();
 
@@ -1312,7 +1314,7 @@ namespace ecdsa {
 
   SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+    auto bio = make_unique(BIO_new_mem_buf(pemPriv.c_str(), static_cast<int>(pemPriv.size())));
     if(!bio)
       return internal::err<EC_KEY_uptr>();
 
@@ -1430,7 +1432,7 @@ namespace ecdsa {
 namespace evp {
   SO_API Expected<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+    auto bio = make_unique(BIO_new_mem_buf(pemPub.c_str(), static_cast<int>(pemPub.size())));
     if(!bio)
       return internal::err<EVP_PKEY_uptr>(); 
 
@@ -1443,7 +1445,7 @@ namespace evp {
 
   SO_API Expected<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+    auto bio = make_unique(BIO_new_mem_buf(pemPriv.c_str(), static_cast<int>(pemPriv.size())));
     if(!bio)
       return internal::err<EVP_PKEY_uptr>(); 
 
@@ -1626,7 +1628,7 @@ namespace rand {
 namespace rsa {
   SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+    auto bio = make_unique(BIO_new_mem_buf(pemPub.c_str(), static_cast<int>(pemPub.size())));
     if(!bio)
       return internal::err<RSA_uptr>();
 
@@ -1639,7 +1641,7 @@ namespace rsa {
 
   SO_API Expected<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
-    auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+    auto bio = make_unique(BIO_new_mem_buf(pemPriv.c_str(), static_cast<int>(pemPriv.size())));
     if(!bio)
       return internal::err<RSA_uptr>();
 
