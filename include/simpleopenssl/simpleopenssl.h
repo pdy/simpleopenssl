@@ -443,6 +443,10 @@ namespace rsa {
   SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
   SO_API Expected<std::string> convertPrivKeyToPem(RSA &rsa);
   SO_API Expected<std::string> convertPubKeyToPem(RSA &rsa);
+
+  SO_API Expected<RSA_uptr> convertDerToPrivKey(const Bytes &der);
+  SO_API Expected<Bytes> convertPrivKeyToDer(RSA &rsa);
+
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
   SO_API Expected<bool> checkKey(RSA &rsa);
  
@@ -1653,20 +1657,10 @@ namespace rsa {
   }
  
   SO_API Expected<std::string> convertPrivKeyToPem(RSA &rsa)
-  {
-    
+  { 
     const auto check = rsa::checkKey(rsa);
     if(!check)
       return internal::err<std::string>(check.errorCode());
-
-    /*const auto freeOpenssl = [](unsigned char *ptr) { OPENSSL_free(ptr);};
-    unsigned char *ptr = nullptr; // this needs to be freed with OPENSSL_free
-    const int len = i2d_RSAPrivateKey(&rsa, &ptr);
-    if (0 > len)
-      return internal::err<std::string>();
-
-    std::unique_ptr<unsigned char[], decltype(freeOpenssl)> buf(ptr, freeOpenssl);
-    */
     
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(!bio)
@@ -1725,7 +1719,36 @@ namespace rsa {
   
     return internal::ok(std::move(ret));
   }
-  
+ 
+  SO_API Expected<RSA_uptr> convertDerToPrivKey(const Bytes &der)
+  {
+    const uint8_t *ptr = der.data();
+    auto ret = make_unique(d2i_RSAPrivateKey(nullptr, &ptr, static_cast<long>(der.size())));
+    if(!ret)
+      return internal::err<RSA_uptr>();
+
+    return internal::ok(std::move(ret));
+  }
+
+  SO_API Expected<Bytes> convertPrivKeyToDer(RSA &rsa)
+  {
+    const auto check = rsa::checkKey(rsa);
+    if(!check)
+      return internal::err<Bytes>(check.errorCode());
+
+    const auto freeOpenssl = [](uint8_t *ptr) { OPENSSL_free(ptr);};
+    uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
+    const int len = i2d_RSAPrivateKey(&rsa, &ptr);
+    if (0 > len)
+      return internal::err<Bytes>();
+
+    std::unique_ptr<uint8_t[], decltype(freeOpenssl)> buf(ptr, freeOpenssl);
+    Bytes ret;
+    ret.reserve(static_cast<size_t>(len));
+    std::copy_n(buf.get(), len, std::back_inserter(ret));
+    return internal::ok(std::move(ret));
+  }
+
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa)
   {
     EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
