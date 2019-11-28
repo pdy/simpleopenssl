@@ -181,6 +181,15 @@ TEST(RsaKeyUT, derToPrivKeyConversion_ok)
   EXPECT_EQ(1, RSA_check_key(privKey.get()));
 }
 
+TEST(RsaKeyUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
+{
+  // WHEN
+  auto maybePrivKey = rsa::convertDerToPrivKey(data::rsa3072PubKeyDer);
+
+  // THEN
+  ASSERT_FALSE(maybePrivKey);
+}
+
 TEST(RsaKeyUT, extractPublicKeyOK)
 {
   // GIVEN
