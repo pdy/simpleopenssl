@@ -11,6 +11,16 @@ namespace so { namespace ut { namespace rsa {
 
 namespace rsa = ::so::rsa;
 
+namespace {
+inline bool operator==(const Bytes &lhs, const Bytes &rhs)
+{
+  if(lhs.size() == rhs.size())
+    return std::equal(lhs.begin(), lhs.end(), rhs.begin());
+
+  return false;
+}
+} // anonymouns namespace
+
 TEST(RsaKeyUT, pem2PubKeyConversion_shouldSuccess)
 {
   // WHEN
@@ -140,6 +150,24 @@ TEST(RsaKeyUT, pubKey2PemConversion_shouldSuccessWhenGivenPrivKey)
   // THEN
   EXPECT_TRUE(maybePemPub);
   EXPECT_EQ(data::rsa3072PubKeyPem, *maybePemPub); 
+}
+
+TEST(RsaKeyUT, privKey2DerConversion_ok)
+{
+  // GIVEN
+  const auto pemPriv= data::rsa3072PrivKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_RSAPrivateKey(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto maybeDerPriv = rsa::convertPrivKeyToDer(*key);
+
+  // THEN
+  ASSERT_TRUE(maybeDerPriv);
+  EXPECT_EQ(data::rsa3072PrivKeyDer, *maybeDerPriv);
 }
 
 TEST(RsaKeyUT, extractPublicKeyOK)
