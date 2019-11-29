@@ -17,6 +17,8 @@ struct SignVerifyInput
   std::string shortDesc;
   std::string privKeyPem;
   std::string pubKeyPem;
+  ::so::Bytes privKeyDer;
+  ::so::Bytes pubKeyDer;
   ::so::Bytes signedData;
   ::so::Bytes signature;
   std::function<::so::Expected<::so::Bytes>(const ::so::Bytes&, RSA&)> signer;
@@ -36,34 +38,51 @@ TEST_P(RsaSignVerifyUT, verify_AgainstPrecalculatedSignature)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  auto maybeKey = rsa::convertPemToPubKey(input.pubKeyPem);
-  ASSERT_TRUE(maybeKey);
-  auto key = maybeKey.moveValue();
+  auto maybePemKey = rsa::convertPemToPubKey(input.pubKeyPem);
+  ASSERT_TRUE(maybePemKey);
+  auto keyPem = maybePemKey.moveValue();
+
+  //auto maybeDerKey = rsa::convertPemToPubKey(input.pubKeyPem);
+  //ASSERT_TRUE(maybeDerKey);
+  //auto keyDer = maybeDerKey.moveValue();
 
   // WHEN
-  const auto verified = input.verifier(input.signature, input.signedData, *key); 
+  const auto verifiedPem = input.verifier(input.signature, input.signedData, *keyPem); 
+//  const auto verifiedDer = input.verifier(input.signature, input.signedData, *keyDer); 
 
   // THEN
-  ASSERT_TRUE(verified);
-  EXPECT_TRUE(*verified);
+  ASSERT_TRUE(verifiedPem);
+  EXPECT_TRUE(*verifiedPem);
+  //ASSERT_TRUE(verifiedDer);
+  //EXPECT_TRUE(*verifiedDer);
 }
 
-TEST_P(RsaSignVerifyUT, signVerify_AgainstPrecalculatedKey)
+TEST_P(RsaSignVerifyUT, signVerify_PemDerConversionsAgainstPrecalculatedKey)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  auto maybeKey = rsa::convertPemToPrivKey(input.privKeyPem);
-  ASSERT_TRUE(maybeKey);
-  auto key = maybeKey.moveValue();
+  auto maybePemKey = rsa::convertPemToPrivKey(input.privKeyPem);
+  ASSERT_TRUE(maybePemKey);
+  auto pemKey = maybePemKey.moveValue();
+  
+  auto maybeDerKey = rsa::convertDerToPrivKey(input.privKeyDer);
+  ASSERT_TRUE(maybeDerKey);
+  auto derKey = maybeDerKey.moveValue();
 
   // WHEN
-  const auto sig = input.signer(input.signedData, *key); 
-  ASSERT_TRUE(sig);
-  const auto verified = input.verifier(*sig, input.signedData, *key);
-  ASSERT_TRUE(verified);
+  const auto sigPem = input.signer(input.signedData, *pemKey); 
+  ASSERT_TRUE(sigPem);
+  const auto pemVerified = input.verifier(*sigPem, input.signedData, *pemKey);
+  ASSERT_TRUE(pemVerified);
+
+  const auto sigDer = input.signer(input.signedData, *derKey); 
+  ASSERT_TRUE(sigDer);
+  const auto derVerified = input.verifier(*sigDer, input.signedData, *derKey);
+  ASSERT_TRUE(derVerified);
 
   // THEN
-  EXPECT_TRUE(*verified);
+  EXPECT_TRUE(*pemVerified);
+  EXPECT_TRUE(*derVerified);
 }
 
 
@@ -117,6 +136,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA1",
     data::rsa3072PrivKeyPem,
     data::rsa3072PubKeyPem,
+    data::rsa3072PrivKeyDer,
+    data::rsa3072PubKeyDer,
     data::signedTextBytes,
     data::signature_rsa_sha1,
     &::so::rsa::signSha1,
@@ -128,6 +149,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA224",
     data::rsa3072PrivKeyPem,
     data::rsa3072PubKeyPem,
+    data::rsa3072PrivKeyDer,
+    data::rsa3072PubKeyDer,
     data::signedTextBytes,
     data::signature_rsa_sha224,
     &::so::rsa::signSha224,
@@ -139,6 +162,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA256",
     data::rsa3072PrivKeyPem,
     data::rsa3072PubKeyPem,
+    data::rsa3072PrivKeyDer,
+    data::rsa3072PubKeyDer,
     data::signedTextBytes,
     data::signature_rsa_sha256,
     &::so::rsa::signSha256,
@@ -150,6 +175,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA384",
     data::rsa3072PrivKeyPem,
     data::rsa3072PubKeyPem,
+    data::rsa3072PrivKeyDer,
+    data::rsa3072PubKeyDer,
     data::signedTextBytes,
     data::signature_rsa_sha384,
     &::so::rsa::signSha384,
@@ -161,6 +188,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA512",
     data::rsa3072PrivKeyPem,
     data::rsa3072PubKeyPem,
+    data::rsa3072PrivKeyDer,
+    data::rsa3072PubKeyDer,
     data::signedTextBytes,
     data::signature_rsa_sha512,
     &::so::rsa::signSha512,
