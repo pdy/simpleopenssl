@@ -5,13 +5,17 @@
 #include <iterator>
 #include <fstream>
 
-void saveFile(const std::string &file, const std::string &content);
+int savePem(RSA &rsa, int keySize);
+int saveDer(RSA &key, int keySize);
+template<typename DATA>
+void saveFile(const std::string &file, const DATA &content);
+std::string namePrefix(int keySize);
 
 int main(int argc, char *argv[])
 {
   cmdline::parser arg;
   arg.add("help", 'h', "Print help.");
-  //arg.add<std::string>("format", 'f', "Output keys format [pem, der]", false, "pem");
+  arg.add<std::string>("format", 'f', "Output keys format [pem, der, all]", false, "pem");
   arg.add<int>("key", 'k', "Key size [1024, 2048, 3072, 4096, 5120, 6144, 7168].", false, 3072);
   arg.add<unsigned long>("exponent", 'e', "Exponent value [3, 17, 65537]", false, 65537);
   const std::vector<int> availKeyBits = {1024, 2048, 3072, 4096, 5120, 6144, 7168};  
@@ -57,36 +61,83 @@ int main(int argc, char *argv[])
     std::cout << "Error when generating the key: " << maybeKey.msg() << "\n";
     return 0;
   }
-
+  
+  const std::string format = arg.get<std::string>("format");
   auto key = maybeKey.moveValue();
-  const auto pemPriv = so::rsa::convertPrivKeyToPem(*key);
+  if(format == "der")
+    return saveDer(*key, keySize);
+  else if(format == "all")
+  {
+    const auto pemRes = savePem(*key, keySize);
+    const auto derRes = saveDer(*key, keySize);
+    return pemRes && derRes;
+  }
+  
+  return savePem(*key, keySize); 
+}
+
+int savePem(RSA &key, int keySize)
+{
+  const auto pemPriv = so::rsa::convertPrivKeyToPem(key);
   if(!pemPriv)
   {
     std::cout << "Error converting to PEM: " << pemPriv.msg() << "\n";
     return 0;
   }
 
-  const auto pemPub = so::rsa::convertPubKeyToPem(*key);
+  const auto pemPub = so::rsa::convertPubKeyToPem(key);
   if(!pemPub)
   {
     std::cout << "Error converting to PEM: " << pemPub.msg() << "\n";
     return 0;
   }
   
-  std::cout << "Generated priv.pem and pub.pem with " << keySize << " bits and " << exponent << " exponent\n";
-  saveFile("priv.pem", *pemPriv);
-  saveFile("pub.pem", *pemPub);
+  const std::string privName = namePrefix(keySize) + "_priv.pem";
+  const std::string pubName = namePrefix(keySize) + "_pub.pem";
+  std::cout << "Generated " << privName << " and " << pubName << "\n";
+  saveFile(privName, *pemPriv);
+  saveFile(pubName, *pemPub);
 
   return 0;
 }
 
+int saveDer(RSA &key, int keySize)
+{
+  const auto derPriv = so::rsa::convertPrivKeyToDer(key);
+  if(!derPriv)
+  {
+    std::cout << "Error converting to DER: " << derPriv.msg() << "\n";
+    return 0;
+  }
 
-void saveFile(const std::string &file, const std::string &content)
+  const auto derPub = so::rsa::convertPubKeyToDer(key);
+  if(!derPub)
+  {
+    std::cout << "Error converting to DER: " << derPub.msg() << "\n";
+    return 0;
+  }
+  
+  const std::string privName = namePrefix(keySize) + "_priv.der";
+  const std::string pubName = namePrefix(keySize) + "_pub.der";
+  std::cout << "Generated " << privName << " and " << pubName << "\n";
+  saveFile(privName, *derPriv);
+  saveFile(pubName, *derPub);
+
+  return 0;
+}
+
+template<typename DATA>
+void saveFile(const std::string &file, const DATA &content)
 {
   std::ofstream outFile(file, std::ios::binary);
   if(!outFile.is_open())
     return;
 
-  outFile.write(content.data(), static_cast<std::streamsize>(content.size()));
+  outFile.write( reinterpret_cast<const char*>(content.data()), static_cast<std::streamsize>(content.size()));
   outFile.close();
+}
+
+std::string namePrefix(int keySize)
+{
+  return "rsa" + std::to_string(keySize);
 }
