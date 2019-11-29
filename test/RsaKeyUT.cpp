@@ -190,6 +190,33 @@ TEST(RsaKeyUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
   ASSERT_FALSE(maybePrivKey);
 }
 
+TEST(RsaKeyUT, pubKey2DerConversion_ok)
+{
+  // GIVEN
+  const auto pemPub = data::rsa3072PubKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_RSA_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto maybeDerPub = rsa::convertPubKeyToDer(*key);
+
+  // THEN
+  ASSERT_TRUE(maybeDerPub);
+  EXPECT_EQ(data::rsa3072PubKeyDer, *maybeDerPub);
+}
+
+TEST(RsaKeyUT, derToPubKeyConversion_ok)
+{
+  // WHEN
+  auto maybePubKey = rsa::convertDerToPubKey(data::rsa3072PubKeyDer);
+
+  // THEN
+  ASSERT_TRUE(maybePubKey);
+}
+
 TEST(RsaKeyUT, extractPublicKeyOK)
 {
   // GIVEN
