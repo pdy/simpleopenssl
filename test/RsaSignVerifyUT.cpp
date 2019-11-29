@@ -42,19 +42,19 @@ TEST_P(RsaSignVerifyUT, verify_AgainstPrecalculatedSignature)
   ASSERT_TRUE(maybePemKey);
   auto keyPem = maybePemKey.moveValue();
 
-  //auto maybeDerKey = rsa::convertPemToPubKey(input.pubKeyPem);
-  //ASSERT_TRUE(maybeDerKey);
-  //auto keyDer = maybeDerKey.moveValue();
+  auto maybeDerKey = rsa::convertDerToPubKey(input.pubKeyDer);
+  ASSERT_TRUE(maybeDerKey);
+  auto keyDer = maybeDerKey.moveValue();
 
   // WHEN
   const auto verifiedPem = input.verifier(input.signature, input.signedData, *keyPem); 
-//  const auto verifiedDer = input.verifier(input.signature, input.signedData, *keyDer); 
+  const auto verifiedDer = input.verifier(input.signature, input.signedData, *keyDer); 
 
   // THEN
   ASSERT_TRUE(verifiedPem);
   EXPECT_TRUE(*verifiedPem);
-  //ASSERT_TRUE(verifiedDer);
-  //EXPECT_TRUE(*verifiedDer);
+  ASSERT_TRUE(verifiedDer);
+  EXPECT_TRUE(*verifiedDer);
 }
 
 TEST_P(RsaSignVerifyUT, signVerify_PemDerConversionsAgainstPrecalculatedKey)
