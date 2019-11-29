@@ -445,7 +445,9 @@ namespace rsa {
   SO_API Expected<std::string> convertPubKeyToPem(RSA &rsa);
 
   SO_API Expected<RSA_uptr> convertDerToPrivKey(const Bytes &der);
+  SO_API Expected<RSA_uptr> convertDerToPubKey(const Bytes &der);
   SO_API Expected<Bytes> convertPrivKeyToDer(RSA &rsa);
+  SO_API Expected<Bytes> convertPubKeyToDer(RSA &rsa);
 
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
   SO_API Expected<bool> checkKey(RSA &rsa);
@@ -1730,6 +1732,16 @@ namespace rsa {
     return internal::ok(std::move(ret));
   }
 
+  SO_API Expected<RSA_uptr> convertDerToPubKey(const Bytes &der)
+  {
+    const uint8_t *ptr = der.data();
+    auto ret = make_unique(d2i_RSA_PUBKEY(nullptr, &ptr, static_cast<long>(der.size())));
+    if(!ret)
+      return internal::err<RSA_uptr>();
+
+    return internal::ok(std::move(ret));
+  }
+
   SO_API Expected<Bytes> convertPrivKeyToDer(RSA &rsa)
   {
     const auto check = rsa::checkKey(rsa);
@@ -1739,6 +1751,21 @@ namespace rsa {
     const auto freeOpenssl = [](uint8_t *ptr) { OPENSSL_free(ptr);};
     uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
     const int len = i2d_RSAPrivateKey(&rsa, &ptr);
+    if (0 > len)
+      return internal::err<Bytes>();
+
+    std::unique_ptr<uint8_t[], decltype(freeOpenssl)> buf(ptr, freeOpenssl);
+    Bytes ret;
+    ret.reserve(static_cast<size_t>(len));
+    std::copy_n(buf.get(), len, std::back_inserter(ret));
+    return internal::ok(std::move(ret));
+  }
+
+  SO_API Expected<Bytes> convertPubKeyToDer(RSA &rsa)
+  {
+    const auto freeOpenssl = [](uint8_t *ptr) { OPENSSL_free(ptr);};
+    uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
+    const int len = i2d_RSA_PUBKEY(&rsa, &ptr);
     if (0 > len)
       return internal::err<Bytes>();
 
