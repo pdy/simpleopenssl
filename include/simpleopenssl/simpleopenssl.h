@@ -346,8 +346,9 @@ namespace ecdsa {
 
   SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub);
-//  SO_API Expected<std::string> convertPrivKeyToPem(EC_KEY &ec);
-//  SO_API Expected<std::string> convertPubKeyToPem(EC_KEY &ec);
+  SO_API Expected<std::string> convertPrivKeyToPem(EC_KEY &ec);
+  SO_API Expected<std::string> convertPubKeyToPem(EC_KEY &ec);
+
   SO_API Expected<Bytes> convertToDer(const Signature &signature); 
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
   SO_API Expected<Signature> convertToSignature(const Bytes &derSigBytes);
@@ -1048,6 +1049,20 @@ namespace internal {
 
     return internal::ok(std::move(ret));
   }
+  
+  template<typename Key, typename FUNC, typename ... Types>
+  SO_PRV Expected<Key> convertPemToKey(const std::string &pem, FUNC readBio, Types ...args)
+  {
+    auto bio = make_unique(BIO_new_mem_buf(pem.c_str(), static_cast<int>(pem.size())));
+    if(!bio)
+      return internal::err<Key>();
+
+    auto key = make_unique(readBio(bio.get(), std::forward<Types>(args)...));
+    if(!key)
+      return internal::err<Key>();
+
+    return internal::ok(std::move(key));
+  }
 
 } //namespace internal
 
@@ -1324,28 +1339,26 @@ namespace ecdsa {
 
   SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
-    auto bio = make_unique(BIO_new_mem_buf(pemPub.c_str(), static_cast<int>(pemPub.size())));
-    if(!bio)
-      return internal::err<EC_KEY_uptr>();
-
-    auto key = make_unique(PEM_read_bio_EC_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
-    if(!key)
-      return internal::err<EC_KEY_uptr>(); 
-
-    return internal::ok(std::move(key));
+    return internal::convertPemToKey<EC_KEY_uptr>(pemPub, PEM_read_bio_EC_PUBKEY, nullptr, nullptr, nullptr); 
   }
 
   SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
-    auto bio = make_unique(BIO_new_mem_buf(pemPriv.c_str(), static_cast<int>(pemPriv.size())));
-    if(!bio)
-      return internal::err<EC_KEY_uptr>();
-
-    auto key= make_unique(PEM_read_bio_ECPrivateKey(bio.get(), nullptr, nullptr, nullptr));
-    if(!key)
-      return internal::err<EC_KEY_uptr>();
-
-    return internal::ok(std::move(key));
+    return internal::convertPemToKey<EC_KEY_uptr>(pemPriv, PEM_read_bio_ECPrivateKey, nullptr, nullptr, nullptr); 
+  }
+ 
+  SO_API Expected<std::string> convertPrivKeyToPem(EC_KEY &ec)
+  { 
+    const auto check = ecdsa::checkKey(ec);
+    if(!check)
+      return internal::err<std::string>(check.errorCode());
+  
+    return internal::convertToPem(PEM_write_bio_ECPrivateKey, &ec, nullptr, nullptr, 0, nullptr, nullptr); 
+  }
+ 
+  SO_API Expected<std::string> convertPubKeyToPem(EC_KEY &pubKey)
+  {
+    return internal::convertToPem(PEM_write_bio_EC_PUBKEY, &pubKey);
   }
 
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve)
@@ -1651,28 +1664,12 @@ namespace rand {
 namespace rsa {
   SO_API Expected<RSA_uptr> convertPemToPubKey(const std::string &pemPub)
   {
-    auto bio = make_unique(BIO_new_mem_buf(pemPub.c_str(), static_cast<int>(pemPub.size())));
-    if(!bio)
-      return internal::err<RSA_uptr>();
-
-    auto key = make_unique(PEM_read_bio_RSA_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
-    if(!key)
-      return internal::err<RSA_uptr>(); 
-
-    return internal::ok(std::move(key));
+    return internal::convertPemToKey<RSA_uptr>(pemPub, PEM_read_bio_RSA_PUBKEY, nullptr, nullptr, nullptr); 
   }
 
   SO_API Expected<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
-    auto bio = make_unique(BIO_new_mem_buf(pemPriv.c_str(), static_cast<int>(pemPriv.size())));
-    if(!bio)
-      return internal::err<RSA_uptr>();
-
-    auto key = make_unique(PEM_read_bio_RSAPrivateKey(bio.get(), nullptr, nullptr, nullptr));
-    if(!key)
-      return internal::err<RSA_uptr>();
-
-    return internal::ok(std::move(key));
+    return internal::convertPemToKey<RSA_uptr>(pemPriv, PEM_read_bio_RSAPrivateKey, nullptr, nullptr, nullptr); 
   }
  
   SO_API Expected<std::string> convertPrivKeyToPem(RSA &rsa)
