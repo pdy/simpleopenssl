@@ -81,6 +81,42 @@ TEST(EcdsaKeyUT, pem2PrivKeyConversion_shouldFailWithPubKey)
   EXPECT_FALSE(maybeKey);
 }
 
+TEST(EcdsaKeyUT, privKey2PemConversion_ok)
+{
+  // GIVEN
+  const auto pemPriv= data::secp256k1PrivKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_ECPrivateKey(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto maybePemPriv = ecdsa::convertPrivKeyToPem(*key);
+
+  // THEN
+  ASSERT_TRUE(maybePemPriv);
+  EXPECT_EQ(pemPriv, *maybePemPriv); 
+}
+
+TEST(EcdsaKeyUT, pubKey2PemConversion_ok)
+{
+  // GIVEN
+  const auto pemPub= data::secp256PubKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_EC_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto maybePemPub = ecdsa::convertPubKeyToPem(*key);
+
+  // THEN
+  ASSERT_TRUE(maybePemPub);
+  EXPECT_EQ(pemPub, *maybePemPub); 
+}
+
 TEST(EcdsaKeyUT, curveOf_AgainstPrecalculatedData)
 {
   // GIVEN
