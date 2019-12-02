@@ -1015,7 +1015,7 @@ namespace internal {
       return internal::err<Bytes>();
 
     {
-      char buf[1024];
+      char buf[1024 * 10];
       int rdlen;
       do {
         char *bufFirstPos = buf;
