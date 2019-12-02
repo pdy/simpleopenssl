@@ -1687,11 +1687,7 @@ namespace rsa {
       return internal::err<std::string>();
 
     if(1 != PEM_write_bio_RSA_PUBKEY(bio.get(), &pubKey))
-      return internal::err<std::string>();
-
-    const auto keyBits = rsa::getKeyBits(pubKey);
-    if(!keyBits)
-      return internal::err<std::string>(keyBits.errorCode());
+      return internal::err<std::string>(); 
     
     std::string ret;
     BUF_MEM *buf; // this will be freed with bio
