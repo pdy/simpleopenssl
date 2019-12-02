@@ -1210,7 +1210,6 @@ namespace ecdsa {
       s.size() == other.s.size() &&
       std::equal(r.begin(), r.end(), other.r.begin()) && 
       std::equal(s.begin(), s.end(), other.s.begin());
-
   }
   
   inline bool Signature::operator !=(const Signature &other) const
