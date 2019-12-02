@@ -1693,19 +1693,11 @@ namespace rsa {
     if(!keyBits)
       return internal::err<std::string>(keyBits.errorCode());
     
-    const int readBufSize = static_cast<int>(*keyBits) * 2 + 1;
-    std::unique_ptr<char[]> readBuf (new char[static_cast<unsigned long>(readBufSize)]);
-    int charsRead = 0;
     std::string ret;
-    ret.reserve(static_cast<size_t>(*keyBits));
-    do {
-      std::memset(readBuf.get(), 0x00, static_cast<size_t>(readBufSize));
-      char *ptr = readBuf.get();
-      charsRead = BIO_read(bio.get(), ptr, readBufSize - 1);
-      if(charsRead)
-        ret += readBuf.get();
-
-    } while(charsRead > 0);
+    BUF_MEM *buf; // this will be freed with bio
+    BIO_get_mem_ptr(bio.get(), &buf);
+    ret.reserve(static_cast<size_t>(buf->length));
+    ret.append(buf->data, static_cast<size_t>(buf->length));
   
     return internal::ok(std::move(ret));
   }
