@@ -174,9 +174,7 @@ struct X509Extension
   }
 };
 
-
 SO_PRV std::string errCodeToString(unsigned long errCode);
-
 } //namespace internal
 
 template<typename T>
@@ -1032,6 +1030,25 @@ namespace internal {
     return internal::ok(Bytes(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen)));
   }
 
+  template<typename FUNC, typename ... Types>
+  SO_PRV Expected<std::string> convertToPem(FUNC writeToBio, Types ...args)
+  {
+    auto bio = make_unique(BIO_new(BIO_s_mem()));
+    if(!bio)
+      return internal::err<std::string>();
+
+    if(1 != writeToBio(bio.get(), std::forward<Types>(args)...))
+      return internal::err<std::string>();
+
+    std::string ret;
+    BUF_MEM *buf; // this will be freed with bio
+    BIO_get_mem_ptr(bio.get(), &buf);
+    ret.reserve(static_cast<size_t>(buf->length));
+    ret.append(buf->data, static_cast<size_t>(buf->length));
+
+    return internal::ok(std::move(ret));
+  }
+
 } //namespace internal
 
 SO_API void init()
@@ -1663,39 +1680,13 @@ namespace rsa {
     const auto check = rsa::checkKey(rsa);
     if(!check)
       return internal::err<std::string>(check.errorCode());
-    
-    auto bio = make_unique(BIO_new(BIO_s_mem()));
-    if(!bio)
-      return internal::err<std::string>();
-
-    if(1 != PEM_write_bio_RSAPrivateKey(bio.get(), &rsa, nullptr, nullptr, 0, nullptr, nullptr))
-      return internal::err<std::string>();
-
-    std::string ret;
-    BUF_MEM *buf; // this will be freed with bio
-    BIO_get_mem_ptr(bio.get(), &buf);
-    ret.reserve(static_cast<size_t>(buf->length));
-    ret.append(buf->data, static_cast<size_t>(buf->length));
-
-    return internal::ok(std::move(ret));
+  
+    return internal::convertToPem(PEM_write_bio_RSAPrivateKey, &rsa, nullptr, nullptr, 0, nullptr, nullptr); 
   }
  
   SO_API Expected<std::string> convertPubKeyToPem(RSA &pubKey)
   {
-    auto bio = make_unique(BIO_new(BIO_s_mem()));
-    if(!bio)
-      return internal::err<std::string>();
-
-    if(1 != PEM_write_bio_RSA_PUBKEY(bio.get(), &pubKey))
-      return internal::err<std::string>(); 
-    
-    std::string ret;
-    BUF_MEM *buf; // this will be freed with bio
-    BIO_get_mem_ptr(bio.get(), &buf);
-    ret.reserve(static_cast<size_t>(buf->length));
-    ret.append(buf->data, static_cast<size_t>(buf->length));
-  
-    return internal::ok(std::move(ret));
+    return internal::convertToPem(PEM_write_bio_RSA_PUBKEY, &pubKey);
   }
  
   SO_API Expected<RSA_uptr> convertDerToPrivKey(const Bytes &der)
