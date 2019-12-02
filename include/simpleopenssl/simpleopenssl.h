@@ -1217,6 +1217,30 @@ namespace ecdsa {
     return !(*this == other);
   }
 
+  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
+  {
+    return internal::convertPemToKey<EC_KEY_uptr>(pemPub, PEM_read_bio_EC_PUBKEY, nullptr, nullptr, nullptr); 
+  }
+
+  SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
+  {
+    return internal::convertPemToKey<EC_KEY_uptr>(pemPriv, PEM_read_bio_ECPrivateKey, nullptr, nullptr, nullptr); 
+  }
+ 
+  SO_API Expected<std::string> convertPrivKeyToPem(EC_KEY &ec)
+  { 
+    const auto check = ecdsa::checkKey(ec);
+    if(!check)
+      return internal::err<std::string>(check.errorCode());
+  
+    return internal::convertToPem(PEM_write_bio_ECPrivateKey, &ec, nullptr, nullptr, 0, nullptr, nullptr); 
+  }
+ 
+  SO_API Expected<std::string> convertPubKeyToPem(EC_KEY &pubKey)
+  {
+    return internal::convertToPem(PEM_write_bio_EC_PUBKEY, &pubKey);
+  }
+
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey)
   {
     if(1 != EC_KEY_check_key(&ecKey))
@@ -1334,30 +1358,6 @@ namespace ecdsa {
         return internal::err<EVP_PKEY_uptr>();
     
     return internal::ok(std::move(evpKey));
-  }
-
-  SO_API Expected<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
-  {
-    return internal::convertPemToKey<EC_KEY_uptr>(pemPub, PEM_read_bio_EC_PUBKEY, nullptr, nullptr, nullptr); 
-  }
-
-  SO_API Expected<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
-  {
-    return internal::convertPemToKey<EC_KEY_uptr>(pemPriv, PEM_read_bio_ECPrivateKey, nullptr, nullptr, nullptr); 
-  }
- 
-  SO_API Expected<std::string> convertPrivKeyToPem(EC_KEY &ec)
-  { 
-    const auto check = ecdsa::checkKey(ec);
-    if(!check)
-      return internal::err<std::string>(check.errorCode());
-  
-    return internal::convertToPem(PEM_write_bio_ECPrivateKey, &ec, nullptr, nullptr, 0, nullptr, nullptr); 
-  }
- 
-  SO_API Expected<std::string> convertPubKeyToPem(EC_KEY &pubKey)
-  {
-    return internal::convertToPem(PEM_write_bio_EC_PUBKEY, &pubKey);
   }
 
   SO_API Expected<EC_KEY_uptr> generateKey(Curve curve)
