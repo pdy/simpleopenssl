@@ -1064,6 +1064,17 @@ namespace internal {
     return internal::ok(std::move(key));
   }
 
+  template<typename Key, typename FUNC>
+  SO_PRV Expected<Key> convertDerToKey(const Bytes &der, FUNC d2iFunction)
+  {
+    const uint8_t *ptr = der.data();
+    auto ret = make_unique(d2iFunction(nullptr, &ptr, static_cast<long>(der.size())));
+    if(!ret)
+      return internal::err<RSA_uptr>();
+
+    return internal::ok(std::move(ret));
+  }
+
 } //namespace internal
 
 SO_API void init()
@@ -1687,22 +1698,12 @@ namespace rsa {
  
   SO_API Expected<RSA_uptr> convertDerToPrivKey(const Bytes &der)
   {
-    const uint8_t *ptr = der.data();
-    auto ret = make_unique(d2i_RSAPrivateKey(nullptr, &ptr, static_cast<long>(der.size())));
-    if(!ret)
-      return internal::err<RSA_uptr>();
-
-    return internal::ok(std::move(ret));
+    return internal::convertDerToKey<RSA_uptr>(der, d2i_RSAPrivateKey);
   }
 
   SO_API Expected<RSA_uptr> convertDerToPubKey(const Bytes &der)
   {
-    const uint8_t *ptr = der.data();
-    auto ret = make_unique(d2i_RSA_PUBKEY(nullptr, &ptr, static_cast<long>(der.size())));
-    if(!ret)
-      return internal::err<RSA_uptr>();
-
-    return internal::ok(std::move(ret));
+    return internal::convertDerToKey<RSA_uptr>(der, d2i_RSA_PUBKEY);
   }
 
   SO_API Expected<Bytes> convertPrivKeyToDer(RSA &rsa)
