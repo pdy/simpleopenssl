@@ -1954,26 +1954,23 @@ namespace x509 {
 
   SO_API Expected<bool> isCa(X509 &cert)
   {
+    // TODO:
+    // I shold wrap somehow positive cases:
+    // https://www.openssl.org/docs/man1.1.0/man3/X509_check_ca.html
     if(0 == X509_check_ca(&cert)){
-      const auto lastErr = ERR_get_error();
-      if(0 == lastErr)
-        return internal::ok(false);
-
-      return internal::err<bool>(lastErr);
+      return internal::ok(false);
     }
     return internal::ok(true);
   }
 
   SO_API Expected<bool> isSelfSigned(X509 &cert)
   {
+    // TODO:
+    // I should wrap somehow and return X509_V_ERR* macros
     if(X509_V_OK == X509_check_issued(&cert, &cert))
       return internal::ok(true);
     
-    const auto lastErr = ERR_get_error();
-    if(0 == lastErr)
-      return internal::ok(false);
-
-    return internal::err<bool>(lastErr);
+    return internal::ok(false);  
   }
 
   SO_API Expected<X509_uptr> convertPemToX509(const std::string &pemCert)
