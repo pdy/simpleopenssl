@@ -117,6 +117,71 @@ TEST(EcdsaKeyUT, pubKey2PemConversion_ok)
   EXPECT_EQ(pemPub, *maybePemPub); 
 }
 
+TEST(EcdsaKeyUT, privKey2DerConversion_ok)
+{
+  // GIVEN
+  const auto pemPriv = data::secp256k1PrivKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_ECPrivateKey(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto maybeDerPriv = ecdsa::convertPrivKeyToDer(*key);
+
+  // THEN
+  ASSERT_TRUE(maybeDerPriv);
+  EXPECT_EQ(data::secp256k1PrivKeyDer, *maybeDerPriv);
+}
+
+TEST(EcdsaKeyUT, derToPrivKeyConversion_ok)
+{
+  // WHEN
+  auto maybePrivKey = ecdsa::convertDerToPrivKey(data::secp256k1PrivKeyDer);
+
+  // THEN
+  ASSERT_TRUE(maybePrivKey);
+  auto privKey = maybePrivKey.moveValue();
+  EXPECT_EQ(1, EC_KEY_check_key(privKey.get()));
+}
+
+TEST(EcdsaKeyUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
+{
+  // WHEN
+  auto maybePrivKey = rsa::convertDerToPrivKey(data::secp256PubKeyDer);
+
+  // THEN
+  ASSERT_FALSE(maybePrivKey);
+}
+
+TEST(EcdsaKeyUT, pubKey2DerConversion_ok)
+{
+  // GIVEN
+  const auto pemPub = data::secp256PubKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_EC_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto maybeDerPub = ecdsa::convertPubKeyToDer(*key);
+
+  // THEN
+  ASSERT_TRUE(maybeDerPub);
+  EXPECT_EQ(data::secp256PubKeyDer, *maybeDerPub);
+}
+
+TEST(EcdsaKeyUT, derToPubKeyConversion_ok)
+{
+  // WHEN
+  auto maybePubKey = ecdsa::convertDerToPubKey(data::secp256PubKeyDer);
+
+  // THEN
+  ASSERT_TRUE(maybePubKey);
+}
+
 TEST(EcdsaKeyUT, curveOf_AgainstPrecalculatedData)
 {
   // GIVEN

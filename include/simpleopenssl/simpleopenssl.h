@@ -1075,7 +1075,7 @@ namespace internal {
     const uint8_t *ptr = der.data();
     auto ret = make_unique(d2iFunction(nullptr, &ptr, static_cast<long>(der.size())));
     if(!ret)
-      return internal::err<RSA_uptr>();
+      return internal::err<Key>();
 
     return internal::ok(std::move(ret));
   }
