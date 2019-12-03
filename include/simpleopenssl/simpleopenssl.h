@@ -1075,6 +1075,22 @@ namespace internal {
     return internal::ok(std::move(ret));
   }
 
+  template<typename Key, typename FUNC>
+  SO_PRV Expected<Bytes> convertKeyToDer(Key &key, FUNC i2dFunction)
+  {
+    const auto freeOpenssl = [](uint8_t *ptr) { OPENSSL_free(ptr);};
+    uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
+    const int len = i2dFunction(&key, &ptr);
+    if (0 > len)
+      return internal::err<Bytes>();
+
+    std::unique_ptr<uint8_t[], decltype(freeOpenssl)> buf(ptr, freeOpenssl);
+    Bytes ret;
+    ret.reserve(static_cast<size_t>(len));
+    std::copy_n(buf.get(), len, std::back_inserter(ret));
+    return internal::ok(std::move(ret));
+  }
+
 } //namespace internal
 
 SO_API void init()
@@ -1712,32 +1728,12 @@ namespace rsa {
     if(!check)
       return internal::err<Bytes>(check.errorCode());
 
-    const auto freeOpenssl = [](uint8_t *ptr) { OPENSSL_free(ptr);};
-    uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
-    const int len = i2d_RSAPrivateKey(&rsa, &ptr);
-    if (0 > len)
-      return internal::err<Bytes>();
-
-    std::unique_ptr<uint8_t[], decltype(freeOpenssl)> buf(ptr, freeOpenssl);
-    Bytes ret;
-    ret.reserve(static_cast<size_t>(len));
-    std::copy_n(buf.get(), len, std::back_inserter(ret));
-    return internal::ok(std::move(ret));
+    return internal::convertKeyToDer(rsa, i2d_RSAPrivateKey);
   }
 
   SO_API Expected<Bytes> convertPubKeyToDer(RSA &rsa)
   {
-    const auto freeOpenssl = [](uint8_t *ptr) { OPENSSL_free(ptr);};
-    uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
-    const int len = i2d_RSA_PUBKEY(&rsa, &ptr);
-    if (0 > len)
-      return internal::err<Bytes>();
-
-    std::unique_ptr<uint8_t[], decltype(freeOpenssl)> buf(ptr, freeOpenssl);
-    Bytes ret;
-    ret.reserve(static_cast<size_t>(len));
-    std::copy_n(buf.get(), len, std::back_inserter(ret));
-    return internal::ok(std::move(ret));
+    return internal::convertKeyToDer(rsa, i2d_RSA_PUBKEY);
   }
 
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(RSA &rsa)
