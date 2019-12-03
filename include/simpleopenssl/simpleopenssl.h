@@ -349,6 +349,11 @@ namespace ecdsa {
   SO_API Expected<std::string> convertPrivKeyToPem(EC_KEY &ec);
   SO_API Expected<std::string> convertPubKeyToPem(EC_KEY &ec);
 
+  SO_API Expected<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der);
+  SO_API Expected<EC_KEY_uptr> convertDerToPubKey(const Bytes &der);
+  SO_API Expected<Bytes> convertPrivKeyToDer(EC_KEY &rsa);
+  SO_API Expected<Bytes> convertPubKeyToDer(EC_KEY &rsa);
+
   SO_API Expected<Bytes> convertToDer(const Signature &signature); 
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
   SO_API Expected<Signature> convertToSignature(const Bytes &derSigBytes);
@@ -1266,6 +1271,30 @@ namespace ecdsa {
   SO_API Expected<std::string> convertPubKeyToPem(EC_KEY &pubKey)
   {
     return internal::convertToPem(PEM_write_bio_EC_PUBKEY, &pubKey);
+  }
+
+  SO_API Expected<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der)
+  {
+    return internal::convertDerToKey<EC_KEY_uptr>(der, d2i_ECPrivateKey);
+  }
+
+  SO_API Expected<EC_KEY_uptr> convertDerToPubKey(const Bytes &der)
+  {
+    return internal::convertDerToKey<EC_KEY_uptr>(der, d2i_EC_PUBKEY);
+  }
+
+  SO_API Expected<Bytes> convertPrivKeyToDer(EC_KEY &ec)
+  {
+    const auto check = ecdsa::checkKey(ec);
+    if(!check)
+      return internal::err<Bytes>(check.errorCode());
+
+    return internal::convertKeyToDer(ec, i2d_ECPrivateKey);
+  }
+
+  SO_API Expected<Bytes> convertPubKeyToDer(EC_KEY &ec)
+  {
+    return internal::convertKeyToDer(ec, i2d_EC_PUBKEY);
   }
 
   SO_API Expected<bool> checkKey(const EC_KEY &ecKey)
