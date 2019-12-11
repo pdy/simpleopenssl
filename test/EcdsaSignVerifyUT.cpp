@@ -16,6 +16,8 @@ struct SignVerifyInput
   std::string shortDesc;
   std::string privKeyPem;
   std::string pubKeyPem;
+  ::so::Bytes privKeyDer;
+  ::so::Bytes pubKeyDer;
   ::so::Bytes signedData;
   ::so::Bytes signature;
   std::function<::so::Expected<::so::Bytes>(const ::so::Bytes&, EC_KEY&)> signer;
@@ -36,16 +38,23 @@ TEST_P(EcdsaSignVerifyUT, verify_AgainstPrecalculatedSignature)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  auto maybeKey = ecdsa::convertPemToPubKey(input.pubKeyPem);
-  ASSERT_TRUE(maybeKey);
-  auto key = maybeKey.moveValue();
+  auto maybeKeyDer = ecdsa::convertPemToPubKey(input.pubKeyPem);
+  ASSERT_TRUE(maybeKeyDer);
+  auto keyPem = maybeKeyDer.moveValue();
+
+  auto maybeDerKey = ecdsa::convertDerToPubKey(input.pubKeyDer);
+  ASSERT_TRUE(maybeDerKey);
+  auto keyDer = maybeDerKey.moveValue();
 
   // WHEN
-  const auto verified = input.verifier(input.signature, input.signedData, *key); 
+  const auto verifiedPem = input.verifier(input.signature, input.signedData, *keyPem); 
+  const auto verifiedDer = input.verifier(input.signature, input.signedData, *keyDer); 
 
   // THEN
-  ASSERT_TRUE(verified);
-  EXPECT_TRUE(*verified);
+  ASSERT_TRUE(verifiedPem);
+  EXPECT_TRUE(*verifiedPem);
+  ASSERT_TRUE(verifiedDer);
+  EXPECT_TRUE(*verifiedDer);
 }
 
 TEST_P(EcdsaSignVerifyUT, signVerify_AgainstPrecalculatedKey)
@@ -116,6 +125,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA1",
     data::secp256k1PrivKeyPem,
     data::secp256PubKeyPem,
+    data::secp256k1PrivKeyDer,
+    data::secp256PubKeyDer,
     data::signedTextBytes,
     data::signature_sha1,
     &::so::ecdsa::signSha1,
@@ -127,6 +138,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA224",
     data::secp256k1PrivKeyPem,
     data::secp256PubKeyPem,
+    data::secp256k1PrivKeyDer,
+    data::secp256PubKeyDer,
     data::signedTextBytes,
     data::signature_sha224,
     &::so::ecdsa::signSha224,
@@ -138,6 +151,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA256",
     data::secp256k1PrivKeyPem,
     data::secp256PubKeyPem,
+    data::secp256k1PrivKeyDer,
+    data::secp256PubKeyDer,
     data::signedTextBytes,
     data::signature_sha256,
     &::so::ecdsa::signSha256,
@@ -149,6 +164,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA384",
     data::secp256k1PrivKeyPem,
     data::secp256PubKeyPem,
+    data::secp256k1PrivKeyDer,
+    data::secp256PubKeyDer,
     data::signedTextBytes,
     data::signature_sha384,
     &::so::ecdsa::signSha384,
@@ -160,6 +177,8 @@ const auto testCases = ::testing::Values(
     "Sign/Verify with SHA512",
     data::secp256k1PrivKeyPem,
     data::secp256PubKeyPem,
+    data::secp256k1PrivKeyDer,
+    data::secp256PubKeyDer,
     data::signedTextBytes,
     data::signature_sha512,
     &::so::ecdsa::signSha512,
