@@ -61,18 +61,28 @@ TEST_P(EcdsaSignVerifyUT, signVerify_AgainstPrecalculatedKey)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  auto maybeKey = ecdsa::convertPemToPrivKey(input.privKeyPem);
-  ASSERT_TRUE(maybeKey);
-  auto key = maybeKey.moveValue();
+  auto maybeKeyPem = ecdsa::convertPemToPrivKey(input.privKeyPem);
+  ASSERT_TRUE(maybeKeyPem);
+  auto keyPem = maybeKeyPem.moveValue();
+
+  auto maybeKeyDer = ecdsa::convertDerToPrivKey(input.privKeyDer);
+  ASSERT_TRUE(maybeKeyPem);
+  auto keyDer = maybeKeyDer.moveValue();
 
   // WHEN
-  const auto sig = input.signer(input.signedData, *key); 
-  ASSERT_TRUE(sig);
-  const auto verified = input.verifier(*sig, input.signedData, *key);
-  ASSERT_TRUE(verified);
+  const auto sigPem = input.signer(input.signedData, *keyPem); 
+  ASSERT_TRUE(sigPem);
+  const auto verifiedPem = input.verifier(*sigPem, input.signedData, *keyPem);
+  ASSERT_TRUE(verifiedPem);
+
+  const auto sigDer = input.signer(input.signedData, *keyDer); 
+  ASSERT_TRUE(sigPem);
+  const auto verifiedDer = input.verifier(*sigDer, input.signedData, *keyDer);
+  ASSERT_TRUE(verifiedDer);
 
   // THEN
-  EXPECT_TRUE(*verified);
+  EXPECT_TRUE(*verifiedPem);
+  EXPECT_TRUE(*verifiedDer);
 }
 
 TEST_P(EcdsaSignVerifyUT, signVerify_ApiIntegrity)
