@@ -7,7 +7,7 @@ STRIP := strip
 TEST_FLAGS := -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-prototypes -Wno-weak-vtables \
 	-Wno-missing-variable-declarations -Wno-gnu-zero-variadic-macro-arguments
 
-FLAGS := -std=c++14 -Wno-deprecated-register -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded
+FLAGS := -std=c++11 -Wno-deprecated-register -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded
 
 LD_FLAGS := -L./3rd/gtest/lib -L./3rd/openssl/lib
 

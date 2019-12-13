@@ -56,6 +56,12 @@ inline so::Bytes readBinaryFile(const std::string &filePath)
   return ret;
 }
 
+inline bool operator==(const ::so::Bytes &lhs, const ::so::Bytes &rhs)
+{
+  return lhs.size() == rhs.size() &&
+    std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
 }}}
 
 #endif

@@ -11,7 +11,7 @@ myFlags = [
     '-Wno-global-constructors',
     '-Wno-exit-time-destructors',
     '-Wno-padded',
-    '-std=c++14',
+    '-std=c++11',
     '-stdlib=libstdc++',
     '-x','c++',
     '-I','.',

@@ -2,7 +2,9 @@
 
 #include <numeric>
 #include <simpleopenssl/simpleopenssl.h>
+
 #include "precalculated.h"
+#include "utils.h"
 
 namespace so { namespace ut { namespace x509 {
 
@@ -396,10 +398,7 @@ TEST(X509UT, getSerialNumberWithPrecalculatedData)
   // THEN
   ASSERT_TRUE(maybeSerial);
   auto serial = *maybeSerial;
-  EXPECT_TRUE(std::equal(expected.begin(),
-      expected.end(),
-      serial.begin(),
-      serial.end()));
+  EXPECT_EQ(expected, serial);
 }
 
 TEST(X509UT, getSerialNumber)
@@ -417,10 +416,7 @@ TEST(X509UT, getSerialNumber)
   // THEN
   ASSERT_TRUE(maybeSerial);
   auto serial = *maybeSerial;
-  EXPECT_TRUE(std::equal(expectedSerialArray.begin(),
-      expectedSerialArray.end(),
-      serial.begin(),
-      serial.end()));
+  EXPECT_EQ(expectedSerialArray, serial);
 }
 
 TEST(X509UT, getSetSerialNumberAPIIntegrity)
@@ -439,32 +435,26 @@ TEST(X509UT, getSetSerialNumberAPIIntegrity)
   ASSERT_TRUE(setResult);
   ASSERT_TRUE(getResult);
   auto serial = *getResult;
-  EXPECT_TRUE(std::equal(expected.begin(),
-      expected.end(),
-      serial.begin(),
-      serial.end()));
+  EXPECT_EQ(expected, serial);
 }
 
 TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
 {
   // GIVEN
-  std::vector<uint8_t> expected(256);
-  std::iota(expected.begin(), expected.end(), 0x00);
+  std::vector<uint8_t> data(256);
+  std::iota(data.begin(), data.end(), 0x00);
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-
+  const std::vector<uint8_t> expected(std::next(data.begin()), data.end());
   // WHEN
-  const auto setResult = x509::setSerial(*cert, expected);
+  const auto setResult = x509::setSerial(*cert, data);
   auto getResult = x509::getSerialNumber(*cert);
 
   // THEN
   ASSERT_TRUE(setResult);
   ASSERT_TRUE(getResult);
   auto serial = *getResult;
-  EXPECT_TRUE(std::equal(std::next(expected.begin()),
-      expected.end(),
-      serial.begin(),
-      serial.end()));
+  EXPECT_EQ(expected, serial);
 }
 
 TEST(X509UT, getEcdsaSignature)
@@ -548,7 +538,7 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
 
   // THEN
   EXPECT_EQ(maybeSignature.value().size(), der.value().size());
-  ASSERT_TRUE(std::equal(maybeSignature.value().begin(), maybeSignature.value().end(), der.value().begin()));
+  EXPECT_EQ(maybeSignature.value(), der.value());
 }
 
 TEST(X509UT, setGetVersionTest)

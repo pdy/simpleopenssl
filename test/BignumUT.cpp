@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <simpleopenssl/simpleopenssl.h>
 #include <numeric>
-
+#include "utils.h"
 namespace so { namespace ut { namespace bignum {
 
 namespace bignum = ::so::bignum;
@@ -23,7 +23,7 @@ TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
   auto returnedBuffer = *maybeReturnedBuffer;
   ASSERT_EQ(SIZE, returnedBuffer.size());
 
-  EXPECT_TRUE(std::equal(buffer.begin(), buffer.end(), returnedBuffer.begin(), returnedBuffer.end()));
+  EXPECT_EQ(buffer, returnedBuffer);
 }
 
 }}} // namespace so { namespace ut { namespace bignum {
