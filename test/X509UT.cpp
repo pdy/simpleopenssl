@@ -446,6 +446,7 @@ TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
   const std::vector<uint8_t> expected(std::next(data.begin()), data.end());
+
   // WHEN
   const auto setResult = x509::setSerial(*cert, data);
   auto getResult = x509::getSerialNumber(*cert);
