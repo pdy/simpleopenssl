@@ -1523,28 +1523,12 @@ namespace ecdsa {
 namespace evp {
   SO_API Expected<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
-    auto bio = make_unique(BIO_new_mem_buf(pemPub.c_str(), static_cast<int>(pemPub.size())));
-    if(!bio)
-      return internal::err<EVP_PKEY_uptr>(); 
-
-    EVP_PKEY *rawKey = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
-    if(!rawKey)
-      return internal::err<EVP_PKEY_uptr>();
-
-    return internal::ok(make_unique(rawKey));
+    return internal::convertPemToKey<EVP_PKEY_uptr>(pemPub, PEM_read_bio_PUBKEY, nullptr, nullptr, nullptr); 
   }
 
   SO_API Expected<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
-    auto bio = make_unique(BIO_new_mem_buf(pemPriv.c_str(), static_cast<int>(pemPriv.size())));
-    if(!bio)
-      return internal::err<EVP_PKEY_uptr>(); 
-
-    EVP_PKEY *rawKey = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
-    if(!rawKey)
-      return internal::err<EVP_PKEY_uptr>();
-
-    return internal::ok(make_unique(rawKey));
+    return internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
   }
 
   SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
