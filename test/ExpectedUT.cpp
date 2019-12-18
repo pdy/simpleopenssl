@@ -36,4 +36,29 @@ TEST(ExpectedUT, errUsageWithBytes)
   EXPECT_EQ((::so::Bytes{}), expected.value());
 }
 
+TEST(ExpectedUT, okUsageWithUptrs)
+{
+  // WHEN
+  const auto expected = ::so::internal::ok(::so::make_unique<BIGNUM>(nullptr));
+
+  // THEN
+  EXPECT_TRUE(expected);
+  EXPECT_TRUE(expected.hasValue());
+  EXPECT_FALSE(expected.hasError());
+  EXPECT_EQ(static_cast<unsigned long>(0), expected.errorCode());
+  EXPECT_EQ("ok", expected.msg());
+}
+
+TEST(ExpectedUT, errUsageWithUptrs)
+{
+  // WHEN 
+  const auto expected = ::so::internal::err<::so::BIGNUM_uptr>(5);
+
+  // THEN
+  EXPECT_FALSE(expected);
+  EXPECT_FALSE(expected.hasValue());
+  EXPECT_TRUE(expected.hasError());
+  EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
+}
+
 }}} // namespace so { namespace ut { namespace bignum {
