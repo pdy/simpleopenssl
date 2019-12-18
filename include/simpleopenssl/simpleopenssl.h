@@ -220,7 +220,7 @@ public:
   std::string msg() const
   {
     if(0 == m_opensslErrCode)
-      return "OK";
+      return "ok";
 
     return internal::errCodeToString(m_opensslErrCode); 
   }
