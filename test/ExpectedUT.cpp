@@ -61,4 +61,26 @@ TEST(ExpectedUT, errUsageWithUptrs)
   EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
 }
 
+TEST(ExpectedUT, okUsageWithVoid)
+{
+  // WHEN
+  const auto expected = ::so::internal::ok();
+  
+  // THEN  
+  EXPECT_TRUE(expected);
+  EXPECT_FALSE(expected.hasError());
+  EXPECT_EQ(static_cast<unsigned long>(0), expected.errorCode());
+  EXPECT_EQ("ok", expected.msg());
+}
+
+TEST(ExpectedUT, errUsageWithVoid)
+{
+  // WHEN  
+  const auto expected = ::so::internal::err<void>(5);
+
+  // THEN
+  EXPECT_FALSE(expected);
+  EXPECT_TRUE(expected.hasError());
+  EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
+}
 }}} // namespace so { namespace ut { namespace bignum {
