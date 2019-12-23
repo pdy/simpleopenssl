@@ -4,8 +4,6 @@
 
 namespace so { namespace ut { namespace expected {
 
-//template<typename T>
-//using Expected = ::so::Expected<T>;
 
 TEST(ExpectedUT, okUsageWithBytes)
 {
@@ -20,7 +18,6 @@ TEST(ExpectedUT, okUsageWithBytes)
   EXPECT_EQ("ok", expected.msg());
   EXPECT_EQ((::so::Bytes{0x00, 0x01}), *expected);
   EXPECT_EQ((::so::Bytes{0x00, 0x01}), expected.value());
-  //EXPECT_EQ(32, sizeof(expected));
 }
 
 TEST(ExpectedUT, errUsageWithBytes)
@@ -38,7 +35,6 @@ TEST(ExpectedUT, errUsageWithBytes)
   EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
   EXPECT_EQ((::so::Bytes{}), *expected);
   EXPECT_EQ((::so::Bytes{}), expected.value());
-  //EXPECT_EQ(32, sizeof(expected));
 }
 
 TEST(ExpectedUT, okUsageWithUptrs)
@@ -52,7 +48,6 @@ TEST(ExpectedUT, okUsageWithUptrs)
   EXPECT_FALSE(expected.hasError());
   EXPECT_EQ(static_cast<unsigned long>(0), expected.errorCode());
   EXPECT_EQ("ok", expected.msg());
-  //EXPECT_EQ(16, sizeof(expected));
 }
 
 TEST(ExpectedUT, errUsageWithUptrs)
@@ -65,7 +60,6 @@ TEST(ExpectedUT, errUsageWithUptrs)
   EXPECT_FALSE(expected.hasValue());
   EXPECT_TRUE(expected.hasError());
   EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
-  //EXPECT_EQ(16, sizeof(expected));
 }
 
 TEST(ExpectedUT, okUsageWithVoid)
@@ -78,7 +72,6 @@ TEST(ExpectedUT, okUsageWithVoid)
   EXPECT_FALSE(expected.hasError());
   EXPECT_EQ(static_cast<unsigned long>(0), expected.errorCode());
   EXPECT_EQ("ok", expected.msg());
-  //EXPECT_EQ(8, sizeof(expected));
 }
 
 TEST(ExpectedUT, errUsageWithVoid)
@@ -90,6 +83,5 @@ TEST(ExpectedUT, errUsageWithVoid)
   EXPECT_FALSE(expected);
   EXPECT_TRUE(expected.hasError());
   EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
-  //EXPECT_EQ(8, sizeof(expected));
 }
 }}} // namespace so { namespace ut { namespace bignum {
