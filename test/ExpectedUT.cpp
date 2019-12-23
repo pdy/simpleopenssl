@@ -24,10 +24,7 @@ TEST(ExpectedUT, errUsageWithBytes)
 {
   // WHEN
   const auto expected = ::so::internal::err<::so::Bytes>(5);
-
-  const auto szExp = sizeof expected;
-  (void)szExp;
-
+ 
   // THEN
   EXPECT_FALSE(expected);
   EXPECT_FALSE(expected.hasValue());
