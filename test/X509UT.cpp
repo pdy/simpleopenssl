@@ -129,8 +129,7 @@ TEST(X509UT, getVersionOK)
   const auto actual = x509::getVersion(*cert);
 
   // THEN
-  ASSERT_TRUE(actual);
-  EXPECT_EQ(expected, *actual);
+  EXPECT_EQ(expected, actual);
 }
 
 TEST(X509UT, getVersionShoulNotBeEqual)
@@ -145,8 +144,7 @@ TEST(X509UT, getVersionShoulNotBeEqual)
   const auto actual = x509::getVersion(*cert);
 
   // THEN
-  ASSERT_TRUE(actual);
-  EXPECT_NE(expected, *actual);
+  EXPECT_NE(expected, actual);
 }
 
 TEST(X509UT, getSetVersionApiIntegrityOK)
@@ -162,8 +160,7 @@ TEST(X509UT, getSetVersionApiIntegrityOK)
 
   // THEN
   ASSERT_TRUE(setResult);
-  ASSERT_TRUE(actual);
-  EXPECT_EQ(expected, *actual);
+  EXPECT_EQ(expected, actual);
 }
 
 TEST(X509UT, getValidityOK)
@@ -555,8 +552,7 @@ TEST(X509UT, setGetVersionTest)
   auto getResult = x509::getVersion(*cert);
 
   // THEN
-  ASSERT_TRUE(getResult);
-  EXPECT_EQ(expected, *getResult);
+  EXPECT_EQ(expected, getResult);
 }
 
 }}}

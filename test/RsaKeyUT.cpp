@@ -239,6 +239,18 @@ TEST(RsaKeyUT, extractPublicKeyOK)
   EXPECT_TRUE(*verResult);
 }
 
+TEST(RsaKeyUT, extractPublicPartFromFreshStructureShouldFail)
+{
+  // GIVEN
+  auto key = ::so::make_unique(RSA_new()); 
+
+  // WHEN
+  const auto result = rsa::getPublic(*key);
+  
+  // THEN
+  EXPECT_FALSE(result);
+}
+
 TEST(RsaKeyUT, extractedPublicKeyCantBeUsedForSign)
 {
   // GIVEN
@@ -310,6 +322,33 @@ TEST(RsaKeyUT, checkKeyOnNewlyCreatedStructureShouldFail)
   auto result = rsa::checkKey(*key);
 
   //THEN
+  EXPECT_FALSE(result);
+}
+
+TEST(RsaKeyUT, getKeyBitsOK)
+{
+  // GIVEN
+  auto maybeKey = rsa::generateKey(rsa::KeyBits::_2048_);
+  ASSERT_TRUE(maybeKey);
+  auto key = maybeKey.moveValue();
+ 
+  // WHEN
+  const auto result = rsa::getKeyBits(*key);
+
+  // THEN
+  ASSERT_TRUE(result);
+  EXPECT_EQ(rsa::KeyBits::_2048_, *result);
+}
+
+TEST(RsaKeyUT, getKeyBitsFromFreshStructShouldFail)
+{
+  // GIVEN
+  auto key = ::so::make_unique(RSA_new()); 
+
+  // WHEN
+  const auto result = rsa::getKeyBits(*key);
+  
+  // THEN
   EXPECT_FALSE(result);
 }
 

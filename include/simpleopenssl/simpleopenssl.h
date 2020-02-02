@@ -2,7 +2,7 @@
 #define PDY_SIMPLEOPENSSL_H_
 
 /*
-* Copyright (c) 2018 - 2019 Pawel Drzycimski
+* Copyright (c) 2018 - 2020 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -457,7 +457,7 @@ namespace rsa {
   SO_API Expected<bool> checkKey(RSA &rsa);
  
   SO_API Expected<RSA_uptr> generateKey(KeyBits keySize, Exponent exponent = Exponent::_65537_);
-  SO_API Expected<KeyBits> getKeyBits(const RSA &rsa);
+  SO_API Expected<KeyBits> getKeyBits(RSA &rsa);
   SO_API Expected<RSA_uptr> getPublic(RSA &rsa);
 
   SO_API Expected<Bytes> signSha1(const Bytes &message, RSA &privateKey);
@@ -535,11 +535,12 @@ namespace x509 {
 
   enum class Version : long
   {
-    // Version is zero indexed, thus this light enum
+    // Version is zero indexed, thus this enum
     // to not bring confusion.
     v1 = 0,
     v2 = 1,
-    v3 = 2
+    v3 = 2,
+    vx = std::numeric_limits<long>::max()
   };
 
   SO_API Expected<X509_uptr> convertPemToX509(const std::string &pemCert); 
@@ -557,7 +558,7 @@ namespace x509 {
   SO_API Expected<Info> getSubject(const X509 &cert);
   SO_API Expected<std::string> getSubjectString(const X509 &cert);
   SO_API Expected<Validity> getValidity(const X509 &cert);
-  SO_API Expected<Version> getVersion(const X509 &cert);
+  SO_API Version getVersion(const X509 &cert);
   
   SO_API Expected<bool> isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
@@ -1781,11 +1782,15 @@ namespace rsa {
     return internal::ok(std::move(rsa));
   }
 
-  SO_API Expected<KeyBits> getKeyBits(const RSA &rsa)
+  SO_API Expected<KeyBits> getKeyBits(RSA &rsa)
   {
-    // TODO:
-    // I kept returning Expected<> to keep API consistent,
-    // but I could just return rsa::KeySize here....I don't know...
+    // We need rsa->n to be not null to call RSA_size or we will have segfault.
+    // Since rsa->n is public modulus we can check its validity by trying to
+    // get public key.
+    const auto pub = rsa::getPublic(rsa);
+    if(!pub)
+      return internal::err<KeyBits>(pub.errorCode());
+
     return internal::ok(static_cast<KeyBits>(RSA_bits(&rsa)));
   }
 
@@ -2151,12 +2156,13 @@ namespace x509 {
     return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err(false);
   }
 
-  SO_API Expected<Version> getVersion(const X509 &cert)
+  SO_API Version getVersion(const X509 &cert)
   {
-    // TODO:
-    // I kept returning Expected<> to keep API
-    // consistent, but I could just return x509::Version here....I don't know...
-    return internal::ok(static_cast<Version>(X509_get_version(&cert)));
+    const long version = X509_get_version(&cert);
+    if(3 <= version || -1 >= version)
+      return Version::vx;
+
+    return static_cast<Version>(version);
   }
 
   SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical)
