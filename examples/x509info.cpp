@@ -37,9 +37,66 @@ int main(int argc, char *argv[])
     return 0;
   }
   
-  //const std::string file = arg.get<std::string>("file");
-//  auto maybeX509 = x509::verifySignature
+  const std::string file = arg.get<std::string>("file");
+  auto maybeX509 = x509::convertPemFileToX509(file);
+  if(!maybeX509)
+  {
+    log << maybeX509.msg();
+    return 0;
+  }
 
+  auto cert = maybeX509.moveValue();
+
+  auto maybeSubject = x509::getSubject(*cert);
+  if(!maybeSubject)
+  {
+    log << maybeSubject.msg();
+    return 0;
+  }
+
+  const auto subject = maybeSubject.moveValue();
+  log << "Subject:";
+  log << "\tCommonName: " << subject.commonName;
+  log << "\tCountryName: " << subject.countryName;
+  log << "\tLocalityName: " << subject.localityName;
+  log << "\tOrganizationName: " << subject.organizationName;
+  log << "\tStateOrProvinceName: " << subject.stateOrProvinceName;
+
+  log << "Version: " << std::get<1>(x509::getVersion(*cert));
+
+  auto maybeIssuer = x509::getIssuer(*cert);
+  if(!maybeIssuer)
+  {
+    log << maybeIssuer.msg();
+    return 0;
+  }
+  const auto issuer = maybeIssuer.moveValue();
+  log << "Issuer:";
+  log << "\tCommonName: " << issuer.commonName;
+  log << "\tCountryName: " << issuer.countryName;
+  log << "\tLocalityName: " << issuer.localityName;
+  log << "\tOrganizationName: " << issuer.organizationName;
+  log << "\tStateOrProvinceName: " << issuer.stateOrProvinceName;
+
+  /*
+  auto maybePubKey = x509::getPubKey(*cert);
+  if(!maybePubKey)
+  {
+    log << maybePubKey.msg();
+    return 0;
+  }
+  
+  const auto pubKeyBytes = evp::
+
+  log << "PublicKey: " << bin2Hex(maybePubKey);
+*/
+  const auto extCount = x509::getExtensionsCount(*cert);
+  if(!extCount)
+  {
+    log << extCount.msg();
+    return 0;
+  }
+  log << "ExtensionCount: " << *extCount;
   return 0;
 }
 
