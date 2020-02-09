@@ -558,7 +558,7 @@ namespace x509 {
   SO_API Expected<Info> getSubject(const X509 &cert);
   SO_API Expected<std::string> getSubjectString(const X509 &cert);
   SO_API Expected<Validity> getValidity(const X509 &cert);
-  SO_API Version getVersion(const X509 &cert);
+  SO_API std::tuple<Version,long> getVersion(const X509 &cert);
   
   SO_API Expected<bool> isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
@@ -573,6 +573,7 @@ namespace x509 {
   SO_API Expected<void> setSubject(X509 &cert, const Info &commonInfo);
   SO_API Expected<void> setValidity(X509 &cert, const Validity &validity);
   SO_API Expected<void> setVersion(X509 &cert, Version version);
+  SO_API Expected<void> setVersion(X509 &cert, long version);
   
   SO_API Expected<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
   SO_API Expected<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
@@ -2156,13 +2157,13 @@ namespace x509 {
     return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err(false);
   }
 
-  SO_API Version getVersion(const X509 &cert)
+  SO_API std::tuple<Version,long> getVersion(const X509 &cert)
   {
     const long version = X509_get_version(&cert);
     if(3 <= version || -1 >= version)
-      return Version::vx;
+      return std::make_tuple(Version::vx, version);
 
-    return static_cast<Version>(version);
+    return std::make_tuple(static_cast<Version>(version), version);
   }
 
   SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical)
@@ -2311,6 +2312,14 @@ namespace x509 {
   SO_API Expected<void> setVersion(X509 &cert, Version version)
   {
     if(1 != X509_set_version(&cert, static_cast<long>(version)))
+      return internal::err();
+    
+    return internal::ok();
+  }
+
+  SO_API Expected<void> setVersion(X509 &cert, long version)
+  {
+    if(1 != X509_set_version(&cert, version))
       return internal::err();
     
     return internal::ok();

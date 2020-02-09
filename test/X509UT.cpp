@@ -129,7 +129,8 @@ TEST(X509UT, getVersionOK)
   const auto actual = x509::getVersion(*cert);
 
   // THEN
-  EXPECT_EQ(expected, actual);
+  EXPECT_EQ(expected, std::get<0>(actual));
+  EXPECT_EQ(static_cast<long>(expected), std::get<1>(actual));
 }
 
 TEST(X509UT, getVersionShoulNotBeEqual)
@@ -144,7 +145,7 @@ TEST(X509UT, getVersionShoulNotBeEqual)
   const auto actual = x509::getVersion(*cert);
 
   // THEN
-  EXPECT_NE(expected, actual);
+  EXPECT_NE(expected, std::get<0>(actual));
 }
 
 TEST(X509UT, getSetVersionApiIntegrityOK)
@@ -160,7 +161,7 @@ TEST(X509UT, getSetVersionApiIntegrityOK)
 
   // THEN
   ASSERT_TRUE(setResult);
-  EXPECT_EQ(expected, actual);
+  EXPECT_EQ(expected, std::get<0>(actual));
 }
 
 TEST(X509UT, getValidityOK)
@@ -537,22 +538,6 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
   // THEN
   EXPECT_EQ(maybeSignature.value().size(), der.value().size());
   EXPECT_EQ(maybeSignature.value(), der.value());
-}
-
-TEST(X509UT, setGetVersionTest)
-{
-  // GIVEN
-  const x509::Version expected = x509::Version::v2;
-  auto cert = so::make_unique(X509_new());
-  ASSERT_TRUE(cert);
-
-  // WHEN
-  auto setResult = x509::setVersion(*cert, expected);
-  ASSERT_TRUE(setResult);
-  auto getResult = x509::getVersion(*cert);
-
-  // THEN
-  EXPECT_EQ(expected, getResult);
 }
 
 }}}
