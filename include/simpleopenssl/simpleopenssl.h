@@ -351,8 +351,8 @@ namespace ecdsa {
 
   SO_API Expected<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der);
   SO_API Expected<EC_KEY_uptr> convertDerToPubKey(const Bytes &der);
-  SO_API Expected<Bytes> convertPrivKeyToDer(EC_KEY &rsa);
-  SO_API Expected<Bytes> convertPubKeyToDer(EC_KEY &rsa);
+  SO_API Expected<Bytes> convertPrivKeyToDer(EC_KEY &ec);
+  SO_API Expected<Bytes> convertPubKeyToDer(EC_KEY &ec);
 
   SO_API Expected<Bytes> convertToDer(const Signature &signature); 
   SO_API Expected<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
