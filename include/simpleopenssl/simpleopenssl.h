@@ -540,10 +540,11 @@ namespace x509 {
     v1 = 0,
     v2 = 1,
     v3 = 2,
-    vx = std::numeric_limits<long>::max()
+    vx = -1 
   };
 
-  SO_API Expected<X509_uptr> convertPemToX509(const std::string &pemCert); 
+  SO_API Expected<X509_uptr> convertPemToX509(const std::string &pemCert);
+  SO_API Expected<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
 
   SO_API Expected<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
   SO_API Expected<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
@@ -1967,6 +1968,27 @@ namespace x509 {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 
     if(0 >= BIO_write(bio.get(), pemCert.c_str(), static_cast<int>(pemCert.length())))
+      return internal::err<X509_uptr>(); 
+
+    auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
+    if(!ret)
+      return internal::err<X509_uptr>();
+
+    return internal::ok(std::move(ret));
+  }
+
+  SO_API Expected<X509_uptr> convertPemFileToX509(const std::string &pemFilePath)
+  {
+    BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
+
+    // I'd rather do copy here than drop const in argument or use
+    // const_cast in BIO_read_filename
+    std::vector<char> fn;
+    fn.reserve(pemFilePath.size() + 1);
+    std::copy_n(pemFilePath.begin(), pemFilePath.size(), std::back_inserter(fn));
+    fn.push_back('\0');
+
+    if(0 >= BIO_read_filename(bio.get(), fn.data()))
       return internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
