@@ -380,7 +380,10 @@ namespace ecdsa {
 namespace evp {
   SO_API Expected<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Expected<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
-  
+
+  SO_API Expected<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der); 
+  SO_API Expected<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
+
   SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   SO_API Expected<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
   SO_API Expected<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
@@ -1531,6 +1534,16 @@ namespace evp {
   SO_API Expected<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
     return internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
+  }
+
+  SO_API Expected<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der)
+  {
+    return internal::convertDerToKey<EVP_PKEY_uptr>(der, d2i_PUBKEY);
+  }
+
+  SO_API Expected<Bytes> convertPubKeyToDer(EVP_PKEY &pkey)
+  {
+    return internal::convertKeyToDer(pkey, i2d_PUBKEY);
   }
 
   SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
