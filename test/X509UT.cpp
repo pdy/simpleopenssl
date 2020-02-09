@@ -432,6 +432,24 @@ TEST(X509UT, getSerialNumberWithPrecalculatedData)
   EXPECT_EQ(expected, serial);
 }
 
+TEST(X509UT, getSerialNumberFromPEMFile)
+{
+  // GIVEN
+  const std::vector<uint8_t> expected {0x1f, 0x47, 0xaf, 0xaa, 0x62, 0x00, 0x70, 0x50, 0x54, 0x4c, 0x01, 0x9e, 0x9b, 0x63, 0x99, 0x2a};
+
+  auto maybeCert = x509::convertPemFileToX509("data/validpemcert.pem");
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN
+  const auto maybeSerial = x509::getSerialNumber(*cert);
+
+  // THEN
+  ASSERT_TRUE(maybeSerial);
+  auto serial = *maybeSerial;
+  EXPECT_EQ(expected, serial);
+}
+
 TEST(X509UT, getSerialNumber)
 {
   // GIVEN
