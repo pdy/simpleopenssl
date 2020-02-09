@@ -8,7 +8,6 @@
 class SimpleLog
 {
 public:
-
   ~SimpleLog()
   {
     std::cout << m_ss.str() << std::endl;
@@ -41,6 +40,11 @@ public:
   {
     m_ss << c_str;
     return *this;
+  }
+
+  std::ostream& stream() const
+  {
+    return std::cout;
   }
 
 private:
