@@ -68,5 +68,81 @@ TEST(EvpKeyUT, pem2PrivKeyConversion_shouldFailWithPubKey)
   EXPECT_FALSE(maybeKey);
 }
 
+TEST(EvpKeyUT, privKey2DerConversion_ok)
+{
+  // GIVEN
+  const auto pemPriv= data::rsa3072PrivKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_RSAPrivateKey(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+  
+  EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
+  ASSERT_TRUE(evpKey);
+  ASSERT_TRUE(EVP_PKEY_set1_RSA(evpKey.get(), key.get()));
+
+  // WHEN
+  const auto maybeDerPriv = evp::convertPrivKeyToDer(*evpKey);
+
+  // THEN
+  ASSERT_TRUE(maybeDerPriv);
+  EXPECT_EQ(data::rsa3072PrivKeyDer, *maybeDerPriv);
+}
+
+TEST(EvpKeyUT, derToPrivKeyConversion_ok)
+{
+  // WHEN
+  auto maybePrivKey = evp::convertDerToPrivKey(data::rsa3072PrivKeyDer);
+
+  // THEN
+  ASSERT_TRUE(maybePrivKey);
+  auto privKey = maybePrivKey.moveValue();
+  EXPECT_EQ(1, RSA_check_key(EVP_PKEY_get0_RSA(privKey.get())));
+  // TODO:
+  // EVP_PKEY_check available in 1.1.1
+  //EXPECT_EQ(1, EVP_PKEY_check(privKey.get()));
+}
+
+TEST(EvpKeyUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
+{
+  // WHEN
+  auto maybePrivKey = evp::convertDerToPrivKey(data::rsa3072PubKeyDer);
+
+  // THEN
+  ASSERT_FALSE(maybePrivKey);
+}
+
+TEST(EvpKeyUT, pubKey2DerConversion_ok)
+{
+  // GIVEN
+  const auto pemPub = data::rsa3072PubKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_RSA_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+  
+  EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
+  ASSERT_TRUE(evpKey);
+  ASSERT_TRUE(EVP_PKEY_set1_RSA(evpKey.get(), key.get()));
+
+  // WHEN
+  const auto maybeDerPub = evp::convertPubKeyToDer(*evpKey);
+
+  // THEN
+  ASSERT_TRUE(maybeDerPub);
+  EXPECT_EQ(data::rsa3072PubKeyDer, *maybeDerPub);
+}
+
+TEST(EvpKeyUT, derToPubKeyConversion_ok)
+{
+  // WHEN
+  auto maybePubKey = evp::convertDerToPubKey(data::rsa3072PubKeyDer);
+
+  // THEN
+  ASSERT_TRUE(maybePubKey);
+}
+
 }}} //namespace so { namespace ut { namespace evp {
 
