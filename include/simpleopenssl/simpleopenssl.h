@@ -381,7 +381,9 @@ namespace evp {
   SO_API Expected<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Expected<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
 
-  SO_API Expected<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der); 
+  SO_API Expected<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der);
+  SO_API Expected<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
+  SO_API Expected<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
   SO_API Expected<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
 
   SO_API Expected<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
@@ -1536,9 +1538,19 @@ namespace evp {
     return internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
   }
 
+  SO_API Expected<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der)
+  {
+    return internal::convertDerToKey<EVP_PKEY_uptr>(der, d2i_AutoPrivateKey);
+  }
+
   SO_API Expected<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der)
   {
     return internal::convertDerToKey<EVP_PKEY_uptr>(der, d2i_PUBKEY);
+  }
+
+  SO_API Expected<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey)
+  {
+    return internal::convertKeyToDer(privKey, i2d_PrivateKey);
   }
 
   SO_API Expected<Bytes> convertPubKeyToDer(EVP_PKEY &pkey)

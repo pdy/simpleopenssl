@@ -78,18 +78,22 @@ int main(int argc, char *argv[])
   log << "\tOrganizationName: " << issuer.organizationName;
   log << "\tStateOrProvinceName: " << issuer.stateOrProvinceName;
 
-  /*
   auto maybePubKey = x509::getPubKey(*cert);
   if(!maybePubKey)
   {
     log << maybePubKey.msg();
     return 0;
   }
-  
-  const auto pubKeyBytes = evp::
+  auto pubKey = maybePubKey.moveValue(); 
+  const auto pubKeyBytes = evp::convertPubKeyToDer(*pubKey);
+  if(!pubKeyBytes)
+  {
+    log << pubKeyBytes.msg();
+    return 0;
+  }
 
-  log << "PublicKey: " << bin2Hex(maybePubKey);
-*/
+  log << "PublicKey: " << bin2Hex(*pubKeyBytes);
+
   const auto extCount = x509::getExtensionsCount(*cert);
   if(!extCount)
   {
