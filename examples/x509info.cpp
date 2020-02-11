@@ -62,7 +62,24 @@ int main(int argc, char *argv[])
   log << "\tOrganizationName: " << subject.organizationName;
   log << "\tStateOrProvinceName: " << subject.stateOrProvinceName;
 
-  log << "Version: " << std::get<1>(x509::getVersion(*cert));
+  x509::Version version;
+  long versionRaw;
+  std::tie(version, versionRaw) = x509::getVersion(*cert);
+  switch(version)
+  {
+    case x509::Version::v1:
+      log << "Version: 1 (" << versionRaw << ")";
+      break;
+    case x509::Version::v2:
+      log << "Version: 2 (" << versionRaw << ")";
+      break;
+  case x509::Version::v3:
+      log << "Version: 3 (" << versionRaw << ")";
+      break;
+  case x509::Version::vx:
+      log << "Version: " << versionRaw;
+      break;
+  };
 
   auto maybeIssuer = x509::getIssuer(*cert);
   if(!maybeIssuer)
