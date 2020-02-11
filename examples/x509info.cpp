@@ -101,6 +101,26 @@ int main(int argc, char *argv[])
     return 0;
   }
   log << "ExtensionCount: " << *extCount;
+  
+  if(*extCount)
+  {
+    auto maybeExtensions = x509::getExtensions(*cert);
+    if(!maybeExtensions)
+    {
+      log << maybeExtensions.msg();
+      return 0;
+    }
+
+    const auto extensions = maybeExtensions.moveValue();
+    for(const auto &ext : extensions)
+    {
+      log << "\tname: " << ext.name << " [" << ext.oidNumerical << "]";
+      log << "\t  critical: " << (ext.critical ? "true" : "false");
+      log << "\t  data: " << bin2Hex(ext.data);
+    }
+  }
+  
+
   return 0;
 }
 
