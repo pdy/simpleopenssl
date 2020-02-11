@@ -104,22 +104,29 @@ int main(int argc, char *argv[])
   
   if(*extCount)
   {
-    auto maybeExtensions = x509::getExtensions(*cert);
-    if(!maybeExtensions)
+    const auto extensions = x509::getExtensions(*cert);
+    if(!extensions)
     {
-      log << maybeExtensions.msg();
+      log << extensions.msg();
       return 0;
     }
 
-    const auto extensions = maybeExtensions.moveValue();
-    for(const auto &ext : extensions)
+    for(const auto &ext : extensions.value())
     {
       log << "\tname: " << ext.name << " [" << ext.oidNumerical << "]";
       log << "\t  critical: " << (ext.critical ? "true" : "false");
       log << "\t  data: " << bin2Hex(ext.data);
     }
   }
-  
+ 
+  const auto sig = x509::getSignature(*cert);
+  if(!sig)
+  {
+    log << sig.msg();
+    return 0;
+  } 
+
+  log << "Signature: " << bin2Hex(*sig);
 
   return 0;
 }
