@@ -7,6 +7,7 @@
 using namespace so;
 
 std::string bin2Hex(const so::Bytes &buff);
+std::string bin2Text(const so::Bytes &buff);
 
 int main(int argc, char *argv[])
 {
@@ -132,7 +133,7 @@ int main(int argc, char *argv[])
     {
       log << "\tname: " << ext.name << " [" << ext.oidNumerical << "]";
       log << "\t  critical: " << (ext.critical ? "true" : "false");
-      log << "\t  data: " << bin2Hex(ext.data);
+      log << "\t  data: " << bin2Text(ext.data);
     }
   }
  
@@ -155,4 +156,13 @@ std::string bin2Hex(const so::Bytes &buff)
     oss << std::setfill('0') << std::setw(2) << std::hex << +bt;
   }
   return oss.str(); 
+}
+
+
+std::string bin2Text(const so::Bytes &buff)
+{
+  std::string ret;
+  ret.reserve(buff.size());
+  std::transform(buff.begin(), buff.end(), std::back_inserter(ret), [](uint8_t bt) { return static_cast<char>(bt);});
+  return ret;
 }
