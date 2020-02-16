@@ -447,7 +447,13 @@ namespace nid {
 
   private:
     ASN1_OBJECT_uptr m_object {nullptr};
-  }; 
+  };
+
+  const auto AACONTROLS	= Nid(NID_aaControls);
+  const auto ACCOUNT = Nid(NID_account);
+
+//  const auto 
+
 } // namespace nid
 
 namespace rand {
