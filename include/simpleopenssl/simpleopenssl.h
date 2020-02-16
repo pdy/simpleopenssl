@@ -567,7 +567,7 @@ namespace x509 {
   SO_API std::tuple<Version,long> getVersion(const X509 &cert);
   
   SO_API bool isCa(X509 &cert);
-  SO_API Expected<bool> isSelfSigned(X509 &cert);
+  SO_API bool isSelfSigned(X509 &cert);
 
   SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false);
   SO_API Expected<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical = false);
@@ -1978,14 +1978,14 @@ namespace x509 {
     return true;
   }
 
-  SO_API Expected<bool> isSelfSigned(X509 &cert)
+  SO_API bool isSelfSigned(X509 &cert)
   {
     // TODO:
     // I should wrap somehow and return X509_V_ERR* macros
     if(X509_V_OK == X509_check_issued(&cert, &cert))
-      return internal::ok(true);
+      return true;
     
-    return internal::ok(false);  
+    return false;
   }
 
   SO_API Expected<X509_uptr> convertPemToX509(const std::string &pemCert)

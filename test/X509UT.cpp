@@ -540,8 +540,7 @@ TEST(X509UT, isSelfSignedShouldBeTrue)
   const auto isSelfSigned = x509::isSelfSigned(*cert);
 
   // THEN
-  ASSERT_TRUE(isSelfSigned);
-  ASSERT_TRUE(*isSelfSigned);
+  EXPECT_TRUE(isSelfSigned);
 }
 
 TEST(X509UT, isSelfSignedShouldBeFalse)
@@ -565,8 +564,7 @@ TEST(X509UT, isSelfSignedShouldBeFalse)
   const auto isSelfSigned = x509::isSelfSigned(*cert);
 
   // THEN
-  ASSERT_TRUE(isSelfSigned);
-  ASSERT_FALSE(*isSelfSigned);
+  EXPECT_FALSE(isSelfSigned);
 }
 
 TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
