@@ -5,7 +5,7 @@
 namespace so { namespace ut { namespace expected {
 
 
-TEST(ExpectedUT, okUsageWithBytes)
+TEST(ResultUT, okUsageWithBytes)
 {
   // WHEN
   const auto expected = ::so::internal::ok(::so::Bytes{0x00, 0x01});
@@ -20,7 +20,7 @@ TEST(ExpectedUT, okUsageWithBytes)
   EXPECT_EQ((::so::Bytes{0x00, 0x01}), expected.value());
 }
 
-TEST(ExpectedUT, errUsageWithBytes)
+TEST(ResultUT, errUsageWithBytes)
 {
   // WHEN
   const auto expected = ::so::internal::err<::so::Bytes>(5);
@@ -34,7 +34,7 @@ TEST(ExpectedUT, errUsageWithBytes)
   EXPECT_EQ((::so::Bytes{}), expected.value());
 }
 
-TEST(ExpectedUT, okUsageWithUptrs)
+TEST(ResultUT, okUsageWithUptrs)
 {
   // WHEN
   const auto expected = ::so::internal::ok(::so::make_unique<BIGNUM>(nullptr));
@@ -47,7 +47,7 @@ TEST(ExpectedUT, okUsageWithUptrs)
   EXPECT_EQ("ok", expected.msg());
 }
 
-TEST(ExpectedUT, errUsageWithUptrs)
+TEST(ResultUT, errUsageWithUptrs)
 {
   // WHEN 
   const auto expected = ::so::internal::err<::so::BIGNUM_uptr>(5);
@@ -59,7 +59,7 @@ TEST(ExpectedUT, errUsageWithUptrs)
   EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
 }
 
-TEST(ExpectedUT, okUsageWithVoid)
+TEST(ResultUT, okUsageWithVoid)
 {
   // WHEN
   const auto expected = ::so::internal::ok(); 
@@ -71,7 +71,7 @@ TEST(ExpectedUT, okUsageWithVoid)
   EXPECT_EQ("ok", expected.msg());
 }
 
-TEST(ExpectedUT, errUsageWithVoid)
+TEST(ResultUT, errUsageWithVoid)
 {
   // WHEN  
   const auto expected = ::so::internal::err<void>(5);
@@ -82,7 +82,7 @@ TEST(ExpectedUT, errUsageWithVoid)
   EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
 }
 
-TEST(ExpectedUT, okUsageWithUnsignedLong)
+TEST(ResultUT, okUsageWithUnsignedLong)
 {
   // WHEN
   const auto expected = ::so::internal::ok(10ul); 
@@ -97,7 +97,7 @@ TEST(ExpectedUT, okUsageWithUnsignedLong)
   EXPECT_EQ("ok", expected.msg());
 }
 
-TEST(ExpectedUT, errUsageWithUnsignedLong)
+TEST(ResultUT, errUsageWithUnsignedLong)
 {
   // WHEN  
   const auto expected = ::so::internal::err<unsigned long>(5);

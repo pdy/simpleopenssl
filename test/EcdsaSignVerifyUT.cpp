@@ -20,9 +20,9 @@ struct SignVerifyInput
   ::so::Bytes pubKeyDer;
   ::so::Bytes signedData;
   ::so::Bytes signature;
-  std::function<::so::Expected<::so::Bytes>(const ::so::Bytes&, EC_KEY&)> signer;
-  std::function<::so::Expected<bool>(const ::so::Bytes&,const ::so::Bytes&, EC_KEY&)> verifier;
-  std::function<::so::Expected<bool>(const ::so::Bytes&,const ::so::Bytes&, EVP_PKEY&)> evpVerifier;
+  std::function<::so::Result<::so::Bytes>(const ::so::Bytes&, EC_KEY&)> signer;
+  std::function<::so::Result<bool>(const ::so::Bytes&,const ::so::Bytes&, EC_KEY&)> verifier;
+  std::function<::so::Result<bool>(const ::so::Bytes&,const ::so::Bytes&, EVP_PKEY&)> evpVerifier;
 };
 
 // so that gtest failure log would be more descriptive

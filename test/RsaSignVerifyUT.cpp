@@ -21,9 +21,9 @@ struct SignVerifyInput
   ::so::Bytes pubKeyDer;
   ::so::Bytes signedData;
   ::so::Bytes signature;
-  std::function<::so::Expected<::so::Bytes>(const ::so::Bytes&, RSA&)> signer;
-  std::function<::so::Expected<bool>(const ::so::Bytes&,const ::so::Bytes&, RSA&)> verifier;
-  std::function<::so::Expected<bool>(const ::so::Bytes&,const ::so::Bytes&, EVP_PKEY&)> evpVerifier;
+  std::function<::so::Result<::so::Bytes>(const ::so::Bytes&, RSA&)> signer;
+  std::function<::so::Result<bool>(const ::so::Bytes&,const ::so::Bytes&, RSA&)> verifier;
+  std::function<::so::Result<bool>(const ::so::Bytes&,const ::so::Bytes&, EVP_PKEY&)> evpVerifier;
 };
 
 std::ostream& operator<<(std::ostream &oss, const SignVerifyInput &input)
