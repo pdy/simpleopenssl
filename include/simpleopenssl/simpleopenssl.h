@@ -424,6 +424,32 @@ namespace hash {
   SO_API Result<Bytes> fileSHA512(const std::string &path);
 } // namespace hash
 
+namespace nid {
+  class Nid
+  {
+  public:
+    explicit Nid(int raw);
+    Nid(const Nid &other);
+    Nid(Nid&&) = default;
+
+    Nid& operator=(const Nid &other);
+    Nid& operator=(Nid&&) = default;
+
+    bool operator==(const Nid &other) const;
+    bool operator!=(const Nid &other) const;
+
+    operator bool() const;
+    int operator*() const;
+
+    int getRaw() const;
+    std::string getLongName() const;
+    std::string getShortName() const;
+
+  private:
+    ASN1_OBJECT_uptr m_object {nullptr};
+  }; 
+} // namespace nid
+
 namespace rand {
   SO_API Result<Bytes> bytes(unsigned short numOfBytes);
 } //namespace rand
@@ -1715,6 +1741,71 @@ namespace hash {
     return internal::doHashFile(path, EVP_sha512());
   }
 }// namespace hash
+
+namespace nid {
+  Nid::Nid(int raw)
+  {
+    if(0 < raw && raw != NID_undef)
+      m_object = make_unique(OBJ_nid2obj(raw));
+  }
+
+  Nid::Nid(const Nid &other)
+  {
+    if(!other.m_object)
+      m_object.reset();
+    else
+      m_object = make_unique(OBJ_dup(other.m_object.get()));
+  }
+
+  Nid& Nid::operator=(const Nid &other)
+  {
+    if(!other.m_object)
+      m_object.reset();
+    else
+      m_object = make_unique(OBJ_dup(other.m_object.get()));
+
+    return *this;
+  }
+
+  bool Nid::operator==(const Nid &other) const
+  {
+    return 0 == OBJ_cmp(m_object.get(), other.m_object.get());
+  }
+
+  bool Nid::operator!=(const Nid &other) const
+  {
+    return !(*this == other);
+  }
+
+  Nid::operator bool() const
+  {
+    return m_object != nullptr;
+  }
+
+  int Nid::operator*() const
+  {
+    return getRaw(); 
+  }
+
+  int Nid::getRaw() const
+  {
+    if(!m_object)
+      return NID_undef;
+
+    return OBJ_obj2nid(m_object.get());
+  }
+
+  std::string Nid::getLongName() const
+  {
+    return OBJ_nid2ln(getRaw());
+  }
+
+  std::string Nid::getShortName() const
+  {
+    return OBJ_nid2sn(getRaw());
+  }
+
+} // namespace nid
 
 namespace rand {
   SO_API Result<Bytes> bytes(unsigned short numOfBytes)
