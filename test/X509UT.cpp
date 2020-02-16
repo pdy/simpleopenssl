@@ -591,4 +591,15 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
   EXPECT_EQ(maybeSignature.value(), der.value());
 }
 
+TEST(X509UT, isCA)
+{
+  // GIVEN
+  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN/THEN
+  EXPECT_TRUE(x509::isCa(*cert));
+}
+
 }}}

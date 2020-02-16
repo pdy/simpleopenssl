@@ -566,7 +566,7 @@ namespace x509 {
   SO_API Expected<Validity> getValidity(const X509 &cert);
   SO_API std::tuple<Version,long> getVersion(const X509 &cert);
   
-  SO_API Expected<bool> isCa(X509 &cert);
+  SO_API bool isCa(X509 &cert);
   SO_API Expected<bool> isSelfSigned(X509 &cert);
 
   SO_API Expected<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false);
@@ -1967,15 +1967,15 @@ namespace x509 {
     return internal::nameToString(*getIssuer);
   }
 
-  SO_API Expected<bool> isCa(X509 &cert)
+  SO_API bool isCa(X509 &cert)
   {
     // TODO:
     // I shold wrap somehow positive cases:
     // https://www.openssl.org/docs/man1.1.0/man3/X509_check_ca.html
     if(0 == X509_check_ca(&cert)){
-      return internal::ok(false);
+      return false;
     }
-    return internal::ok(true);
+    return true;
   }
 
   SO_API Expected<bool> isSelfSigned(X509 &cert)
