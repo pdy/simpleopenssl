@@ -428,32 +428,29 @@ namespace nid {
   class Nid
   {
   public:
-    explicit Nid(int raw);
-    Nid(const Nid &other);
-    Nid(Nid&&) = default;
+    inline explicit Nid(int raw);
+    inline Nid(const Nid &other);
+    inline Nid(Nid&&) = default;
 
-    Nid& operator=(const Nid &other);
-    Nid& operator=(Nid&&) = default;
+    inline Nid& operator=(const Nid &other);
+    inline Nid& operator=(Nid&&) = default;
 
-    bool operator==(const Nid &other) const;
-    bool operator!=(const Nid &other) const;
+    inline bool operator==(const Nid &other) const;
+    inline bool operator!=(const Nid &other) const;
 
-    operator bool() const;
-    int operator*() const;
+    inline operator bool() const;
+    inline int operator*() const;
 
-    int getRaw() const;
-    std::string getLongName() const;
-    std::string getShortName() const;
+    inline int getRaw() const;
+    inline std::string getLongName() const;
+    inline std::string getShortName() const;
 
   private:
     ASN1_OBJECT_uptr m_object {nullptr};
   };
 
-  const auto AACONTROLS	= Nid(NID_aaControls);
+  const auto AACONTROLS = Nid(NID_aaControls);
   const auto ACCOUNT = Nid(NID_account);
-
-//  const auto 
-
 } // namespace nid
 
 namespace rand {
