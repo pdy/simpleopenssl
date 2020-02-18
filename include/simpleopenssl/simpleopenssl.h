@@ -759,7 +759,7 @@ namespace nid {
   const auto ID_IT_ENCKEYPAIRTYPES = Nid(NID_id_it_encKeyPairTypes);
   const auto ID_IT_IMPLICITCONFIRM = Nid(NID_id_it_implicitConfirm);
   const auto ID_IT_KEYPAIRPARAMREP = Nid(NID_id_it_keyPairParamRep);
-  const auto ID_IT_KEYPAIRPARAMREQ = Nid(NID_id_it_keyPairParamRep);
+  const auto ID_IT_KEYPAIRPARAMREQ = Nid(NID_id_it_keyPairParamReq);
   const auto ID_IT_ORIGPKIMESSAGE = Nid(NID_id_it_origPKIMessage);
   const auto ID_IT_PREFERREDSYMMALG = Nid(NID_id_it_preferredSymmAlg);
   const auto ID_IT_REVPASSPHRASE = Nid(NID_id_it_revPassphrase);
@@ -992,7 +992,7 @@ namespace nid {
   const auto PBEWITHMD5ANDRC2_CBC = Nid(NID_pbeWithMD5AndRC2_CBC);
   const auto PBEWITHSHA1ANDDES_CBC = Nid(NID_pbeWithSHA1AndDES_CBC);
   const auto PBEWITHSHA1ANDRC2_CBC = Nid(NID_pbeWithSHA1AndRC2_CBC);
-  const auto PBE_WITHSHA1AND128BITRC4 = Nid(NID_pbe_WithSHA1And128BitRC2_CBC);
+  const auto PBE_WITHSHA1AND128BITRC4 = Nid(NID_pbe_WithSHA1And128BitRC4);
   const auto PBE_WITHSHA1AND128BITRC2_CBC = Nid(NID_pbe_WithSHA1And128BitRC2_CBC);
   const auto PBE_WITHSHA1AND2_KEY_TRIPLEDES_CBC = Nid(NID_pbe_WithSHA1And2_Key_TripleDES_CBC);
   const auto PBE_WITHSHA1AND3_KEY_TRIPLEDES_CBC = Nid(NID_pbe_WithSHA1And3_Key_TripleDES_CBC);
@@ -1210,7 +1210,7 @@ namespace nid {
   const auto SETCT_CREDRESTBE = Nid(NID_setct_CredResTBE);
   const auto SETCT_CREDREVREQTBE = Nid(NID_setct_CredRevReqTBE);
   const auto SETCT_CREDREVREQTBEX = Nid(NID_setct_CredRevReqTBEX);
-  const auto SETCT_CREDREVREQTBS = Nid(NID_setct_CredRevReqTBE);
+  const auto SETCT_CREDREVREQTBS = Nid(NID_setct_CredRevReqTBS);
   const auto SETCT_CREDREVREQTBSX = Nid(NID_setct_CredRevReqTBSX);
   const auto SETCT_CREDREVRESDATA = Nid(NID_setct_CredRevResData);
   const auto SETCT_CREDREVRESTBE = Nid(NID_setct_CredRevResTBE);
@@ -1317,7 +1317,7 @@ namespace nid {
   const auto WAP_WSG_IDM_ECID_WTLS11 = Nid(NID_wap_wsg_idm_ecid_wtls11);
   const auto WAP_WSG_IDM_ECID_WTLS12 = Nid(NID_wap_wsg_idm_ecid_wtls12);
   const auto WHIRLPOOL = Nid(NID_whirlpool);
-  const auto X500 = Nid(NID_X509);
+  const auto X500 = Nid(NID_X500);
   const auto X509 = Nid(NID_X509);
   const auto X121ADDRESS = Nid(NID_x121Address);
   const auto X500ALGORITHMS = Nid(NID_X500algorithms);
@@ -1331,7 +1331,7 @@ namespace nid {
   const auto X9_62_C2ONB239V4 = Nid(NID_X9_62_c2onb239v4);
   const auto X9_62_C2ONB239V5 = Nid(NID_X9_62_c2onb239v5);
   const auto X9_62_C2PNB163V1 = Nid(NID_X9_62_c2pnb163v1);
-  const auto X9_62_C2PNB163V2 = Nid(NID_X9_62_c2pnb163v3);
+  const auto X9_62_C2PNB163V2 = Nid(NID_X9_62_c2pnb163v2);
   const auto X9_62_C2PNB163V3 = Nid(NID_X9_62_c2pnb163v3);
   const auto X9_62_C2PNB176V1 = Nid(NID_X9_62_c2pnb176v1);
   const auto X9_62_C2PNB208W1 = Nid(NID_X9_62_c2pnb208w1);
