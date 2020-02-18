@@ -593,7 +593,7 @@ namespace nid {
   const auto DOCUMENTTITLE = Nid(NID_documentTitle);
   const auto DOCUMENTVERSION = Nid(NID_documentVersion);
   const auto DOD = Nid(NID_dod);
-  const auto DOMAIN = Nid(NID_Domain);
+  const auto DOMAINNID = Nid(NID_Domain);
   const auto DOMAINCOMPONENT = Nid(NID_domainComponent);
   const auto DOMAINRELATEDOBJECT = Nid(NID_domainRelatedObject);
   const auto DSA = Nid(NID_dsa);
