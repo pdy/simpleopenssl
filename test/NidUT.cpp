@@ -4,9 +4,33 @@
 
 using namespace so;
 
-TEST(NidUT, cmp)
+struct NidUTInput
 {
-  EXPECT_EQ(nid::AACONTROLS, nid::Nid(NID_aaControls));
-  EXPECT_NE(nid::AACONTROLS, nid::ACCOUNT);
+  int rawNid;
+  nid::Nid soNid;
+};
+
+class NidValidityUT : public ::testing::TestWithParam<NidUTInput>
+{};
+
+TEST_P(NidValidityUT, cmp)
+{
+  const auto input {GetParam()};
+  
+  EXPECT_EQ(input.rawNid, input.soNid.getRaw());
 }
 
+const auto testCases = ::testing::Values(
+  NidUTInput {
+    NID_undef, nid::UNDEF
+  },
+  NidUTInput {
+    NID_aaControls, nid::AACONTROLS
+  }
+);
+
+INSTANTIATE_TEST_CASE_P(
+    Nid,
+    NidValidityUT,
+    testCases 
+);
