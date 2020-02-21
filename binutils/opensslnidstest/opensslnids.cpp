@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
 
   log << "Writing to " << outFile;
 
-  out << "const auto testCases = ::testing::Values(\n";
+  out << "const static NidUTInput NID_VALIDITY_UT_VALUES[] {\n";
   size_t nidsWritten = 0;
   for(std::string line; std::getline(in, line);)
   {
@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
       ++nidsWritten;
     }
   }
+  out << "};\n";
   log << "Written nids " << nidsWritten;
 
   return 0;
