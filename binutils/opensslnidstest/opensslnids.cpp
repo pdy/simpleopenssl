@@ -4,17 +4,15 @@
 
 #include <fstream>
 
-struct CloseInstream{
-  CloseInstream(std::ifstream &_o):o(_o){}
-  ~CloseInstream(){o.close();}
-  std::ifstream &o;
+template<typename T>
+struct CloseStream
+{
+  CloseStream(T &_stream) : stream(_stream) {}
+  ~CloseStream() {stream.close();}
+
+  T &stream;
 };
 
-struct CloseOutstream{
-  CloseOutstream(std::ofstream &_o):o(_o){}
-  ~CloseOutstream(){o.close();}
-  std::ofstream &o;
-};
 
 std::string formSection(const std::string &nidLine);
 
@@ -54,7 +52,7 @@ int main(int argc, char *argv[])
     log << "Can't open " << file;
     return 0;
   }
-  const CloseInstream inGuard(in);
+  const CloseStream<decltype(in)> inGuard(in);
   
   const std::string outFile = "./nidstestcases.txt";
   std::ofstream out(outFile);
@@ -63,7 +61,7 @@ int main(int argc, char *argv[])
     log << "Can't open " << outFile;
     return 0;
   }
-  const CloseOutstream outGuard(out);
+  const CloseStream<decltype(out)> outGuard(out);
 
   log << "Writing to " << outFile;
 
