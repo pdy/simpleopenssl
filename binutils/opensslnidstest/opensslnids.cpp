@@ -1,5 +1,6 @@
 #include "cmdline/cmdline.h"
 #include "simplelog/simplelog.h"
+#include <stdexcept>
 
 #include <fstream>
 
@@ -72,7 +73,12 @@ int main(int argc, char *argv[])
   {
     if(line.find("NID_") != std::string::npos)
     {
-      out << formSection(line);
+      try {
+        out << formSection(line);
+      }catch(const std::runtime_error &e){
+        log << e.what();
+        throw;
+      }
       ++nidsWritten;
     }
   }
@@ -90,7 +96,7 @@ std::string formSection(const std::string &nidLine)
 {
   const auto pos = nidLine.find("NID_");
   if(pos == std::string::npos)
-    throw "No NID_ in line";
+    throw std::runtime_error("No NID_ in line");
 
   std::string ret = " NidUTInput {\n";
   const auto nid = getNid(nidLine, pos);
@@ -118,7 +124,7 @@ std::string stripNid(const std::string &nid)
 {
   const auto pos = nid.find('_');
   if(pos == std::string::npos)
-    throw "No undersore in nid";
+    throw std::runtime_error("No undersore in nid");
 
   return nid.substr(pos + 1);
 }
