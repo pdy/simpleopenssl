@@ -6,7 +6,7 @@
 
 using namespace so;
 
-Expected<Bytes> makeHash(const std::string& filePath, const std::string &type);
+Result<Bytes> makeHash(const std::string& filePath, const std::string &type);
 std::string bin2Hex(const so::Bytes &buff);
 
 int main(int argc, char *argv[])
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-Expected<Bytes> makeHash(const std::string& filePath, const std::string &type)
+Result<Bytes> makeHash(const std::string& filePath, const std::string &type)
 {
   if(type == "sha1")
     return hash::fileSHA1(filePath);
