@@ -14,7 +14,8 @@ struct CloseStream
 };
 
 
-std::string formSection(const std::string &nidLine);
+std::string formTestSecion(const std::string &nidLine);
+std::string formSoEntry(const std::string &nidLine);
 
 int main(int argc, char *argv[])
 {
@@ -54,25 +55,36 @@ int main(int argc, char *argv[])
   }
   const CloseStream<decltype(in)> inGuard(in);
   
-  const std::string outFile = "./nidstestcases.txt";
-  std::ofstream out(outFile);
-  if(!out.is_open())
+  const std::string testsOutFile = "./nidstestcases.txt";
+  std::ofstream testsOut(testsOutFile);
+  if(!testsOut.is_open())
   {
-    log << "Can't open " << outFile;
+    log << "Can't open " << testsOutFile;
     return 0;
   }
-  const CloseStream<decltype(out)> outGuard(out);
+  const CloseStream<decltype(testsOut)> testsOutGuard(testsOut);
 
-  log << "Writing to " << outFile;
+  const std::string soOutFile = "./sonamespace.txt";
+  std::ofstream soOut(soOutFile);
+  if(!testsOut.is_open())
+  {
+    log << "Can't open " << soOutFile;
+    return 0;
+  }
+  const CloseStream<decltype(soOut)> soOutGuard(soOut);
 
-  out << "const static NidUTInput NID_VALIDITY_UT_VALUES[] {\n";
+  log << "Writing to " << testsOutFile;
+  log << "Writing to " << soOutFile;
+
+  testsOut << "const static NidUTInput NID_VALIDITY_UT_VALUES[] {\n";
   size_t nidsWritten = 0;
   for(std::string line; std::getline(in, line);)
   {
     if(line.find("NID_") != std::string::npos)
     {
       try {
-        out << formSection(line);
+        testsOut << formTestSecion(line);
+        soOut << formSoEntry(line);
       }catch(const std::runtime_error &e){
         log << e.what();
         throw;
@@ -80,7 +92,7 @@ int main(int argc, char *argv[])
       ++nidsWritten;
     }
   }
-  out << "};\n";
+  testsOut << "};\n";
   log << "Written nids " << nidsWritten;
 
   return 0;
@@ -90,7 +102,7 @@ std::string toUpper(const std::string &str);
 std::string getNid(const std::string &nidLine, std::string::size_type nidStartPos);
 std::string stripNid(const std::string &nidLine);
 
-std::string formSection(const std::string &nidLine)
+std::string formTestSecion(const std::string &nidLine)
 {
   const auto pos = nidLine.find("NID_");
   if(pos == std::string::npos)
@@ -105,6 +117,17 @@ std::string formSection(const std::string &nidLine)
   return ret;
 }
 
+std::string formSoEntry(const std::string &nidLine)
+{
+  const auto pos = nidLine.find("NID_");
+  if(pos == std::string::npos)
+    throw std::runtime_error("No NID_ in line");
+
+  const auto nid = getNid(nidLine, pos);
+  const auto upperNid = toUpper(stripNid(nid));
+
+  return "  static const auto " + upperNid + " = Nid(" + nid + ");\n";
+}
 
 std::string getNid(const std::string &nidLine, std::string::size_type nidStartPos)
 {
