@@ -25,8 +25,8 @@ TEST_P(NidValidityUT, cmp)
   EXPECT_EQ(input.rawNid, input.soNid.getRaw());
 }
 
-const static NidUTInput NID_VALIDITY_UT_VALUES[] { 
-NidUTInput {
+const static NidUTInput NID_VALIDITY_UT_VALUES[] {
+ NidUTInput {
   NID_undef, nid::UNDEF
  },
  NidUTInput {
@@ -392,9 +392,9 @@ NidUTInput {
  NidUTInput {
   NID_mgf1, nid::MGF1
  },
-// NidUTInput {
-//  NID_pSpecified, nid::PSPECIFIED
-// },
+ NidUTInput {
+  NID_pSpecified, nid::PSPECIFIED
+ },
  NidUTInput {
   NID_rsassaPss, nid::RSASSAPSS
  },
@@ -578,18 +578,18 @@ NidUTInput {
  NidUTInput {
   NID_id_smime_ct_compressedData, nid::ID_SMIME_CT_COMPRESSEDDATA
  },
-// NidUTInput {
-//  NID_id_smime_ct_contentCollection, nid::ID_SMIME_CT_CONTENTCOLLECTION
-// },
-// NidUTInput {
-//  NID_id_smime_ct_authEnvelopedData, nid::ID_SMIME_CT_AUTHENVELOPEDDATA
-// },
+ NidUTInput {
+  NID_id_smime_ct_contentCollection, nid::ID_SMIME_CT_CONTENTCOLLECTION
+ },
+ NidUTInput {
+  NID_id_smime_ct_authEnvelopedData, nid::ID_SMIME_CT_AUTHENVELOPEDDATA
+ },
  NidUTInput {
   NID_id_ct_asciiTextWithCRLF, nid::ID_CT_ASCIITEXTWITHCRLF
  },
-// NidUTInput {
-//  NID_id_ct_xml, nid::ID_CT_XML
-// },
+ NidUTInput {
+  NID_id_ct_xml, nid::ID_CT_XML
+ },
  NidUTInput {
   NID_id_smime_aa_receiptRequest, nid::ID_SMIME_AA_RECEIPTREQUEST
  },
@@ -1034,9 +1034,9 @@ NidUTInput {
  NidUTInput {
   NID_proxyCertInfo, nid::PROXYCERTINFO
  },
-// NidUTInput {
-//  NID_tlsfeature, nid::TLSFEATURE
-// },
+ NidUTInput {
+  NID_tlsfeature, nid::TLSFEATURE
+ },
  NidUTInput {
   NID_id_qt_cps, nid::ID_QT_CPS
  },
@@ -1076,33 +1076,33 @@ NidUTInput {
  NidUTInput {
   NID_dvcs, nid::DVCS
  },
-// NidUTInput {
-//  NID_ipsec_IKE, nid::IPSEC_IKE
-// },
-// NidUTInput {
-//  NID_capwapAC, nid::CAPWAPAC
-// },
-// NidUTInput {
-//  NID_capwapWTP, nid::CAPWAPWTP
-// },
-// NidUTInput {
-//  NID_sshClient, nid::SSHCLIENT
-// },
-// NidUTInput {
-//  NID_sshServer, nid::SSHSERVER
-// },
-// NidUTInput {
-//  NID_sendRouter, nid::SENDROUTER
-// },
-// NidUTInput {
-//  NID_sendProxiedRouter, nid::SENDPROXIEDROUTER
-// },
-// NidUTInput {
-//  NID_sendOwner, nid::SENDOWNER
-// },
-// NidUTInput {
-//  NID_sendProxiedOwner, nid::SENDPROXIEDOWNER
-// },
+ NidUTInput {
+  NID_ipsec_IKE, nid::IPSEC_IKE
+ },
+ NidUTInput {
+  NID_capwapAC, nid::CAPWAPAC
+ },
+ NidUTInput {
+  NID_capwapWTP, nid::CAPWAPWTP
+ },
+ NidUTInput {
+  NID_sshClient, nid::SSHCLIENT
+ },
+ NidUTInput {
+  NID_sshServer, nid::SSHSERVER
+ },
+ NidUTInput {
+  NID_sendRouter, nid::SENDROUTER
+ },
+ NidUTInput {
+  NID_sendProxiedRouter, nid::SENDPROXIEDROUTER
+ },
+ NidUTInput {
+  NID_sendOwner, nid::SENDOWNER
+ },
+ NidUTInput {
+  NID_sendProxiedOwner, nid::SENDPROXIEDOWNER
+ },
  NidUTInput {
   NID_id_it_caProtEncCert, nid::ID_IT_CAPROTENCCERT
  },
@@ -1433,12 +1433,12 @@ NidUTInput {
  NidUTInput {
   NID_ripemd160WithRSA, nid::RIPEMD160WITHRSA
  },
-// NidUTInput {
-//  NID_blake2b512, nid::BLAKE2B512
-// },
-// NidUTInput {
-//  NID_blake2s256, nid::BLAKE2S256
-// },
+ NidUTInput {
+  NID_blake2b512, nid::BLAKE2B512
+ },
+ NidUTInput {
+  NID_blake2s256, nid::BLAKE2S256
+ },
  NidUTInput {
   NID_sxnet, nid::SXNET
  },
@@ -1895,15 +1895,15 @@ NidUTInput {
  NidUTInput {
   NID_aes_256_ctr, nid::AES_256_CTR
  },
-// NidUTInput {
-//  NID_aes_128_ocb, nid::AES_128_OCB
-// },
-// NidUTInput {
-//  NID_aes_192_ocb, nid::AES_192_OCB
-// },
-// NidUTInput {
-//  NID_aes_256_ocb, nid::AES_256_OCB
-// },
+ NidUTInput {
+  NID_aes_128_ocb, nid::AES_128_OCB
+ },
+ NidUTInput {
+  NID_aes_192_ocb, nid::AES_192_OCB
+ },
+ NidUTInput {
+  NID_aes_256_ocb, nid::AES_256_OCB
+ },
  NidUTInput {
   NID_aes_128_xts, nid::AES_128_XTS
  },
@@ -2001,7 +2001,7 @@ NidUTInput {
   NID_documentSeries, nid::DOCUMENTSERIES
  },
  NidUTInput {
-  NID_Domain, nid::DOMAINNID
+  NID_Domain, nid::DOMAIN
  },
  NidUTInput {
   NID_rFC822localPart, nid::RFC822LOCALPART
@@ -2129,9 +2129,9 @@ NidUTInput {
  NidUTInput {
   NID_friendlyCountryName, nid::FRIENDLYCOUNTRYNAME
  },
-// NidUTInput {
-//  NID_uniqueIdentifier, nid::UNIQUEIDENTIFIER
-// },
+ NidUTInput {
+  NID_uniqueIdentifier, nid::UNIQUEIDENTIFIER
+ },
  NidUTInput {
   NID_organizationalStatus, nid::ORGANIZATIONALSTATUS
  },
@@ -2582,9 +2582,9 @@ NidUTInput {
  NidUTInput {
   NID_cryptocom, nid::CRYPTOCOM
  },
-// NidUTInput {
-//  NID_id_tc26, nid::ID_TC26
-// },
+ NidUTInput {
+  NID_id_tc26, nid::ID_TC26
+ },
  NidUTInput {
   NID_id_GostR3411_94_with_GostR3410_2001, nid::ID_GOSTR3411_94_WITH_GOSTR3410_2001
  },
@@ -2609,24 +2609,24 @@ NidUTInput {
  NidUTInput {
   NID_gost89_cnt, nid::GOST89_CNT
  },
-// NidUTInput {
-//  NID_gost89_cnt_12, nid::GOST89_CNT_12
-// },
-// NidUTInput {
-//  NID_gost89_cbc, nid::GOST89_CBC
-// },
-// NidUTInput {
-//  NID_gost89_ecb, nid::GOST89_ECB
-// },
-// NidUTInput {
-//  NID_gost89_ctr, nid::GOST89_CTR
-// },
+ NidUTInput {
+  NID_gost89_cnt_12, nid::GOST89_CNT_12
+ },
+ NidUTInput {
+  NID_gost89_cbc, nid::GOST89_CBC
+ },
+ NidUTInput {
+  NID_gost89_ecb, nid::GOST89_ECB
+ },
+ NidUTInput {
+  NID_gost89_ctr, nid::GOST89_CTR
+ },
  NidUTInput {
   NID_id_Gost28147_89_MAC, nid::ID_GOST28147_89_MAC
  },
-// NidUTInput {
-//  NID_gost_mac_12, nid::GOST_MAC_12
-// },
+ NidUTInput {
+  NID_gost_mac_12, nid::GOST_MAC_12
+ },
  NidUTInput {
   NID_id_GostR3411_94_prf, nid::ID_GOSTR3411_94_PRF
  },
@@ -2744,120 +2744,120 @@ NidUTInput {
  NidUTInput {
   NID_id_GostR3410_2001_ParamSet_cc, nid::ID_GOSTR3410_2001_PARAMSET_CC
  },
-// NidUTInput {
-//  NID_id_tc26_algorithms, nid::ID_TC26_ALGORITHMS
-// },
-// NidUTInput {
-//  NID_id_tc26_sign, nid::ID_TC26_SIGN
-// },
-// NidUTInput {
-//  NID_id_GostR3410_2012_256, nid::ID_GOSTR3410_2012_256
-// },
-// NidUTInput {
-//  NID_id_GostR3410_2012_512, nid::ID_GOSTR3410_2012_512
-// },
-// NidUTInput {
-//  NID_id_tc26_digest, nid::ID_TC26_DIGEST
-// },
-// NidUTInput {
-//  NID_id_GostR3411_2012_256, nid::ID_GOSTR3411_2012_256
-// },
-// NidUTInput {
-//  NID_id_GostR3411_2012_512, nid::ID_GOSTR3411_2012_512
-// },
-// NidUTInput {
-//  NID_id_tc26_signwithdigest, nid::ID_TC26_SIGNWITHDIGEST
-// },
-// NidUTInput {
-//  NID_id_tc26_signwithdigest_gost3410_2012_256, nid::ID_TC26_SIGNWITHDIGEST_GOST3410_2012_256
-// },
-// NidUTInput {
-//  NID_id_tc26_signwithdigest_gost3410_2012_512, nid::ID_TC26_SIGNWITHDIGEST_GOST3410_2012_512
-// },
-// NidUTInput {
-//  NID_id_tc26_mac, nid::ID_TC26_MAC
-// },
-// NidUTInput {
-//  NID_id_tc26_hmac_gost_3411_2012_256, nid::ID_TC26_HMAC_GOST_3411_2012_256
-// },
-// NidUTInput {
-//  NID_id_tc26_hmac_gost_3411_2012_512, nid::ID_TC26_HMAC_GOST_3411_2012_512
-// },
-// NidUTInput {
-//  NID_id_tc26_cipher, nid::ID_TC26_CIPHER
-// },
-// NidUTInput {
-//  NID_id_tc26_agreement, nid::ID_TC26_AGREEMENT
-// },
-// NidUTInput {
-//  NID_id_tc26_agreement_gost_3410_2012_256, nid::ID_TC26_AGREEMENT_GOST_3410_2012_256
-// },
-// NidUTInput {
-//  NID_id_tc26_agreement_gost_3410_2012_512, nid::ID_TC26_AGREEMENT_GOST_3410_2012_512
-// },
-// NidUTInput {
-//  NID_id_tc26_constants, nid::ID_TC26_CONSTANTS
-// },
-// NidUTInput {
-//  NID_id_tc26_sign_constants, nid::ID_TC26_SIGN_CONSTANTS
-// },
-// NidUTInput {
-//  NID_id_tc26_gost_3410_2012_512_constants, nid::ID_TC26_GOST_3410_2012_512_CONSTANTS
-// },
-// NidUTInput {
-//  NID_id_tc26_gost_3410_2012_512_paramSetTest, nid::ID_TC26_GOST_3410_2012_512_PARAMSETTEST
-// },
-// NidUTInput {
-//  NID_id_tc26_gost_3410_2012_512_paramSetA, nid::ID_TC26_GOST_3410_2012_512_PARAMSETA
-// },
-// NidUTInput {
-//  NID_id_tc26_gost_3410_2012_512_paramSetB, nid::ID_TC26_GOST_3410_2012_512_PARAMSETB
-// },
-// NidUTInput {
-//  NID_id_tc26_digest_constants, nid::ID_TC26_DIGEST_CONSTANTS
-// },
-// NidUTInput {
-//  NID_id_tc26_cipher_constants, nid::ID_TC26_CIPHER_CONSTANTS
-// },
-// NidUTInput {
-//  NID_id_tc26_gost_28147_constants, nid::ID_TC26_GOST_28147_CONSTANTS
-// },
-// NidUTInput {
-//  NID_id_tc26_gost_28147_param_Z, nid::ID_TC26_GOST_28147_PARAM_Z
-// },
-// NidUTInput {
-//  NID_INN, nid::INN
-// },
-// NidUTInput {
-//  NID_OGRN, nid::OGRN
-// },
-// NidUTInput {
-//  NID_SNILS, nid::SNILS
-// },
-// NidUTInput {
-//  NID_subjectSignTool, nid::SUBJECTSIGNTOOL
-// },
-// NidUTInput {
-//  NID_issuerSignTool, nid::ISSUERSIGNTOOL
-// },
-// NidUTInput {
-//  NID_grasshopper_ecb, nid::GRASSHOPPER_ECB
-// },
-// NidUTInput {
-//  NID_grasshopper_ctr, nid::GRASSHOPPER_CTR
-// },
-// NidUTInput {
-//  NID_grasshopper_ofb, nid::GRASSHOPPER_OFB
-// },
-// NidUTInput {
-//  NID_grasshopper_cbc, nid::GRASSHOPPER_CBC
-// },
-// NidUTInput {
-//  NID_grasshopper_cfb, nid::GRASSHOPPER_CFB
-// },
-// NidUTInput {
-//  NID_grasshopper_mac, nid::GRASSHOPPER_MAC
-// },
+ NidUTInput {
+  NID_id_tc26_algorithms, nid::ID_TC26_ALGORITHMS
+ },
+ NidUTInput {
+  NID_id_tc26_sign, nid::ID_TC26_SIGN
+ },
+ NidUTInput {
+  NID_id_GostR3410_2012_256, nid::ID_GOSTR3410_2012_256
+ },
+ NidUTInput {
+  NID_id_GostR3410_2012_512, nid::ID_GOSTR3410_2012_512
+ },
+ NidUTInput {
+  NID_id_tc26_digest, nid::ID_TC26_DIGEST
+ },
+ NidUTInput {
+  NID_id_GostR3411_2012_256, nid::ID_GOSTR3411_2012_256
+ },
+ NidUTInput {
+  NID_id_GostR3411_2012_512, nid::ID_GOSTR3411_2012_512
+ },
+ NidUTInput {
+  NID_id_tc26_signwithdigest, nid::ID_TC26_SIGNWITHDIGEST
+ },
+ NidUTInput {
+  NID_id_tc26_signwithdigest_gost3410_2012_256, nid::ID_TC26_SIGNWITHDIGEST_GOST3410_2012_256
+ },
+ NidUTInput {
+  NID_id_tc26_signwithdigest_gost3410_2012_512, nid::ID_TC26_SIGNWITHDIGEST_GOST3410_2012_512
+ },
+ NidUTInput {
+  NID_id_tc26_mac, nid::ID_TC26_MAC
+ },
+ NidUTInput {
+  NID_id_tc26_hmac_gost_3411_2012_256, nid::ID_TC26_HMAC_GOST_3411_2012_256
+ },
+ NidUTInput {
+  NID_id_tc26_hmac_gost_3411_2012_512, nid::ID_TC26_HMAC_GOST_3411_2012_512
+ },
+ NidUTInput {
+  NID_id_tc26_cipher, nid::ID_TC26_CIPHER
+ },
+ NidUTInput {
+  NID_id_tc26_agreement, nid::ID_TC26_AGREEMENT
+ },
+ NidUTInput {
+  NID_id_tc26_agreement_gost_3410_2012_256, nid::ID_TC26_AGREEMENT_GOST_3410_2012_256
+ },
+ NidUTInput {
+  NID_id_tc26_agreement_gost_3410_2012_512, nid::ID_TC26_AGREEMENT_GOST_3410_2012_512
+ },
+ NidUTInput {
+  NID_id_tc26_constants, nid::ID_TC26_CONSTANTS
+ },
+ NidUTInput {
+  NID_id_tc26_sign_constants, nid::ID_TC26_SIGN_CONSTANTS
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_512_constants, nid::ID_TC26_GOST_3410_2012_512_CONSTANTS
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_512_paramSetTest, nid::ID_TC26_GOST_3410_2012_512_PARAMSETTEST
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_512_paramSetA, nid::ID_TC26_GOST_3410_2012_512_PARAMSETA
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_512_paramSetB, nid::ID_TC26_GOST_3410_2012_512_PARAMSETB
+ },
+ NidUTInput {
+  NID_id_tc26_digest_constants, nid::ID_TC26_DIGEST_CONSTANTS
+ },
+ NidUTInput {
+  NID_id_tc26_cipher_constants, nid::ID_TC26_CIPHER_CONSTANTS
+ },
+ NidUTInput {
+  NID_id_tc26_gost_28147_constants, nid::ID_TC26_GOST_28147_CONSTANTS
+ },
+ NidUTInput {
+  NID_id_tc26_gost_28147_param_Z, nid::ID_TC26_GOST_28147_PARAM_Z
+ },
+ NidUTInput {
+  NID_INN, nid::INN
+ },
+ NidUTInput {
+  NID_OGRN, nid::OGRN
+ },
+ NidUTInput {
+  NID_SNILS, nid::SNILS
+ },
+ NidUTInput {
+  NID_subjectSignTool, nid::SUBJECTSIGNTOOL
+ },
+ NidUTInput {
+  NID_issuerSignTool, nid::ISSUERSIGNTOOL
+ },
+ NidUTInput {
+  NID_grasshopper_ecb, nid::GRASSHOPPER_ECB
+ },
+ NidUTInput {
+  NID_grasshopper_ctr, nid::GRASSHOPPER_CTR
+ },
+ NidUTInput {
+  NID_grasshopper_ofb, nid::GRASSHOPPER_OFB
+ },
+ NidUTInput {
+  NID_grasshopper_cbc, nid::GRASSHOPPER_CBC
+ },
+ NidUTInput {
+  NID_grasshopper_cfb, nid::GRASSHOPPER_CFB
+ },
+ NidUTInput {
+  NID_grasshopper_mac, nid::GRASSHOPPER_MAC
+ },
  NidUTInput {
   NID_camellia_128_cbc, nid::CAMELLIA_128_CBC
  },
@@ -2885,18 +2885,18 @@ NidUTInput {
  NidUTInput {
   NID_camellia_128_cfb128, nid::CAMELLIA_128_CFB128
  },
-// NidUTInput {
-//  NID_camellia_128_gcm, nid::CAMELLIA_128_GCM
-// },
-// NidUTInput {
-//  NID_camellia_128_ccm, nid::CAMELLIA_128_CCM
-// },
-// NidUTInput {
-//  NID_camellia_128_ctr, nid::CAMELLIA_128_CTR
-// },
-// NidUTInput {
-//  NID_camellia_128_cmac, nid::CAMELLIA_128_CMAC
-// },
+ NidUTInput {
+  NID_camellia_128_gcm, nid::CAMELLIA_128_GCM
+ },
+ NidUTInput {
+  NID_camellia_128_ccm, nid::CAMELLIA_128_CCM
+ },
+ NidUTInput {
+  NID_camellia_128_ctr, nid::CAMELLIA_128_CTR
+ },
+ NidUTInput {
+  NID_camellia_128_cmac, nid::CAMELLIA_128_CMAC
+ },
  NidUTInput {
   NID_camellia_192_ecb, nid::CAMELLIA_192_ECB
  },
@@ -2906,18 +2906,18 @@ NidUTInput {
  NidUTInput {
   NID_camellia_192_cfb128, nid::CAMELLIA_192_CFB128
  },
-// NidUTInput {
-//  NID_camellia_192_gcm, nid::CAMELLIA_192_GCM
-// },
-// NidUTInput {
-//  NID_camellia_192_ccm, nid::CAMELLIA_192_CCM
-// },
-// NidUTInput {
-//  NID_camellia_192_ctr, nid::CAMELLIA_192_CTR
-// },
-// NidUTInput {
-//  NID_camellia_192_cmac, nid::CAMELLIA_192_CMAC
-// },
+ NidUTInput {
+  NID_camellia_192_gcm, nid::CAMELLIA_192_GCM
+ },
+ NidUTInput {
+  NID_camellia_192_ccm, nid::CAMELLIA_192_CCM
+ },
+ NidUTInput {
+  NID_camellia_192_ctr, nid::CAMELLIA_192_CTR
+ },
+ NidUTInput {
+  NID_camellia_192_cmac, nid::CAMELLIA_192_CMAC
+ },
  NidUTInput {
   NID_camellia_256_ecb, nid::CAMELLIA_256_ECB
  },
@@ -2927,18 +2927,18 @@ NidUTInput {
  NidUTInput {
   NID_camellia_256_cfb128, nid::CAMELLIA_256_CFB128
  },
-// NidUTInput {
-//  NID_camellia_256_gcm, nid::CAMELLIA_256_GCM
-// },
-// NidUTInput {
-//  NID_camellia_256_ccm, nid::CAMELLIA_256_CCM
-// },
-// NidUTInput {
-//  NID_camellia_256_ctr, nid::CAMELLIA_256_CTR
-// },
-// NidUTInput {
-//  NID_camellia_256_cmac, nid::CAMELLIA_256_CMAC
-// },
+ NidUTInput {
+  NID_camellia_256_gcm, nid::CAMELLIA_256_GCM
+ },
+ NidUTInput {
+  NID_camellia_256_ccm, nid::CAMELLIA_256_CCM
+ },
+ NidUTInput {
+  NID_camellia_256_ctr, nid::CAMELLIA_256_CTR
+ },
+ NidUTInput {
+  NID_camellia_256_cmac, nid::CAMELLIA_256_CMAC
+ },
  NidUTInput {
   NID_camellia_128_cfb1, nid::CAMELLIA_128_CFB1
  },
@@ -2989,95 +2989,94 @@ NidUTInput {
  },
  NidUTInput {
   NID_aes_256_cbc_hmac_sha1, nid::AES_256_CBC_HMAC_SHA1
- }
-// NidUTInput {
-//  NID_aes_128_cbc_hmac_sha256, nid::AES_128_CBC_HMAC_SHA256
-// },
-// NidUTInput {
-//  NID_aes_192_cbc_hmac_sha256, nid::AES_192_CBC_HMAC_SHA256
-// },
-// NidUTInput {
-//  NID_aes_256_cbc_hmac_sha256, nid::AES_256_CBC_HMAC_SHA256
-// },
-// NidUTInput {
-//  NID_chacha20_poly1305, nid::CHACHA20_POLY1305
-// },
-// NidUTInput {
-//  NID_chacha20, nid::CHACHA20
-// },
-// NidUTInput {
-//  NID_dhpublicnumber, nid::DHPUBLICNUMBER
-// },
-// NidUTInput {
-//  NID_brainpoolP160r1, nid::BRAINPOOLP160R1
-// },
-// NidUTInput {
-//  NID_brainpoolP160t1, nid::BRAINPOOLP160T1
-// },
-// NidUTInput {
-//  NID_brainpoolP192r1, nid::BRAINPOOLP192R1
-// },
-// NidUTInput {
-//  NID_brainpoolP192t1, nid::BRAINPOOLP192T1
-// },
-// NidUTInput {
-//  NID_brainpoolP224r1, nid::BRAINPOOLP224R1
-// },
-// NidUTInput {
-//  NID_brainpoolP224t1, nid::BRAINPOOLP224T1
-// },
-// NidUTInput {
-//  NID_brainpoolP256r1, nid::BRAINPOOLP256R1
-// },
-// NidUTInput {
-//  NID_brainpoolP256t1, nid::BRAINPOOLP256T1
-// },
-// NidUTInput {
-//  NID_brainpoolP320r1, nid::BRAINPOOLP320R1
-// },
-// NidUTInput {
-//  NID_brainpoolP320t1, nid::BRAINPOOLP320T1
-// },
-// NidUTInput {
-//  NID_brainpoolP384r1, nid::BRAINPOOLP384R1
-// },
-// NidUTInput {
-//  NID_brainpoolP384t1, nid::BRAINPOOLP384T1
-// },
-// NidUTInput {
-//  NID_brainpoolP512r1, nid::BRAINPOOLP512R1
-// },
-// NidUTInput {
-//  NID_brainpoolP512t1, nid::BRAINPOOLP512T1
-// },
-// NidUTInput {
-//  NID_dhSinglePass_stdDH_sha1kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA1KDF_SCHEME
-// },
-// NidUTInput {
-//  NID_dhSinglePass_stdDH_sha224kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA224KDF_SCHEME
-// },
-// NidUTInput {
-//  NID_dhSinglePass_stdDH_sha256kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA256KDF_SCHEME
-// },
-// NidUTInput {
-//  NID_dhSinglePass_stdDH_sha384kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA384KDF_SCHEME
-// },
-// NidUTInput {
-//  NID_dhSinglePass_stdDH_sha512kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA512KDF_SCHEME
-// },
-// NidUTInput {
-//  NID_dhSinglePass_cofactorDH_sha1kdf_scheme, nid::DHSINGLEPASS_COFACTORDH_SHA1KDF_SCHEME
-// },
-// NidUTInput {
-//  NID_dhSinglePass_cofactorDH_sha224kdf_scheme, nid::DHSINGLEPASS_COFACTORDH_SHA224KDF_SCHEME
-// },
-// NidUTInput {
-//  NID_dhSinglePass_cofactorDH_sha256kdf_scheme, nid::DHSINGLEPASS_COFACTORDH_SHA256KDF_SCHEME
-// },
-// NidUTInput {
-//  NID_dhSinglePass_cofactorDH_sha384kdf_scheme, nid::DHSINGLEPASS_COFACTORDH_SHA384KDF_SCHEME
-// },
-/*
+ },
+ NidUTInput {
+  NID_aes_128_cbc_hmac_sha256, nid::AES_128_CBC_HMAC_SHA256
+ },
+ NidUTInput {
+  NID_aes_192_cbc_hmac_sha256, nid::AES_192_CBC_HMAC_SHA256
+ },
+ NidUTInput {
+  NID_aes_256_cbc_hmac_sha256, nid::AES_256_CBC_HMAC_SHA256
+ },
+ NidUTInput {
+  NID_chacha20_poly1305, nid::CHACHA20_POLY1305
+ },
+ NidUTInput {
+  NID_chacha20, nid::CHACHA20
+ },
+ NidUTInput {
+  NID_dhpublicnumber, nid::DHPUBLICNUMBER
+ },
+ NidUTInput {
+  NID_brainpoolP160r1, nid::BRAINPOOLP160R1
+ },
+ NidUTInput {
+  NID_brainpoolP160t1, nid::BRAINPOOLP160T1
+ },
+ NidUTInput {
+  NID_brainpoolP192r1, nid::BRAINPOOLP192R1
+ },
+ NidUTInput {
+  NID_brainpoolP192t1, nid::BRAINPOOLP192T1
+ },
+ NidUTInput {
+  NID_brainpoolP224r1, nid::BRAINPOOLP224R1
+ },
+ NidUTInput {
+  NID_brainpoolP224t1, nid::BRAINPOOLP224T1
+ },
+ NidUTInput {
+  NID_brainpoolP256r1, nid::BRAINPOOLP256R1
+ },
+ NidUTInput {
+  NID_brainpoolP256t1, nid::BRAINPOOLP256T1
+ },
+ NidUTInput {
+  NID_brainpoolP320r1, nid::BRAINPOOLP320R1
+ },
+ NidUTInput {
+  NID_brainpoolP320t1, nid::BRAINPOOLP320T1
+ },
+ NidUTInput {
+  NID_brainpoolP384r1, nid::BRAINPOOLP384R1
+ },
+ NidUTInput {
+  NID_brainpoolP384t1, nid::BRAINPOOLP384T1
+ },
+ NidUTInput {
+  NID_brainpoolP512r1, nid::BRAINPOOLP512R1
+ },
+ NidUTInput {
+  NID_brainpoolP512t1, nid::BRAINPOOLP512T1
+ },
+ NidUTInput {
+  NID_dhSinglePass_stdDH_sha1kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA1KDF_SCHEME
+ },
+ NidUTInput {
+  NID_dhSinglePass_stdDH_sha224kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA224KDF_SCHEME
+ },
+ NidUTInput {
+  NID_dhSinglePass_stdDH_sha256kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA256KDF_SCHEME
+ },
+ NidUTInput {
+  NID_dhSinglePass_stdDH_sha384kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA384KDF_SCHEME
+ },
+ NidUTInput {
+  NID_dhSinglePass_stdDH_sha512kdf_scheme, nid::DHSINGLEPASS_STDDH_SHA512KDF_SCHEME
+ },
+ NidUTInput {
+  NID_dhSinglePass_cofactorDH_sha1kdf_scheme, nid::DHSINGLEPASS_COFACTORDH_SHA1KDF_SCHEME
+ },
+ NidUTInput {
+  NID_dhSinglePass_cofactorDH_sha224kdf_scheme, nid::DHSINGLEPASS_COFACTORDH_SHA224KDF_SCHEME
+ },
+ NidUTInput {
+  NID_dhSinglePass_cofactorDH_sha256kdf_scheme, nid::DHSINGLEPASS_COFACTORDH_SHA256KDF_SCHEME
+ },
+ NidUTInput {
+  NID_dhSinglePass_cofactorDH_sha384kdf_scheme, nid::DHSINGLEPASS_COFACTORDH_SHA384KDF_SCHEME
+ },
  NidUTInput {
   NID_dhSinglePass_cofactorDH_sha512kdf_scheme, nid::DHSINGLEPASS_COFACTORDH_SHA512KDF_SCHEME
  },
@@ -3135,7 +3134,6 @@ NidUTInput {
  NidUTInput {
   NID_kx_rsa, nid::KX_RSA
  },
- 
  NidUTInput {
   NID_kx_ecdhe, nid::KX_ECDHE
  },
@@ -3184,7 +3182,6 @@ NidUTInput {
  NidUTInput {
   NID_auth_null, nid::AUTH_NULL
  }
-*/
 };
 
 INSTANTIATE_TEST_CASE_P(
