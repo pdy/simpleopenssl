@@ -80,7 +80,7 @@ int main(int argc, char *argv[])
   case x509::Version::vx:
       log << "Version: " << versionRaw;
       break;
-  };
+  }
 
   auto maybeIssuer = x509::getIssuer(*cert);
   if(!maybeIssuer)
