@@ -3,7 +3,7 @@ print-%  : ; @echo $* = $($*)
 CXX := clang++
 STRIP := strip
 
-FLAGS := -std=c++14 -Wno-deprecated-register -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded
+FLAGS := -std=c++17 -Wno-deprecated-register -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded
 
 LD_FLAGS := -L../3rd/openssl/lib
 
