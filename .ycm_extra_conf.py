@@ -14,6 +14,7 @@ flags = [
     '-Wno-global-constructors',
     '-Wno-exit-time-destructors',
     '-Wno-padded',
+    '-Wno-unused-function',
     '-std=c++11',
     '-stdlib=libstdc++',
     '-x','c++',
