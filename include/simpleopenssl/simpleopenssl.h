@@ -2,7 +2,7 @@
 #define PDY_SIMPLEOPENSSL_H_
 
 /*
-* Copyright (c) 2018 - 2020 Pawel Drzycimski
+* Copyright (c) 2018 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -2088,7 +2088,7 @@ namespace internal {
 
   SO_PRV Result<Bytes> doHashFile(const std::string &path, const EVP_MD *evpMd)
   {    
-    auto bioRaw = BIO_new_file(path.c_str(), "rb");
+    auto bioRaw = make_unique(BIO_new_file(path.c_str(), "rb"));
     if(!bioRaw)
       return internal::err<Bytes>();
 
@@ -2102,7 +2102,7 @@ namespace internal {
     // BIO_set_md which supposed to consume this pointer takes.... non const!
     // WTF OpenSSL?
     BIO_set_md(mdtmp, const_cast<EVP_MD*>(evpMd));
-    auto bio = make_unique(BIO_push(mdtmp, bioRaw));
+    auto bio = make_unique(BIO_push(mdtmp, bioRaw.release()));
     if(!bio)
       return internal::err<Bytes>();
 
@@ -2123,7 +2123,7 @@ namespace internal {
   }
 
   template<typename FUNC, typename ... Types>
-  SO_PRV Result<std::string> convertToPem(FUNC writeToBio, Types ...args)
+  SO_PRV Result<std::string> convertToPem(FUNC writeToBio, Types&& ...args)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(!bio)
@@ -2142,7 +2142,7 @@ namespace internal {
   }
   
   template<typename Key, typename FUNC, typename ... Types>
-  SO_PRV Result<Key> convertPemToKey(const std::string &pem, FUNC readBio, Types ...args)
+  SO_PRV Result<Key> convertPemToKey(const std::string &pem, FUNC readBio, Types&& ...args)
   {
     auto bio = make_unique(BIO_new_mem_buf(pem.c_str(), static_cast<int>(pem.size())));
     if(!bio)
