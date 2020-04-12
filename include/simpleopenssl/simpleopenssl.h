@@ -3182,11 +3182,11 @@ namespace x509 {
 
   SO_API nid::Nid getPubKeyAlgorithm(X509 &cert)
   {
-  auto pkey = make_unique(X509_get_pubkey(&cert));
+    auto *pkey = X509_get0_pubkey(&cert);
     if(!pkey)
       return nid::Nid::UNDEF;
 
-    return static_cast<nid::Nid>(EVP_PKEY_base_id(pkey.get())); 
+    return static_cast<nid::Nid>(EVP_PKEY_base_id(pkey)); 
   }
 
   SO_API Result<Bytes> getSerialNumber(X509 &cert)
