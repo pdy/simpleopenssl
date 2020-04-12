@@ -110,25 +110,19 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  log << "PublicKey: " << bin2Hex(*pubKeyBytes);
+  log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value()
+    << "\n\t" << bin2Hex(*pubKeyBytes);
 
-  const auto extCount = x509::getExtensionsCount(*cert);
-  if(!extCount)
+  const auto extensions = x509::getExtensions(*cert);
+  if(!extensions)
   {
-    log << extCount.msg();
+    log << extensions.msg();
     return 0;
   }
-  log << "ExtensionCount: " << *extCount;
+  log << "ExtensionCount: " << extensions->size();
   
-  if(*extCount)
+  if(!extensions->empty())
   {
-    const auto extensions = x509::getExtensions(*cert);
-    if(!extensions)
-    {
-      log << extensions.msg();
-      return 0;
-    }
-
     for(const auto &ext : extensions.value())
     {
       if(ext.id != x509::CertExtensionId::UNDEF)
@@ -152,8 +146,9 @@ int main(int argc, char *argv[])
     log << sig.msg();
     return 0;
   } 
-
-  log << "Signature: " << bin2Hex(*sig);
+  const auto sigType = x509::getSignatureAlgorithm(*cert);
+  log << "Signature: " << nid::getLongName(sigType).value()
+      << "\n\t" << bin2Hex(*sig);
 
   return 0;
 }

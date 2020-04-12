@@ -146,6 +146,7 @@ class AddValueRef<T, TSelf, std::false_type>
 {
 public:
   const T& operator*() const { return value(); }
+  const T* operator->() const { return &(value()); }
   const T& value() const { return static_cast<const TSelf*>(this)->m_value; }
 };
 
@@ -378,6 +379,15 @@ namespace ecdsa {
 } // namespace ecdsa
 
 namespace evp {
+  enum class PubKeyType
+  {
+    NONE  = EVP_PKEY_NONE,
+    EC    = EVP_PKEY_EC,
+    RSA   = EVP_PKEY_RSA,
+    DSA   = EVP_PKEY_DSA,
+    DH    = EVP_PKEY_DH
+  };
+
   SO_API Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
 
@@ -385,6 +395,9 @@ namespace evp {
   SO_API Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
   SO_API Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
   SO_API Result<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
+
+  SO_API PubKeyType getPubkeyType(EVP_PKEY &pubkey);
+  SO_API std::string convertPubkeyTypeToString(PubKeyType pubKeyType);
 
   SO_API Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   SO_API Result<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
@@ -1626,8 +1639,10 @@ namespace x509 {
   SO_API Result<Info> getIssuer(const X509 &cert);
   SO_API Result<std::string> getIssuerString(const X509 &cert); 
   SO_API Result<EVP_PKEY_uptr> getPubKey(X509 &cert);
+  SO_API nid::Nid getPubKeyAlgorithm(X509 &cert);
   SO_API Result<Bytes> getSerialNumber(X509 &cert);
   SO_API Result<Bytes> getSignature(const X509 &cert);
+  SO_API nid::Nid getSignatureAlgorithm(const X509 &cert);
   SO_API Result<Info> getSubject(const X509 &cert);
   SO_API Result<std::string> getSubjectString(const X509 &cert);
   SO_API Result<Validity> getValidity(const X509 &cert);
@@ -2625,6 +2640,16 @@ namespace evp {
     return internal::convertKeyToDer(pkey, i2d_PUBKEY);
   }
 
+  SO_API PubKeyType getPubkeyType(EVP_PKEY &pubkey)
+  {
+    return static_cast<PubKeyType>(EVP_PKEY_base_id(&pubkey));
+  }
+
+  SO_API std::string convertPubkeyTypeToString(PubKeyType pubKeyType)
+  {
+    return nid::getLongName(static_cast<int>(pubKeyType)).value();
+  }
+
   SO_API Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
   { 
     return internal::evpSign(message, EVP_sha1(), privateKey);
@@ -3155,6 +3180,15 @@ namespace x509 {
     return internal::ok(std::move(pkey));
   }
 
+  SO_API nid::Nid getPubKeyAlgorithm(X509 &cert)
+  {
+  auto pkey = make_unique(X509_get_pubkey(&cert));
+    if(!pkey)
+      return nid::Nid::UNDEF;
+
+    return static_cast<nid::Nid>(EVP_PKEY_base_id(pkey.get())); 
+  }
+
   SO_API Result<Bytes> getSerialNumber(X509 &cert)
   {
     // both internal pointers, must not be freed
@@ -3204,6 +3238,11 @@ namespace x509 {
     return internal::ok(std::move(rawDerSequence));
   }
   
+  SO_API nid::Nid getSignatureAlgorithm(const X509 &cert)
+  {
+    return static_cast<nid::Nid>(X509_get_signature_nid(&cert)); 
+  }
+
   SO_API Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert)
   {
     // both internal pointers and must not be freed
