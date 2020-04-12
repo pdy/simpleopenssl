@@ -145,5 +145,24 @@ TEST(EvpKeyUT, derToPubKeyConversion_ok)
   ASSERT_TRUE(maybePubKey);
 }
 
+TEST(EvpKeyUT, getPubKeyType)
+{
+  // GIVEN
+  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+  auto maybePubKey = x509::getPubKey(*cert);
+  ASSERT_TRUE(maybePubKey);
+  auto pubKey = maybePubKey.moveValue();
+
+  // WHEN
+  
+  const auto pubKeyType = evp::getPubkeyType(*pubKey) ;
+
+  // THEN
+  EXPECT_EQ(evp::PubKeyType::EC, pubKeyType);
+  EXPECT_EQ("id-ecPublicKey", evp::convertPubkeyTypeToString(pubKeyType));
+}
+
 }}} //namespace so { namespace ut { namespace evp {
 

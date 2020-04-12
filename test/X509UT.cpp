@@ -600,4 +600,26 @@ TEST(X509UT, isCA)
   EXPECT_TRUE(x509::isCa(*cert));
 }
 
+TEST(X509UT, getPubKeyAlgo)
+{
+  // GIVEN
+  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN/THEN
+  ASSERT_EQ(nid::Nid::X9_62_ID_ECPUBLICKEY, x509::getPubKeyAlgorithm(*cert));
+}
+
+TEST(X509UT, getSignatureAlgo)
+{
+  // GIVEN
+  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN/THEN
+  ASSERT_EQ(nid::Nid::ECDSA_WITH_SHA384, x509::getSignatureAlgorithm(*cert));
+}
+
 }}}
