@@ -8,6 +8,7 @@ using namespace so;
 
 std::string bin2Hex(const so::Bytes &buff);
 std::string bin2Text(const so::Bytes &buff);
+void logHex(const std::string &hexStr, size_t newLine);
 
 int main(int argc, char *argv[])
 {
@@ -63,9 +64,7 @@ int main(int argc, char *argv[])
   log << "\tOrganizationName: " << subject.organizationName;
   log << "\tStateOrProvinceName: " << subject.stateOrProvinceName;
 
-  x509::Version version;
-  long versionRaw;
-  std::tie(version, versionRaw) = x509::getVersion(*cert);
+  const auto[version, versionRaw] = x509::getVersion(*cert);
   switch(version)
   {
     case x509::Version::v1:
@@ -102,6 +101,7 @@ int main(int argc, char *argv[])
     log << maybePubKey.msg();
     return 0;
   }
+  
   auto pubKey = maybePubKey.moveValue(); 
   const auto pubKeyBytes = evp::convertPubKeyToDer(*pubKey);
   if(!pubKeyBytes)
@@ -110,8 +110,8 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value()
-    << "\n\t" << bin2Hex(*pubKeyBytes);
+  log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value();
+  logHex(bin2Hex(*pubKeyBytes), 30);
 
   const auto extensions = x509::getExtensions(*cert);
   if(!extensions)
@@ -147,8 +147,8 @@ int main(int argc, char *argv[])
     return 0;
   } 
   const auto sigType = x509::getSignatureAlgorithm(*cert);
-  log << "Signature: " << nid::getLongName(sigType).value()
-      << "\n\t" << bin2Hex(*sig);
+  log << "Signature: " << nid::getLongName(sigType).value();
+  logHex(bin2Hex(*sig), 36);
 
   return 0;
 }
@@ -170,3 +170,13 @@ std::string bin2Text(const so::Bytes &buff)
   std::transform(buff.begin(), buff.end(), std::back_inserter(ret), [](uint8_t bt) { return static_cast<char>(bt);});
   return ret;
 }
+
+void logHex(const std::string &hexStr, size_t newLine)
+{
+  std::cout << "\t";
+  for(size_t i = 1; i <= hexStr.size(); ++i)
+    std::cout << hexStr[i-1] << (i%2==0 ? " ":"") << (i%newLine == 0 && i!=hexStr.size() ? "\n\t" : "");
+
+  std::cout << "\n";
+}
+
