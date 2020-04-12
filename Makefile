@@ -30,7 +30,7 @@ endif
 
 OBJ := $(BUILD)/obj
 
-.PHONY: all clean runTests
+.PHONY: all clean runUT
 
 DESTBIN := $(BUILD)/bin
 
@@ -49,7 +49,7 @@ copydata:
 strip:
 	$(STRIP) $(DESTBIN)/UnitTests
 
-runTests:
+runUT:
 	@cd $(DESTBIN)/ && ./UnitTests && cd -
 
 OBJS_UT := $(OBJ)/Asn1UT.o $(OBJ)/EcdsaSignVerifyUT.o $(OBJ)/EvpSignVerifyUT.o $(OBJ)/EcdsaKeyUT.o \
