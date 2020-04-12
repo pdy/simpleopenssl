@@ -427,7 +427,6 @@ namespace hash {
 namespace nid {
   enum class Nid : int
   {
-    //
     UNDEF = NID_undef,
     ITU_T = NID_itu_t,
     CCITT = NID_ccitt,
