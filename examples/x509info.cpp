@@ -49,6 +49,31 @@ int main(int argc, char *argv[])
 
   auto cert = maybeX509.moveValue();
 
+  const auto[version, versionRaw] = x509::getVersion(*cert);
+  switch(version)
+  {
+    case x509::Version::v1:
+      log << "Version: 1 (" << versionRaw << ")";
+      break;
+    case x509::Version::v2:
+      log << "Version: 2 (" << versionRaw << ")";
+      break;
+    case x509::Version::v3:
+      log << "Version: 3 (" << versionRaw << ")";
+      break;
+    case x509::Version::vx:
+      log << "Version: " << versionRaw;
+      break;
+  }
+  
+  const auto serial = x509::getSerialNumber(*cert);
+  if(!serial)
+  {
+    log << serial.msg();
+    return 0;
+  }
+  log << "Serial: " << bin2Hex(*serial);
+
   auto maybeSubject = x509::getSubject(*cert);
   if(!maybeSubject)
   {
@@ -64,23 +89,7 @@ int main(int argc, char *argv[])
   log << "\tOrganizationName: " << subject.organizationName;
   log << "\tStateOrProvinceName: " << subject.stateOrProvinceName;
 
-  const auto[version, versionRaw] = x509::getVersion(*cert);
-  switch(version)
-  {
-    case x509::Version::v1:
-      log << "Version: 1 (" << versionRaw << ")";
-      break;
-    case x509::Version::v2:
-      log << "Version: 2 (" << versionRaw << ")";
-      break;
-  case x509::Version::v3:
-      log << "Version: 3 (" << versionRaw << ")";
-      break;
-  case x509::Version::vx:
-      log << "Version: " << versionRaw;
-      break;
-  }
-
+  
   auto maybeIssuer = x509::getIssuer(*cert);
   if(!maybeIssuer)
   {
