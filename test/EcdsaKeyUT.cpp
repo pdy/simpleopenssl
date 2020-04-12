@@ -259,4 +259,32 @@ TEST(EcdsaKeyUT, checkKeyFail)
   EXPECT_FALSE(ecdsa::checkKey(*key));
 }
 
+TEST(EcdsaKeyUT, getPubKeySize)
+{
+  // GIVEN
+  auto maybeKey = ecdsa::generateKey(ecdsa::Curve::secp112r1);
+  ASSERT_TRUE(maybeKey);
+  auto key = maybeKey.moveValue();
+  
+  // WHEN
+  auto size = ecdsa::getPubKeySize(*key);
+ 
+  // THEN 
+  ASSERT_TRUE(size);
+  EXPECT_EQ(112, *size);
+}
+
+TEST(EcdsaKeyUT, getPubKeySizeOnEmptyKey)
+{
+  // GIVEN
+  auto key = make_unique(EC_KEY_new()); 
+  ASSERT_TRUE(key);
+
+  // WHEN
+  auto size = ecdsa::getPubKeySize(*key);
+   
+  // THEN 
+  ASSERT_FALSE(size);
+}
+
 }}} // namespace so { namespace ut { namespace ecdsa {
