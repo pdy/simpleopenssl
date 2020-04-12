@@ -364,6 +364,7 @@ namespace ecdsa {
   SO_API Result<EC_KEY_uptr> generateKey(Curve curve);
   SO_API Result<Curve> getCurve(const EC_KEY &key);
   SO_API Result<EC_KEY_uptr> getPublic(const EC_KEY &key);
+  SO_API Result<size_t> getPubKeySize(const EC_KEY &key);
  
   SO_API Result<Bytes> signSha1(const Bytes &message, EC_KEY &key);
   SO_API Result<Bytes> signSha224(const Bytes &message, EC_KEY &key);
@@ -2486,6 +2487,16 @@ namespace ecdsa {
       return internal::err<EC_KEY_uptr>();
 
     return internal::ok(std::move(ret));
+  }
+
+  SO_API Result<size_t> getPubKeySize(const EC_KEY &key)
+  {
+    const EC_GROUP *group = EC_KEY_get0_group(&key);
+    if(!group)
+      return internal::err<size_t>();
+
+    const int size = EC_GROUP_get_degree(group);
+    return internal::ok(static_cast<size_t>(size));
   }
 
   SO_API Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &ecKey)
