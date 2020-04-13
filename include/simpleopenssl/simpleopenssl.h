@@ -1632,6 +1632,7 @@ namespace x509 {
   };
 
   SO_API Result<X509_uptr> convertPemToX509(const std::string &pemCert);
+  SO_API Result<std::string> convertX509ToPem(X509 &cert);
   SO_API Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
 
   SO_API Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
@@ -3182,6 +3183,11 @@ namespace x509 {
       return internal::err<X509_uptr>();
 
     return internal::ok(std::move(ret));
+  }
+
+  SO_API Result<std::string> convertX509ToPem(X509 &cert)
+  {
+    return internal::convertToPem(PEM_write_bio_X509, &cert); 
   }
 
   SO_API Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath)

@@ -556,7 +556,8 @@ ZkGENAvDmv+5xVCZELeiWA2PoNV4m/SW6NHrF7gz4MwQssqP9dGMbKPOF/D2nxic
 TnD5WkGMCWpLgqDWWRoOrt6xf0BPWukQBDMHULlZgXzNtoGlEnwztLlnf0I/WWIS
 eBSyDTeFJfopvoqXuws23X486fdKcCAV1n/Nl6y2z+uVvcyTRxY2/jegmV0n0kHf
 gfcKzw==
------END CERTIFICATE-----)";
+-----END CERTIFICATE-----
+)";
 
 const static std::string meaninglessValidPemCert = R"(-----BEGIN CERTIFICATE-----
 MIICiTCCAg+gAwIBAgIQH0evqmIAcFBUTAGem2OZKjAKBggqhkjOPQQDAzCBhTEL
@@ -573,7 +574,8 @@ BBR1cacZSBm8nZ3qQUfflMRId5nTeTAOBgNVHQ8BAf8EBAMCAQYwDwYDVR0TAQH/
 BAUwAwEB/zAKBggqhkjOPQQDAwNoADBlAjEA7wNbeqy3eApyt4jf/7VGFAkK+qDm
 fQjGGoe9GKhzvSbKYAydzpmfz1wPMOG+FDHqAjAU9JM8SaczepBGR7NjfRObTrdv
 GDeAU/7dIOA1mjbRxwG55tzd8/8dLDoWV9mSOdY=
------END CERTIFICATE-----)";
+-----END CERTIFICATE-----
+)";
 
 }}} // namespace so { namespace ut { namespace data {
 
