@@ -358,6 +358,7 @@ namespace ecdsa {
   SO_API Result<Bytes> convertToDer(const Signature &signature); 
   SO_API Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
   SO_API Result<Signature> convertToSignature(const Bytes &derSigBytes);
+  SO_API Result<std::string> convertCurveToString(Curve curve);
 
   SO_API Result<bool> checkKey(const EC_KEY &ecKey);
   SO_API Result<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
@@ -2471,6 +2472,11 @@ namespace ecdsa {
       maybeR.moveValue(),
       maybeS.moveValue(),
     });
+  }
+  
+  SO_API Result<std::string> convertCurveToString(Curve curve)
+  {
+    return nid::getLongName(static_cast<int>(curve));
   }
 
   SO_API Result<EC_KEY_uptr> getPublic(const EC_KEY &key)

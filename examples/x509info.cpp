@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
   }
 
   
-  const std::string sizeStr = [&]{
+  const std::string keyInfo = [&]{
     if(auto rsa = evp::convertToRsa(*pubKey))
     {
       auto key = rsa.moveValue();
@@ -129,13 +129,14 @@ int main(int argc, char *argv[])
     else if(auto ec = evp::convertToEcdsa(*pubKey))
     {
       auto key = ec.moveValue();
-      return "(" + std::to_string(ecdsa::getKeySize(*key).value()) + " bit)";
+      return ecdsa::convertCurveToString(ecdsa::getCurve(*key).value()).value() +
+        " (" + std::to_string(ecdsa::getKeySize(*key).value()) + " bit)";
     }
 
     return std::string(); 
   }();
 
-  log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value() << " " << sizeStr;
+  log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value() << " " << keyInfo;
   logHex(bin2Hex(*pubKeyBytes), 30);
 
   const auto extensions = x509::getExtensions(*cert);

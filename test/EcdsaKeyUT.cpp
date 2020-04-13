@@ -287,4 +287,14 @@ TEST(EcdsaKeyUT, getPubKeySizeOnEmptyKey)
   ASSERT_FALSE(size);
 }
 
+TEST(EcdsaKeyUT, curveToString)
+{
+  const ecdsa::Curve curve = ecdsa::Curve::secp112r2;
+
+  const auto curveName = ecdsa::convertCurveToString(curve);
+
+  ASSERT_TRUE(curveName);
+  EXPECT_EQ("secp112r2", *curveName );
+}
+
 }}} // namespace so { namespace ut { namespace ecdsa {
