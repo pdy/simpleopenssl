@@ -364,7 +364,7 @@ namespace ecdsa {
   SO_API Result<EC_KEY_uptr> generateKey(Curve curve);
   SO_API Result<Curve> getCurve(const EC_KEY &key);
   SO_API Result<EC_KEY_uptr> getPublic(const EC_KEY &key);
-  SO_API Result<size_t> getPubKeySize(const EC_KEY &key);
+  SO_API Result<size_t> getKeySize(const EC_KEY &key);
  
   SO_API Result<Bytes> signSha1(const Bytes &message, EC_KEY &key);
   SO_API Result<Bytes> signSha224(const Bytes &message, EC_KEY &key);
@@ -380,7 +380,7 @@ namespace ecdsa {
 } // namespace ecdsa
 
 namespace evp {
-  enum class PubKeyType
+  enum class KeyType
   {
     NONE  = EVP_PKEY_NONE,
     EC    = EVP_PKEY_EC,
@@ -391,15 +391,15 @@ namespace evp {
 
   SO_API Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
-
   SO_API Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der);
   SO_API Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
   SO_API Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
   SO_API Result<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
-  SO_API std::string convertPubkeyTypeToString(PubKeyType pubKeyType);
+  SO_API std::string convertPubkeyTypeToString(KeyType pubKeyType);
+  SO_API Result<EC_KEY_uptr> convertToEcdsa(EVP_PKEY &key);
+  SO_API Result<RSA_uptr> convertToRsa(EVP_PKEY &key);
 
-  SO_API PubKeyType getKeyType(EVP_PKEY &pubkey);
-  SO_API Result<size_t> getKeySize(const EVP_PKEY &key);
+  SO_API KeyType getKeyType(const EVP_PKEY &pubkey);
 
   SO_API Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   SO_API Result<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
@@ -2490,7 +2490,7 @@ namespace ecdsa {
     return internal::ok(std::move(ret));
   }
 
-  SO_API Result<size_t> getPubKeySize(const EC_KEY &key)
+  SO_API Result<size_t> getKeySize(const EC_KEY &key)
   {
     const EC_GROUP *group = EC_KEY_get0_group(&key);
     if(!group)
@@ -2652,16 +2652,34 @@ namespace evp {
     return internal::convertKeyToDer(pkey, i2d_PUBKEY);
   }
 
-  SO_API std::string convertPubkeyTypeToString(PubKeyType pubKeyType)
+  SO_API std::string convertPubkeyTypeToString(KeyType pubKeyType)
   {
     return nid::getLongName(static_cast<int>(pubKeyType)).value();
   }
 
-  SO_API PubKeyType getKeyType(EVP_PKEY &pubkey)
+  SO_API Result<EC_KEY_uptr> convertToEcdsa(EVP_PKEY &key)
   {
-    return static_cast<PubKeyType>(EVP_PKEY_base_id(&pubkey));
+    auto *ec = EVP_PKEY_get1_EC_KEY(&key);
+    if(!ec)
+      return internal::err<EC_KEY_uptr>();
+
+    return internal::ok(make_unique(ec));
   }
- 
+
+  SO_API Result<RSA_uptr> convertToRsa(EVP_PKEY &key)
+  {
+    auto *rsa = EVP_PKEY_get1_RSA(&key);
+    if(!rsa)
+      return internal::err<RSA_uptr>();
+
+    return internal::ok(make_unique(rsa));
+  }
+
+  SO_API KeyType getKeyType(const EVP_PKEY &pubkey)
+  {
+    return static_cast<KeyType>(EVP_PKEY_base_id(&pubkey));
+  }
+  
   SO_API Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
   { 
     return internal::evpSign(message, EVP_sha1(), privateKey);

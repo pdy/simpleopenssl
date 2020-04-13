@@ -267,7 +267,7 @@ TEST(EcdsaKeyUT, getPubKeySize)
   auto key = maybeKey.moveValue();
   
   // WHEN
-  auto size = ecdsa::getPubKeySize(*key);
+  auto size = ecdsa::getKeySize(*key);
  
   // THEN 
   ASSERT_TRUE(size);
@@ -281,7 +281,7 @@ TEST(EcdsaKeyUT, getPubKeySizeOnEmptyKey)
   ASSERT_TRUE(key);
 
   // WHEN
-  auto size = ecdsa::getPubKeySize(*key);
+  auto size = ecdsa::getKeySize(*key);
    
   // THEN 
   ASSERT_FALSE(size);

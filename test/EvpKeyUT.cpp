@@ -160,7 +160,7 @@ TEST(EvpKeyUT, getKeyType)
   const auto pubKeyType = evp::getKeyType(*pubKey) ;
 
   // THEN
-  EXPECT_EQ(evp::PubKeyType::EC, pubKeyType);
+  EXPECT_EQ(evp::KeyType::EC, pubKeyType);
   EXPECT_EQ("id-ecPublicKey", evp::convertPubkeyTypeToString(pubKeyType));
 }
 
