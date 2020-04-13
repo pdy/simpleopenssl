@@ -19,13 +19,13 @@ LD_LIBS := -pthread $(OPENSSL_LIBS)
 INCLUDES := -I./include/ -isystem./3rd/openssl/include -isystem./3rd/gtest/include
 ROOT_BUILD := ./build
 
-ifeq ($(MAKECMDGOALS),debug)
+ifeq ($(MAKECMDGOALS),release)
+	BUILD = $(ROOT_BUILD)/release
+	CXXFLAGS = $(FLAGS) $(INCLUDES) -O3 -Wall
+else	
 	BUILD = $(ROOT_BUILD)/debug
 	CXXFLAGS = $(FLAGS) $(INCLUDES) -g -Weverything
 	STRIP = echo
-else
-	BUILD = $(ROOT_BUILD)/release
-	CXXFLAGS = $(FLAGS) $(INCLUDES) -O3 -Wall
 endif
 
 OBJ := $(BUILD)/obj
