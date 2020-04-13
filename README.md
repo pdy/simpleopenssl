@@ -5,4 +5,4 @@ Library is header only, so just copy [simpleopenssl.h](https://raw.githubusercon
 * Simple API - no fancy abstractions, no templates, just simple set of functions which get the job done.
 * All heap allocated openssl types encapsulated with unique pointer with stateless deleter.
 * No processing added over openssl that may fail - if you got error, it came from openssl.
-* Clear error handling.
+* Clear, unified error handling WITHOUT EXCEPTIONS.
