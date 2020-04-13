@@ -1933,8 +1933,7 @@ namespace internal {
     const int initStatus = EVP_DigestSignInit(mdCtx.get(), nullptr, evpMd, nullptr, &privateKey);
     if(1 != initStatus)
       return internal::err<Bytes>();
-
-    
+ 
     const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
     if(1 != updateStatus)
       return internal::err<Bytes>();
@@ -2120,7 +2119,6 @@ namespace internal {
         rdlen = BIO_read(bio.get(), bufFirstPos, sizeof(buf));
       } while (rdlen > 0);
     }
-
 
     uint8_t mdbuf[EVP_MAX_MD_SIZE];
     const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
