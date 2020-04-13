@@ -145,7 +145,7 @@ TEST(EvpKeyUT, derToPubKeyConversion_ok)
   ASSERT_TRUE(maybePubKey);
 }
 
-TEST(EvpKeyUT, getPubKeyType)
+TEST(EvpKeyUT, getKeyType)
 {
   // GIVEN
   auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
@@ -157,7 +157,7 @@ TEST(EvpKeyUT, getPubKeyType)
 
   // WHEN
   
-  const auto pubKeyType = evp::getPubkeyType(*pubKey) ;
+  const auto pubKeyType = evp::getKeyType(*pubKey) ;
 
   // THEN
   EXPECT_EQ(evp::PubKeyType::EC, pubKeyType);

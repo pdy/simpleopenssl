@@ -396,9 +396,10 @@ namespace evp {
   SO_API Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
   SO_API Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
   SO_API Result<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
-
-  SO_API PubKeyType getPubkeyType(EVP_PKEY &pubkey);
   SO_API std::string convertPubkeyTypeToString(PubKeyType pubKeyType);
+
+  SO_API PubKeyType getKeyType(EVP_PKEY &pubkey);
+  SO_API Result<size_t> getKeySize(const EVP_PKEY &key);
 
   SO_API Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   SO_API Result<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
@@ -2651,16 +2652,16 @@ namespace evp {
     return internal::convertKeyToDer(pkey, i2d_PUBKEY);
   }
 
-  SO_API PubKeyType getPubkeyType(EVP_PKEY &pubkey)
-  {
-    return static_cast<PubKeyType>(EVP_PKEY_base_id(&pubkey));
-  }
-
   SO_API std::string convertPubkeyTypeToString(PubKeyType pubKeyType)
   {
     return nid::getLongName(static_cast<int>(pubKeyType)).value();
   }
 
+  SO_API PubKeyType getKeyType(EVP_PKEY &pubkey)
+  {
+    return static_cast<PubKeyType>(EVP_PKEY_base_id(&pubkey));
+  }
+ 
   SO_API Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
   { 
     return internal::evpSign(message, EVP_sha1(), privateKey);
