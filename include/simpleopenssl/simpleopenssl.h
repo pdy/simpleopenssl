@@ -2426,13 +2426,13 @@ namespace ecdsa {
     auto maybeS = bignum::convertToBignum(signature.s);
     if(!maybeS)
       return internal::err<Bytes>(maybeS.errorCode());
-
-    auto r = maybeR.moveValue();
-    auto s = maybeS.moveValue();
+ 
     auto sig = make_unique(ECDSA_SIG_new()); 
     if(!sig)
       return internal::err<Bytes>();
 
+    auto r = maybeR.moveValue();
+    auto s = maybeS.moveValue();
     if(1 != ECDSA_SIG_set0(sig.get(), r.release(), s.release()))
       return internal::err<Bytes>();
 
