@@ -1631,6 +1631,9 @@ namespace x509 {
     vx = -1 
   };
 
+  //---- Cerificates----------
+  //----------------------------------------------------------------------------------------------
+
   SO_API Result<X509_uptr> convertPemToX509(const std::string &pemCert);
   SO_API Result<std::string> convertX509ToPem(X509 &cert);
   SO_API Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
@@ -1673,6 +1676,22 @@ namespace x509 {
   SO_API Result<size_t> signSha512(X509 &cert, EVP_PKEY &pkey);  
   
   SO_API Result<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
+
+  
+  //---- Revocation ----------
+  //----------------------------------------------------------------------------------------------
+ 
+  // TODO:
+  // Add UTs for revocation stuff 
+
+  SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
+//  SO_API Result<> getExtensions(X509_CRL &crl);
+  SO_API Result<size_t> getExtensionsCount(X509_CRL &crl);
+  SO_API Result<Info> getIssuer(X509_CRL &crl);
+  SO_API size_t getRevokedCount(X509_CRL &crl);
+//  SO_API Result<std::vector<>> getRevoked(X509_CRL &crl);
+  SO_API Result<Bytes> getSignature(X509_CRL &crl);
+  SO_API std::tuple<Version, long> getVersion(X509_CRL &crl);
  
 } // namespace x509
 
@@ -3572,6 +3591,78 @@ namespace x509 {
       return internal::err();
     
     return internal::ok();
+  }
+
+  SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl)
+  {
+    // both internal pointers and must not be freed
+    const ASN1_BIT_STRING *psig = nullptr;
+    const X509_ALGOR *palg = nullptr;
+    X509_CRL_get0_signature(&crl, &psig, &palg);
+    if(!palg || !psig)
+      return internal::err<ecdsa::Signature>();
+
+    const unsigned char *it = psig->data;
+    const auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &it, static_cast<long>(psig->length)));
+    if(!sig)
+      return internal::err<ecdsa::Signature>();
+
+    // internal pointers
+    const BIGNUM *r,*s;
+    ECDSA_SIG_get0(sig.get(), &r, &s);
+    return internal::ok(ecdsa::Signature{ *bignum::convertToBytes(*r), *bignum::convertToBytes(*s) });
+  }
+  
+  SO_API Result<size_t> getExtensionsCount(X509_CRL &crl)
+  {
+    const int extsCount = X509_CRL_get_ext_count(&crl);
+    if(extsCount < 0)
+      return internal::err<size_t>(); 
+
+    return internal::ok(static_cast<size_t>(extsCount));
+  }
+
+  SO_API Result<Info> getIssuer(X509_CRL &crl)
+  {
+    // this is internal ptr and must not be freed
+    X509_NAME *getIssuer = X509_CRL_get_issuer(&crl);
+    if(!getIssuer)
+      return internal::err<Info>();
+
+    return internal::commonInfo(*getIssuer);
+  }
+
+  SO_API size_t getRevokedCount(X509_CRL &crl)
+  {
+    const int ct = sk_X509_REVOKED_num(X509_CRL_get_REVOKED(&crl));
+    if(0 > ct) // crl stack is null which does not mean error
+      return 0;
+
+    return static_cast<size_t>(ct);
+  }
+  
+  SO_API Result<Bytes> getSignature(X509_CRL &crl)
+  {
+    // both internal pointers and must not be freed
+    const ASN1_BIT_STRING *psig = nullptr;
+    const X509_ALGOR *palg = nullptr;
+    X509_CRL_get0_signature(&crl, &psig, &palg);
+    if(!palg || !psig)
+      return internal::err<Bytes>();
+
+    Bytes rawDerSequence(static_cast<size_t>(psig->length));
+    std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
+
+    return internal::ok(std::move(rawDerSequence));
+  }
+  
+  SO_API std::tuple<Version, long> getVersion(X509_CRL &crl)
+  {
+    const long version = X509_CRL_get_version(&crl);
+    if(3 <= version || -1 >= version)
+      return std::make_tuple(Version::vx, version);
+
+    return std::make_tuple(static_cast<Version>(version), version);
   }
 } // namespace x509
 
