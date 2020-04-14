@@ -199,7 +199,7 @@ TEST(EcdsaKeyUT, curveOf_AgainstPrecalculatedData)
 TEST(EcdsaKeyUT, extractPublicKeyOK)
 {
   // GIVEN
-  auto maybePriv = ecdsa::generateKey(ecdsa::Curve::secp160r2);
+  auto maybePriv = ecdsa::create(ecdsa::Curve::secp160r2);
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
@@ -222,7 +222,7 @@ TEST(EcdsaKeyUT, extractPublicKeyOK)
 TEST(EcdsaKeyUT, extractedPublicKeyCantBeUsedForSign)
 {
   // GIVEN
-  auto maybePriv = ecdsa::generateKey(ecdsa::Curve::secp160r2);
+  auto maybePriv = ecdsa::create(ecdsa::Curve::secp160r2);
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
@@ -242,7 +242,7 @@ TEST(EcdsaKeyUT, extractedPublicKeyCantBeUsedForSign)
 TEST(EcdsaKeyUT, checkKeyOK)
 {
   // GIVEN
-  auto maybeKey = ecdsa::generateKey(ecdsa::Curve::secp112r1);
+  auto maybeKey = ecdsa::create(ecdsa::Curve::secp112r1);
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
   
@@ -262,7 +262,7 @@ TEST(EcdsaKeyUT, checkKeyFail)
 TEST(EcdsaKeyUT, getPubKeySize)
 {
   // GIVEN
-  auto maybeKey = ecdsa::generateKey(ecdsa::Curve::secp112r1);
+  auto maybeKey = ecdsa::create(ecdsa::Curve::secp112r1);
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
   

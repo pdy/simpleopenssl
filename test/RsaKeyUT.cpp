@@ -220,7 +220,7 @@ TEST(RsaKeyUT, derToPubKeyConversion_ok)
 TEST(RsaKeyUT, extractPublicKeyOK)
 {
   // GIVEN
-  auto maybePriv = rsa::generateKey(rsa::KeyBits::_2048_);
+  auto maybePriv = rsa::create(rsa::KeyBits::_2048_);
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
@@ -254,7 +254,7 @@ TEST(RsaKeyUT, extractPublicPartFromFreshStructureShouldFail)
 TEST(RsaKeyUT, extractedPublicKeyCantBeUsedForSign)
 {
   // GIVEN
-  auto maybePriv = rsa::generateKey(rsa::KeyBits::_2048_);
+  auto maybePriv = rsa::create(rsa::KeyBits::_2048_);
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
@@ -274,7 +274,7 @@ TEST(RsaKeyUT, extractedPublicKeyCantBeUsedForSign)
 TEST(RsaKeyUT, checkKeyOK)
 {
   // GIVEN
-  auto maybeKey = rsa::generateKey(rsa::KeyBits::_2048_);
+  auto maybeKey = rsa::create(rsa::KeyBits::_2048_);
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
  
@@ -328,7 +328,7 @@ TEST(RsaKeyUT, checkKeyOnNewlyCreatedStructureShouldFail)
 TEST(RsaKeyUT, getKeyBitsOK)
 {
   // GIVEN
-  auto maybeKey = rsa::generateKey(rsa::KeyBits::_2048_);
+  auto maybeKey = rsa::create(rsa::KeyBits::_2048_);
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
  

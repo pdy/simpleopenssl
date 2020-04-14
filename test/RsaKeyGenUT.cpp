@@ -20,7 +20,7 @@ TEST_P(RsaKeyGenUT, shouldGenerateAndPassChecks)
   const auto input = GetParam();
   
   // WHEN
-  auto maybeKey = rsa::generateKey(input.keyBits, input.exponent);
+  auto maybeKey = rsa::create(input.keyBits, input.exponent);
   ASSERT_TRUE(maybeKey);
   
   auto key = maybeKey.moveValue();

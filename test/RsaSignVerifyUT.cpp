@@ -93,7 +93,7 @@ TEST_P(RsaSignVerifyUT, signVerify_ApiIntegrity)
   const SignVerifyInput input { GetParam() };
   std::vector<uint8_t> data(256);
   std::iota(data.begin(), data.end(), 0); 
-  auto key = rsa::generateKey(rsa::KeyBits::_2048_);
+  auto key = rsa::create(rsa::KeyBits::_2048_);
   ASSERT_TRUE(key);
 
   auto keyUptr = key.moveValue();
@@ -113,7 +113,7 @@ TEST_P(RsaSignVerifyUT, signVerify_IntegrityWithEvp)
   const SignVerifyInput input { GetParam() };
   std::vector<uint8_t> data(256);
   std::iota(data.begin(), data.end(), 0); 
-  auto key = rsa::generateKey(rsa::KeyBits::_2048_);
+  auto key = rsa::create(rsa::KeyBits::_2048_);
   ASSERT_TRUE(key);
 
   auto keyUptr = key.moveValue();

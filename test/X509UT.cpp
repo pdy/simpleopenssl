@@ -258,7 +258,7 @@ TEST(X509UT, getSetPubKeyWithGeneratedKey)
 
   // 1.
   auto cert = ::so::make_unique(X509_new());
-  auto maybeKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::sect239k1);
+  auto maybeKey = ::so::ecdsa::create(::so::ecdsa::Curve::sect239k1);
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
   auto maybePub = ::so::ecdsa::getPublic(*key);
@@ -348,7 +348,7 @@ TEST(X509UT, certSignSha256VerifyAPIIntegrity)
   auto cert = ::so::make_unique(X509_new());
   ASSERT_TRUE(x509::setSubject(*cert, name));
   ASSERT_TRUE(x509::setIssuer(*cert, name));
-  auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
+  auto maybeEcKey = ::so::ecdsa::create(::so::ecdsa::Curve::secp384r1);
   ASSERT_TRUE(maybeEcKey);
   auto maybeKey = ::so::ecdsa::convertToEvp(*maybeEcKey.moveValue());
   ASSERT_TRUE(maybeKey);
@@ -373,7 +373,7 @@ TEST(X509UT, certSignSha1VerifyAPIIntegrity)
   auto cert = ::so::make_unique(X509_new());
   ASSERT_TRUE(x509::setSubject(*cert, name));
   ASSERT_TRUE(x509::setIssuer(*cert, name));
-  auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::secp384r1);
+  auto maybeEcKey = ::so::ecdsa::create(::so::ecdsa::Curve::secp384r1);
   ASSERT_TRUE(maybeEcKey);
   auto maybeKey = ::so::ecdsa::convertToEvp(*maybeEcKey.moveValue());
   ASSERT_TRUE(maybeKey);
@@ -398,7 +398,7 @@ TEST(X509UT, certSignSha384VerifyAPIIntegrity)
   auto cert = ::so::make_unique(X509_new());
   ASSERT_TRUE(x509::setSubject(*cert, name));
   ASSERT_TRUE(x509::setIssuer(*cert, name));
-  auto maybeEcKey = ::so::ecdsa::generateKey(::so::ecdsa::Curve::sect193r1);
+  auto maybeEcKey = ::so::ecdsa::create(::so::ecdsa::Curve::sect193r1);
   ASSERT_TRUE(maybeEcKey);
   auto maybeKey = ::so::ecdsa::convertToEvp(*maybeEcKey.moveValue());
   ASSERT_TRUE(maybeKey);

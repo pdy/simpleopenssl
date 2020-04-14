@@ -295,7 +295,9 @@ namespace asn1 {
   SO_API Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
 } // namepsace asn1
 
-namespace bignum { 
+namespace bignum {
+  SO_API BIGNUM_uptr create();
+
   SO_API Result<BIGNUM_uptr> convertToBignum(const Bytes &bt);
   SO_API Result<Bytes> convertToBytes(const BIGNUM &bn);
   
@@ -345,6 +347,10 @@ namespace ecdsa {
     inline bool operator !=(const Signature &other) const; 
   };
 
+
+  SO_API EC_KEY_uptr create();
+  SO_API Result<EC_KEY_uptr> create(Curve curve);
+
   SO_API Result<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub);
   SO_API Result<std::string> convertPrivKeyToPem(EC_KEY &ec);
@@ -362,7 +368,6 @@ namespace ecdsa {
 
   SO_API Result<bool> checkKey(const EC_KEY &ecKey);
   SO_API Result<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
-  SO_API Result<EC_KEY_uptr> generateKey(Curve curve);
   SO_API Result<Curve> getCurve(const EC_KEY &key);
   SO_API Result<EC_KEY_uptr> getPublic(const EC_KEY &key);
   SO_API Result<size_t> getKeySize(const EC_KEY &key);
@@ -1531,6 +1536,9 @@ namespace rsa {
     _65537_ = RSA_F4
   };
 
+  SO_API RSA_uptr create(); 
+  SO_API Result<RSA_uptr> create(KeyBits keySize, Exponent exponent = Exponent::_65537_);
+
   SO_API Result<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Result<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
   SO_API Result<std::string> convertPrivKeyToPem(RSA &rsa);
@@ -1544,7 +1552,6 @@ namespace rsa {
   SO_API Result<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
   SO_API Result<bool> checkKey(RSA &rsa);
  
-  SO_API Result<RSA_uptr> generateKey(KeyBits keySize, Exponent exponent = Exponent::_65537_);
   SO_API Result<KeyBits> getKeyBits(RSA &rsa);
   SO_API Result<RSA_uptr> getPublic(RSA &rsa);
 
@@ -1633,6 +1640,7 @@ namespace x509 {
 
   //---- Cerificates----------
   //----------------------------------------------------------------------------------------------
+  SO_API X509_uptr create();
 
   SO_API Result<X509_uptr> convertPemToX509(const std::string &pemCert);
   SO_API Result<std::string> convertX509ToPem(X509 &cert);
@@ -1683,7 +1691,7 @@ namespace x509 {
  
   // TODO:
   // Add UTs for revocation stuff 
-
+  SO_API X509_CRL_uptr createCrl();
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
 //  SO_API Result<> getExtensions(X509_CRL &crl);
   SO_API Result<size_t> getExtensionsCount(X509_CRL &crl);
@@ -2315,6 +2323,11 @@ namespace asn1 {
 } // namespace asn1
 
 namespace bignum {
+  SO_API BIGNUM_uptr create()
+  {
+    return make_unique(BN_new());
+  }
+
   SO_API Result<Bytes> convertToBytes(const BIGNUM &bn)
   {
     const auto sz = getByteLen(bn);
@@ -2541,7 +2554,12 @@ namespace ecdsa {
     return internal::ok(std::move(evpKey));
   }
 
-  SO_API Result<EC_KEY_uptr> generateKey(Curve curve)
+  SO_API EC_KEY_uptr create()
+  {
+    return make_unique(EC_KEY_new());
+  }
+
+  SO_API Result<EC_KEY_uptr> create(Curve curve)
   {
     const int nidCurve = static_cast<int>(curve);
     auto key = make_unique(EC_KEY_new_by_curve_name(nidCurve));
@@ -2998,7 +3016,12 @@ namespace rsa {
     return internal::ok(true);
   }
 
-  SO_API Result<RSA_uptr> generateKey(KeyBits keySize, Exponent exponent)
+  SO_API RSA_uptr create()
+  {
+    return make_unique(RSA_new());
+  }
+
+  SO_API Result<RSA_uptr> create(KeyBits keySize, Exponent exponent)
   {
     auto bnE = make_unique(BN_new());
     if(1 != BN_set_word(bnE.get(), static_cast<unsigned long>(exponent)))
@@ -3188,6 +3211,11 @@ namespace x509 {
       return true;
     
     return false;
+  }
+
+  SO_API X509_uptr create()
+  {
+    return make_unique(X509_new());
   }
 
   SO_API Result<X509_uptr> convertPemToX509(const std::string &pemCert)
@@ -3591,6 +3619,11 @@ namespace x509 {
       return internal::err();
     
     return internal::ok();
+  }
+
+  SO_API X509_CRL_uptr createCrl()
+  {
+    return make_unique(X509_CRL_new());
   }
 
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl)

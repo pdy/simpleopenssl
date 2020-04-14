@@ -18,7 +18,7 @@ TEST_P(EcdsaKeyGenUT, shouldExtractCurveInfoFromGeneratedKey)
 {
   const auto input = GetParam();
   
-  auto maybeKey = ecdsa::generateKey(input.curve);
+  auto maybeKey = ecdsa::create(input.curve);
   ASSERT_TRUE(maybeKey);
   
   auto key = maybeKey.moveValue();
