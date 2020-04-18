@@ -1702,6 +1702,7 @@ namespace x509 {
   SO_API X509_CRL_uptr createCrl();
 
   SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
+  SO_API Result<std::string> convertCrlToPem(X509_CRL &crl);
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
 //  SO_API Result<> getExtensions(X509_CRL &crl);
   SO_API Result<size_t> getExtensionsCount(X509_CRL &crl);
@@ -3684,6 +3685,11 @@ namespace x509 {
       return internal::err<X509_CRL_uptr>();
 
     return internal::ok(std::move(ret));
+  }
+  
+  SO_API Result<std::string> convertCrlToPem(X509_CRL &crl)
+  {
+    return internal::convertToPem(PEM_write_bio_X509_CRL, &crl); 
   }
 
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl)

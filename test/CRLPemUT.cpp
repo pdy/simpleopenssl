@@ -25,8 +25,7 @@ TEST(CRLUT, pemStringToCRLShouldSuccess)
   EXPECT_TRUE(crl);
 }
 
-/*
-TEST(X509UT, x509ToPem)
+TEST(CRLUT, crlToPem)
 {
   // GIVEN
   const auto pemCrl = data::validPemCRL;
@@ -44,5 +43,4 @@ TEST(X509UT, x509ToPem)
   ASSERT_TRUE(actual);
   EXPECT_EQ(pemCrl, *actual);
 }
-*/
 }}}
