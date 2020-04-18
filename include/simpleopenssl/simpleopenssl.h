@@ -1701,7 +1701,7 @@ namespace x509 {
   // Add UTs for revocation stuff 
   SO_API X509_CRL_uptr createCrl();
 
-//  SO_API Result<X509_CRL_uptr> convertPemToCRL(std::string &pemCrl);
+  SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
 //  SO_API Result<> getExtensions(X509_CRL &crl);
   SO_API Result<size_t> getExtensionsCount(X509_CRL &crl);
@@ -3670,6 +3670,20 @@ namespace x509 {
   SO_API X509_CRL_uptr createCrl()
   {
     return make_unique(X509_CRL_new());
+  }
+
+  SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl)
+  {
+    BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
+
+    if(0 >= BIO_write(bio.get(), pemCrl.c_str(), static_cast<int>(pemCrl.length())))
+      return internal::err<X509_CRL_uptr>(); 
+
+    auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));
+    if(!ret)
+      return internal::err<X509_CRL_uptr>();
+
+    return internal::ok(std::move(ret));
   }
 
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl)
