@@ -25,6 +25,7 @@
 */
 
 // openssl
+#include <iterator>
 #include <openssl/asn1.h>
 #include <openssl/ssl.h>
 #include <openssl/ec.h>
@@ -288,6 +289,7 @@ namespace asn1 {
   SO_API Result<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form = Form::NAME);
   SO_API Result<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time);
   SO_API Result<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time);
+  SO_API Result<std::string> convertToISO8601(const ASN1_TIME &asnTime);
 
   SO_API Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
   SO_API Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
@@ -1638,6 +1640,12 @@ namespace x509 {
     vx = -1 
   };
 
+  struct Revoked
+  {
+    std::string dateISO860;
+    Bytes serialNumber;
+  };
+
   //---- Cerificates----------
   //----------------------------------------------------------------------------------------------
   SO_API X509_uptr create();
@@ -1692,12 +1700,14 @@ namespace x509 {
   // TODO:
   // Add UTs for revocation stuff 
   SO_API X509_CRL_uptr createCrl();
+
+//  SO_API Result<X509_CRL_uptr> convertPemToCRL(std::string &pemCrl);
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
 //  SO_API Result<> getExtensions(X509_CRL &crl);
   SO_API Result<size_t> getExtensionsCount(X509_CRL &crl);
   SO_API Result<Info> getIssuer(X509_CRL &crl);
   SO_API size_t getRevokedCount(X509_CRL &crl);
-//  SO_API Result<std::vector<>> getRevoked(X509_CRL &crl);
+  SO_API Result<std::vector<Revoked>> getRevoked(X509_CRL &crl);
   SO_API Result<Bytes> getSignature(X509_CRL &crl);
   SO_API std::tuple<Version, long> getVersion(X509_CRL &crl);
  
@@ -2214,6 +2224,29 @@ namespace internal {
     return internal::ok(std::move(ret));
   }
 
+  SO_PRV x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
+  {
+    const X509_REVOKED *revoked = sk_X509_REVOKED_value(revStack, index);
+    if(!revoked)
+      return {};
+
+    const ASN1_INTEGER *serial = X509_REVOKED_get0_serialNumber(revoked);
+    const ASN1_TIME *time = X509_REVOKED_get0_revocationDate(revoked);
+    if(!serial || !time)
+      return {};
+
+    Bytes retSerial;
+    retSerial.reserve(static_cast<size_t>(serial->length));
+    std::copy_n(serial->data, serial->length, std::back_inserter(retSerial));
+
+    const auto timeStr = asn1::convertToISO8601(*time);
+
+    return x509::Revoked{
+      (timeStr ? *timeStr : ""),
+      retSerial
+    };
+  }
+
 } //namespace internal
 
 SO_API void init()
@@ -2274,7 +2307,20 @@ namespace asn1 {
 
     return internal::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
   }
-  
+ 
+  SO_API Result<std::string> convertToISO8601(const ASN1_TIME &asnTime)
+  {
+    constexpr size_t size = 256; 
+    auto bio = make_unique(BIO_new(BIO_s_mem()));
+    if(0 >= ASN1_TIME_print(bio.get(), &asnTime))
+      return internal::err<std::string>(); 
+
+    char buff[size];
+    BIO_gets(bio.get(), buff, size);
+
+    return internal::ok(std::string(buff));
+  }
+
   SO_API Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
   {
     auto maybeBn = bignum::convertToBignum(bt);
@@ -3672,6 +3718,24 @@ namespace x509 {
       return 0;
 
     return static_cast<size_t>(ct);
+  }
+  
+  SO_API Result<std::vector<x509::Revoked>> getRevoked(X509_CRL &crl)
+  {
+    using RetType = std::vector<x509::Revoked>;
+    const size_t sz = x509::getRevokedCount(crl);
+    if(0 == sz)
+      return internal::ok(RetType{});
+
+    STACK_OF(X509_REVOKED) *revokedStack = X509_CRL_get_REVOKED(&crl);
+    if(!revokedStack)
+        return internal::err<RetType>();
+
+    RetType ret(sz);
+    int index = 0;
+    std::generate_n(ret.begin(), sz, [&revokedStack, &index]{return internal::getRevoked(revokedStack, index++);});
+
+    return internal::ok(std::move(ret));
   }
   
   SO_API Result<Bytes> getSignature(X509_CRL &crl)
