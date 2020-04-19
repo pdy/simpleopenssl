@@ -7,7 +7,7 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
-TEST(CRLUT, pemStringToCRLShouldFail)
+TEST(CRLPemUT, pemStringToCRLShouldFail)
 {
   // WHEN
   auto crl = x509::convertPemToCRL(data::invalidPemCRL);
@@ -16,7 +16,7 @@ TEST(CRLUT, pemStringToCRLShouldFail)
   EXPECT_FALSE(crl);
 }
 
-TEST(CRLUT, pemStringToCRLShouldSuccess)
+TEST(CRLPemUT, pemStringToCRLShouldSuccess)
 {
   // WHEN
   auto crl = x509::convertPemToCRL(data::validPemCRL);
@@ -25,7 +25,7 @@ TEST(CRLUT, pemStringToCRLShouldSuccess)
   EXPECT_TRUE(crl);
 }
 
-TEST(CRLUT, crlToPem)
+TEST(CRLPemUT, crlToPem)
 {
   // GIVEN
   const auto pemCrl = data::validPemCRL;
