@@ -67,7 +67,7 @@ TEST(CRLUT, getIssuer)
   ASSERT_TRUE(issuer);
   EXPECT_EQ("Sample Signer Cert", issuer->commonName);
   EXPECT_EQ("Sample Signer Organization", issuer->organizationName);
-//  EXPECT_EQ("Sample Signer Cert", issuer->);
+  EXPECT_EQ("Sample Signer Unit", issuer->organizationalUnitName);
 
 }
 
