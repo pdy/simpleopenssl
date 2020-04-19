@@ -55,8 +55,8 @@ runUT:
 OBJS_UT := $(OBJ)/Asn1UT.o $(OBJ)/EcdsaSignVerifyUT.o $(OBJ)/EvpSignVerifyUT.o $(OBJ)/EcdsaKeyUT.o \
 	$(OBJ)/EcdsaKeyUT.o $(OBJ)/EcdsaKeyGenUT.o $(OBJ)/EcdsaSignatureConvertersUT.o $(OBJ)/EvpKeyUT.o \
 	$(OBJ)/HashUT.o $(OBJ)/HashBytesUT.o $(OBJ)/HashFileUT.o $(OBJ)/X509UT.o $(OBJ)/X509PemUT.o $(OBJ)/CRLPemUT.o \
-	$(OBJ)/X509CertExtensionsUT.o $(OBJ)/BignumUT.o $(OBJ)/RsaKeyUT.o $(OBJ)/RsaKeyGenUT.o $(OBJ)/RsaSignVerifyUT.o \
-	$(OBJ)/ResultUT.o $(OBJ)/NidUT.o
+	$(OBJ)/CRLUT.o $(OBJ)/X509CertExtensionsUT.o $(OBJ)/BignumUT.o $(OBJ)/RsaKeyUT.o $(OBJ)/RsaKeyGenUT.o \
+	$(OBJ)/RsaSignVerifyUT.o $(OBJ)/ResultUT.o $(OBJ)/NidUT.o
 
 $(DESTBIN)/UnitTests: $(OBJS_UT)
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
