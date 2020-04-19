@@ -36,12 +36,13 @@ TEST(CRLUT, revCount)
   EXPECT_EQ(5, revCount);
 }
 
-TEST(CRLUT, getRevoked)
+TEST(CRLUT, getRevokedCount)
 {
   // GIVEN 
   auto mcrl = x509::convertPemToCRL(data::validPemCRL);
   ASSERT_TRUE(mcrl);
-  auto crl = mcrl.moveValue();
+  auto crl = mcrl.moveValue(); 
+
 
   // WHEN
   const auto revoked = x509::getRevoked(*crl);
@@ -49,6 +50,25 @@ TEST(CRLUT, getRevoked)
   // THEN 
   ASSERT_TRUE(revoked);
   EXPECT_EQ(5, revoked->size());
+}
+
+TEST(CRLUT, getIssuer)
+{
+  // GIVEN 
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  ASSERT_TRUE(mcrl);
+  auto crl = mcrl.moveValue(); 
+
+
+  // WHEN
+  const auto issuer = x509::getIssuer(*crl);
+ 
+  // THEN 
+  ASSERT_TRUE(issuer);
+  EXPECT_EQ("Sample Signer Cert", issuer->commonName);
+  EXPECT_EQ("Sample Signer Organization", issuer->organizationName);
+//  EXPECT_EQ("Sample Signer Cert", issuer->);
+
 }
 
 }}} // namespace so { namespace ut { namespace x509 {
