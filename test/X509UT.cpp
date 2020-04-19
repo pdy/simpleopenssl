@@ -17,6 +17,7 @@ TEST(X509UT, getIssuerOK)
   ASSERT_TRUE(X509_NAME_add_entry_by_NID(issuer.get(), NID_countryName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("UK"), -1, -1, 0));
   ASSERT_TRUE(X509_NAME_add_entry_by_NID(issuer.get(), NID_organizationName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Unorganized"), -1, -1, 0));
   ASSERT_TRUE(X509_NAME_add_entry_by_NID(issuer.get(), NID_commonName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Joe Briggs"), -1, -1, 0));
+  ASSERT_TRUE(X509_NAME_add_entry_by_NID(issuer.get(), NID_organizationalUnitName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Sample Unit Name"), -1, -1, 0));
 
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(X509_set_issuer_name(cert.get(), issuer.get()));
@@ -28,6 +29,7 @@ TEST(X509UT, getIssuerOK)
   ASSERT_TRUE(actual);
   EXPECT_EQ("UK", (*actual).countryName);
   EXPECT_EQ("Unorganized", (*actual).organizationName);
+  EXPECT_EQ("Sample Unit Name", (*actual).organizationalUnitName);
   EXPECT_EQ("Joe Briggs", (*actual).commonName);
   EXPECT_EQ("", (*actual).localityName);
   EXPECT_EQ("", (*actual).stateOrProvinceName);
@@ -80,10 +82,11 @@ TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
 TEST(X509UT, setGetIssuerAPIIntegrityOK)
 {
   // GIVEN
-  x509::Info info;
+  x509::Issuer info;
   info.commonName = "Simple Joe";
   info.countryName = "US";
   info.stateOrProvinceName = "Utah";
+  info.organizationalUnitName = "Sample Unit Name";
 
   auto cert = ::so::make_unique(X509_new());
 
@@ -100,7 +103,7 @@ TEST(X509UT, setGetIssuerAPIIntegrityOK)
 TEST(X509UT, setGetSubjectAPIIntegrityOK)
 {
   // GIVEN
-  x509::Info info;
+  x509::Subject info;
   info.commonName = "Simple Joe";
   info.countryName = "US";
   info.stateOrProvinceName = "Utah";
@@ -342,7 +345,7 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
 TEST(X509UT, certSignSha256VerifyAPIIntegrity)
 {
   // GIVEN
-  x509::Info name;
+  x509::Subject name;
   name.commonName = "CommonName";
   name.organizationName = "simpleopenssl";
   auto cert = ::so::make_unique(X509_new());
@@ -367,7 +370,7 @@ TEST(X509UT, certSignSha256VerifyAPIIntegrity)
 TEST(X509UT, certSignSha1VerifyAPIIntegrity)
 {
   // GIVEN
-  x509::Info name;
+  x509::Subject name;
   name.commonName = "CommonName";
   name.organizationName = "simpleopenssl";
   auto cert = ::so::make_unique(X509_new());
@@ -392,7 +395,7 @@ TEST(X509UT, certSignSha1VerifyAPIIntegrity)
 TEST(X509UT, certSignSha384VerifyAPIIntegrity)
 {
   // GIVEN
-  x509::Info name;
+  x509::Subject name;
   name.commonName = "CommonName";
   name.organizationName = "simpleopenssl";
   auto cert = ::so::make_unique(X509_new());

@@ -176,6 +176,46 @@ struct X509Extension
   }
 };
 
+struct X509Name
+{
+  // as of https://tools.ietf.org/html/rfc2459
+  std::string commonName;
+  std::string surname;
+  std::string countryName;
+  std::string localityName;
+  std::string stateOrProvinceName;
+  std::string organizationName;
+  std::string organizationalUnitName;
+  std::string title;
+  std::string name;
+  std::string givenName;
+  std::string initials;
+  std::string generationQualifier;
+  std::string dnQualifier;
+
+  inline bool operator ==(const X509Name &other) const
+  {
+    return commonName == other.commonName
+      && surname == other.surname
+      && countryName == other.countryName
+      && localityName == other.localityName
+      && stateOrProvinceName == other.stateOrProvinceName
+      && organizationName == other.organizationName
+      && organizationalUnitName == other.organizationalUnitName
+      && title == other.title
+      && name == other.name
+      && givenName == other.givenName
+      && initials == other.initials
+      && generationQualifier == other.generationQualifier
+      && dnQualifier == other.dnQualifier;
+  }
+
+  inline bool operator !=(const X509Name &other) const
+  {
+    return !(*this == other);
+  }
+};
+
 SO_PRV std::string errCodeToString(unsigned long errCode);
 } //namespace internal
 
@@ -1608,18 +1648,8 @@ namespace x509 {
   };
  
   using CertExtension = internal::X509Extension<CertExtensionId>;
-
-  struct Info
-  {
-    std::string commonName;
-    std::string countryName;
-    std::string localityName;
-    std::string organizationName;
-    std::string stateOrProvinceName;
-
-    inline bool operator ==(const Info &other) const;
-    inline bool operator !=(const Info &other) const;
-  };
+  using Issuer = internal::X509Name;
+  using Subject = internal::X509Name;
 
   struct Validity
   {
@@ -1659,14 +1689,14 @@ namespace x509 {
   SO_API Result<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical);
   SO_API Result<std::vector<CertExtension>> getExtensions(const X509 &cert);
   SO_API Result<size_t> getExtensionsCount(const X509 &cert);
-  SO_API Result<Info> getIssuer(const X509 &cert);
+  SO_API Result<Issuer> getIssuer(const X509 &cert);
   SO_API Result<std::string> getIssuerString(const X509 &cert); 
   SO_API Result<EVP_PKEY_uptr> getPubKey(X509 &cert);
   SO_API nid::Nid getPubKeyAlgorithm(X509 &cert);
   SO_API Result<Bytes> getSerialNumber(X509 &cert);
   SO_API Result<Bytes> getSignature(const X509 &cert);
   SO_API nid::Nid getSignatureAlgorithm(const X509 &cert);
-  SO_API Result<Info> getSubject(const X509 &cert);
+  SO_API Result<Subject> getSubject(const X509 &cert);
   SO_API Result<std::string> getSubjectString(const X509 &cert);
   SO_API Result<Validity> getValidity(const X509 &cert);
   SO_API std::tuple<Version,long> getVersion(const X509 &cert);
@@ -1678,10 +1708,10 @@ namespace x509 {
   SO_API Result<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical = false);
   SO_API Result<void> setExtension(X509 &cert, const CertExtension &extension); 
   SO_API Result<void> setIssuer(X509 &cert, const X509 &rootCert);
-  SO_API Result<void> setIssuer(X509 &cert, const Info &commonInfo);
+  SO_API Result<void> setIssuer(X509 &cert, const Issuer &issuer);
   SO_API Result<void> setPubKey(X509 &cert, EVP_PKEY &pkey);
   SO_API Result<void> setSerial(X509 &cert, const Bytes &bytes);
-  SO_API Result<void> setSubject(X509 &cert, const Info &commonInfo);
+  SO_API Result<void> setSubject(X509 &cert, const Subject &subject);
   SO_API Result<void> setValidity(X509 &cert, const Validity &validity);
   SO_API Result<void> setVersion(X509 &cert, Version version);
   SO_API Result<void> setVersion(X509 &cert, long version);
@@ -1706,7 +1736,7 @@ namespace x509 {
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
 //  SO_API Result<> getExtensions(X509_CRL &crl);
   SO_API Result<size_t> getExtensionsCount(X509_CRL &crl);
-  SO_API Result<Info> getIssuer(X509_CRL &crl);
+  SO_API Result<Issuer> getIssuer(X509_CRL &crl);
   SO_API size_t getRevokedCount(X509_CRL &crl);
   SO_API Result<std::vector<Revoked>> getRevoked(X509_CRL &crl);
   SO_API Result<Bytes> getSignature(X509_CRL &crl);
@@ -1852,20 +1882,20 @@ namespace internal {
     return internal::ok(std::string(dataStart, static_cast<size_t>(nameLength)));
   }
 
-  SO_PRV Result<x509::Info> commonInfo(X509_NAME &name)
+  SO_PRV Result<internal::X509Name> commonInfo(X509_NAME &name)
   {
-    const auto error = [](unsigned long errCode){ return internal::err<x509::Info>(errCode); }; 
+    const auto error = [](unsigned long errCode){ return internal::err<internal::X509Name>(errCode); }; 
     const auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName)
       return error(commonName.errorCode());
 
+    const auto surname = nameEntry2String(name, NID_surname);
+    if(!surname)
+      return error(surname.errorCode());
+      
     const auto countryName = nameEntry2String(name, NID_countryName);
     if(!countryName)
       return error(countryName.errorCode());
-
-    const auto organizationName = nameEntry2String(name, NID_organizationName);
-    if(!organizationName)
-      return error(organizationName.errorCode());
 
     const auto localityName = nameEntry2String(name, NID_localityName);
     if(!localityName)
@@ -1875,16 +1905,56 @@ namespace internal {
     if(!stateOrProvinceName)
       return error(stateOrProvinceName.errorCode());
 
-    return internal::ok<x509::Info>({ 
+    const auto organizationName = nameEntry2String(name, NID_organizationName);
+    if(!organizationName)
+      return error(organizationName.errorCode());
+
+    const auto organizationalUnitName = nameEntry2String(name, NID_organizationalUnitName);
+    if(!organizationalUnitName)
+      return error(organizationalUnitName.errorCode());
+ 
+    const auto title = nameEntry2String(name, NID_title);
+    if(!title)
+      return error(title.errorCode());
+
+    const auto nameE = nameEntry2String(name, NID_name);
+    if(!nameE)
+      return error(nameE.errorCode());
+
+    const auto givenName = nameEntry2String(name, NID_givenName);
+    if(!givenName)
+      return error(givenName.errorCode());
+
+    const auto initials = nameEntry2String(name, NID_initials);
+    if(!initials)
+      return error(initials.errorCode());
+
+    const auto generationQualifier = nameEntry2String(name, NID_generationQualifier);
+    if(!generationQualifier)
+      return error(generationQualifier.errorCode());
+
+    const auto dnQualifier = nameEntry2String(name, NID_dnQualifier);
+    if(!dnQualifier)
+      return error(dnQualifier.errorCode());
+
+    return internal::ok<internal::X509Name>({ 
         *commonName,
+        *surname,
         *countryName,
         *localityName,
+        *stateOrProvinceName,
         *organizationName,
-        *stateOrProvinceName
+        *organizationalUnitName,
+        *title,
+        *nameE,
+        *givenName,
+        *initials,
+        *generationQualifier,
+        *dnQualifier
     });
   }
 
-  SO_PRV Result<X509_NAME_uptr> infoToX509Name(const x509::Info &info)
+  SO_PRV Result<X509_NAME_uptr> infoToX509Name(const internal::X509Name &info)
   {
     auto name = make_unique(X509_NAME_new()); 
 
@@ -1899,16 +1969,40 @@ namespace internal {
     if(!append(name.get(), NID_commonName, info.commonName))
       return err();
 
+    if(!append(name.get(), NID_surname, info.surname))
+      return err();
+
     if(!append(name.get(), NID_countryName, info.countryName))
       return err();
 
     if(!append(name.get(), NID_localityName, info.localityName))
       return err();
 
+    if(!append(name.get(), NID_stateOrProvinceName, info.stateOrProvinceName))
+      return err();
+
     if(!append(name.get(), NID_organizationName, info.organizationName))
       return err();
 
-    if(!append(name.get(), NID_stateOrProvinceName, info.stateOrProvinceName))
+     if(!append(name.get(), NID_organizationalUnitName, info.organizationalUnitName))
+      return err();
+
+    if(!append(name.get(), NID_title, info.title))
+      return err();
+
+    if(!append(name.get(), NID_name, info.name))
+      return err();
+
+    if(!append(name.get(), NID_givenName, info.givenName))
+      return err();
+
+    if(!append(name.get(), NID_initials, info.initials))
+      return err();
+
+    if(!append(name.get(), NID_generationQualifier, info.generationQualifier))
+      return err();
+
+    if(!append(name.get(), NID_dnQualifier, info.dnQualifier))
       return err();
 
     return internal::ok(std::move(name));
@@ -3197,18 +3291,7 @@ namespace rsa {
   }
 } // namespace rsa
 
-namespace x509 {
-  inline bool Info::operator ==(const Info &other) const
-  {
-    return std::tie( commonName, countryName, organizationName, localityName, stateOrProvinceName) ==
-      std::tie(other.commonName, other.countryName, other.organizationName, other.localityName, other.stateOrProvinceName); 
-  }
-
-  inline bool Info::operator !=(const Info &other) const
-  {
-    return !(*this == other);
-  }
- 
+namespace x509 { 
   inline bool Validity::operator==(const Validity &other) const
   {
     return std::tie(notBefore, notAfter) == std::tie(other.notBefore, other.notAfter);
@@ -3219,12 +3302,12 @@ namespace x509 {
     return !(*this == other);
   }
 
-  SO_API Result<Info> getIssuer(const X509 &cert)
+  SO_API Result<Issuer> getIssuer(const X509 &cert)
   {
     // this is internal ptr and must not be freed
     X509_NAME *getIssuer = X509_get_issuer_name(&cert);
     if(!getIssuer)
-      return internal::err<Info>();
+      return internal::err<Issuer>();
 
     return internal::commonInfo(*getIssuer); 
   }
@@ -3453,12 +3536,12 @@ namespace x509 {
     return internal::ok(static_cast<size_t>(extsCount));
   }
 
-  SO_API Result<Info> getSubject(const X509 &cert)
+  SO_API Result<Subject> getSubject(const X509 &cert)
   {
     // this is internal ptr and must not be freed
     X509_NAME *subject = X509_get_subject_name(&cert);
     if(!subject)
-      return internal::err<Info>();
+      return internal::err<Subject>();
 
     return internal::commonInfo(*subject); 
   }
@@ -3586,7 +3669,7 @@ namespace x509 {
     return internal::ok();
   }
 
-  SO_API Result<void> setIssuer(X509 &cert, const Info &info)
+  SO_API Result<void> setIssuer(X509 &cert, const Issuer &info)
   {
     auto maybeIssuer = internal::infoToX509Name(info);
     if(!maybeIssuer)
@@ -3620,7 +3703,7 @@ namespace x509 {
     return internal::ok();
   }
 
-  SO_API Result<void> setSubject(X509 &cert, const Info &info)
+  SO_API Result<void> setSubject(X509 &cert, const Subject &info)
   {
     auto maybeSubject = internal::infoToX509Name(info); 
     if(!maybeSubject)
@@ -3721,12 +3804,12 @@ namespace x509 {
     return internal::ok(static_cast<size_t>(extsCount));
   }
 
-  SO_API Result<Info> getIssuer(X509_CRL &crl)
+  SO_API Result<Issuer> getIssuer(X509_CRL &crl)
   {
     // this is internal ptr and must not be freed
     X509_NAME *getIssuer = X509_CRL_get_issuer(&crl);
     if(!getIssuer)
-      return internal::err<Info>();
+      return internal::err<Issuer>();
 
     return internal::commonInfo(*getIssuer);
   }
