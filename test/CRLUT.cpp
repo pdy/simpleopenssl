@@ -71,4 +71,36 @@ TEST(CRLUT, getIssuer)
 
 }
 
+TEST(CRLUT, getCrlExtensionsCount)
+{
+  // GIVEN 
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  ASSERT_TRUE(mcrl);
+  auto crl = mcrl.moveValue(); 
+
+
+  // WHEN
+  const auto count = x509::getExtensionsCount(*crl);
+ 
+  // THEN 
+  ASSERT_TRUE(count);
+  EXPECT_EQ(2, *count);
+}
+
+TEST(CRLUT, getCrlExtensions)
+{
+  // GIVEN 
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  ASSERT_TRUE(mcrl);
+  auto crl = mcrl.moveValue(); 
+
+
+  // WHEN
+  const auto exts = x509::getExtensions(*crl);
+ 
+  // THEN 
+  ASSERT_TRUE(exts);
+  ASSERT_EQ(2, exts->size());
+}
+
 }}} // namespace so { namespace ut { namespace x509 {

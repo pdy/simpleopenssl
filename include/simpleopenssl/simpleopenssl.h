@@ -1660,7 +1660,7 @@ namespace x509 {
     ISSUING_DISTRIBUTION_POINT  = NID_issuing_distribution_point
   };
 
-  enum class CrlRevokedExtensionId : int
+  enum class CrlEntryExtensionId : int
   {
     // as of https://www.openssl.org/docs/man1.1.0/crypto/X509_REVOKED_add1_ext_i2d.html
     
@@ -1671,7 +1671,7 @@ namespace x509 {
 
   using CertExtension = internal::X509Extension<CertExtensionId>;
   using CrlExtension = internal::X509Extension<CrlExtensionId>;
-  using CrlRevokedExtension = internal::X509Extension<CrlRevokedExtensionId>;
+  using CrlEntryExtension = internal::X509Extension<CrlEntryExtensionId>;
   using Issuer = internal::X509Name;
   using Subject = internal::X509Name;
 
@@ -1758,7 +1758,7 @@ namespace x509 {
   SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
   SO_API Result<std::string> convertCrlToPem(X509_CRL &crl);
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
-//  SO_API Result<> getExtensions(X509_CRL &crl);
+  SO_API Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl);
   SO_API Result<size_t> getExtensionsCount(X509_CRL &crl);
   SO_API Result<Issuer> getIssuer(X509_CRL &crl);
   SO_API size_t getRevokedCount(X509_CRL &crl);
@@ -3819,6 +3819,30 @@ namespace x509 {
     return internal::ok(ecdsa::Signature{ *bignum::convertToBytes(*r), *bignum::convertToBytes(*s) });
   }
   
+  SO_API Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl)
+  {
+    using RetType = std::vector<CrlExtension>;
+    const auto extsCount = getExtensionsCount(crl);
+    if(!extsCount)
+      return internal::err<RetType>(extsCount.errorCode());
+
+    if(0 == *extsCount)
+      return internal::ok(RetType{});
+
+    RetType ret;
+    ret.reserve(*extsCount); 
+    for(int index = 0; index < static_cast<int>(*extsCount); ++index)
+    {
+      auto getExtension = internal::getExtension<CrlExtensionId>(*X509_CRL_get_ext(&crl, index));
+      if(!getExtension)
+        return internal::err<RetType>(getExtension.errorCode());
+
+      ret.push_back(getExtension.moveValue());
+    }
+
+    return internal::ok(std::move(ret));
+  }
+
   SO_API Result<size_t> getExtensionsCount(X509_CRL &crl)
   {
     const int extsCount = X509_CRL_get_ext_count(&crl);
