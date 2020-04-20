@@ -2178,15 +2178,16 @@ namespace internal {
     const auto oidStr = asn1::convertObjToStr(*asn1Obj, asn1::Form::NUMERICAL);
     if(!oidStr)
       return internal::err<RetType>(oidStr.errorCode());
-
+ 
     if(nid == NID_undef)
-    {  
+    {
+      // most likely custom extension
       const auto val = X509_EXTENSION_get_data(&ex);
 
       Bytes data;
       data.reserve(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, std::back_inserter(data));
-
+       
       return internal::ok(RetType {
             static_cast<ID>(nid),
             static_cast<bool>(critical),
@@ -2195,8 +2196,7 @@ namespace internal {
             std::move(data)
       });
     }
-
-    
+   
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(!X509V3_EXT_print(bio.get(), &ex, 0, 0))
     {// revocation getExtensions, not yet fully working
@@ -2228,7 +2228,7 @@ namespace internal {
         std::string(OBJ_nid2ln(nid)),
         std::move(*oidStr),
         std::move(data)
-      });
+      }); 
   }
 
   template<typename CTX, typename DATA, typename INIT, typename UPDATE, typename FINAL>

@@ -2,6 +2,7 @@
 
 #include <simpleopenssl/simpleopenssl.h>
 #include "precalculated.h"
+#include "utils.h"
 
 namespace so { namespace ut { namespace x509 {
 
@@ -101,6 +102,15 @@ TEST(CRLUT, getCrlExtensions)
   // THEN 
   ASSERT_TRUE(exts);
   ASSERT_EQ(2, exts->size());
+  
+  const auto first = exts->at(0);
+  EXPECT_EQ(nid::Nid::AUTHORITY_KEY_IDENTIFIER, static_cast<nid::Nid>(first.id));
+  EXPECT_EQ(std::string("keyid:BE:12:01:CC:AA:EA:11:80:DA:2E:AD:B2:EA:C7:B5:FB:9F:F9:AD:34\n"),
+            utils::toString(first.data));
+
+  const auto sec = exts->at(1);
+  EXPECT_EQ(x509::CrlExtensionId::CRL_NUMBER, sec.id);
+  EXPECT_EQ("3", utils::toString(sec.data));
 }
 
 }}} // namespace so { namespace ut { namespace x509 {
