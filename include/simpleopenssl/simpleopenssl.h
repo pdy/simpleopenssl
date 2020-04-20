@@ -1646,8 +1646,32 @@ namespace x509 {
     STRONG_EXTRANET_ID          = NID_sxnet,
     PROXY_CERTIFICATE_INFO      = NID_proxyCertInfo
   };
- 
+
+  enum class CrlExtensionId : int
+  {
+    // as of https://www.openssl.org/docs/man1.1.0/crypto/X509_REVOKED_add1_ext_i2d.html
+    
+    UNDEF                       = NID_undef, 
+    CRL_NUMBER                  = NID_crl_number,
+    CRL_DISTRIBUTION_POINTS     = NID_crl_distribution_points,
+    DELTA_CRL_INDICATOR         = NID_delta_crl,
+    FRESHEST_CRL                = NID_freshest_crl,
+    INVALIDITY_DATE             = NID_invalidity_date,
+    ISSUING_DISTRIBUTION_POINT  = NID_issuing_distribution_point
+  };
+
+  enum class CrlRevokedExtensionId : int
+  {
+    // as of https://www.openssl.org/docs/man1.1.0/crypto/X509_REVOKED_add1_ext_i2d.html
+    
+    UNDEF                       = NID_undef,
+    REASON                      = NID_crl_reason,
+    CERTIFICATE_ISSUER          = NID_certificate_issuer
+  };
+
   using CertExtension = internal::X509Extension<CertExtensionId>;
+  using CrlExtension = internal::X509Extension<CrlExtensionId>;
+  using CrlRevokedExtension = internal::X509Extension<CrlRevokedExtensionId>;
   using Issuer = internal::X509Name;
   using Subject = internal::X509Name;
 
