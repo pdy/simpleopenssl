@@ -3,6 +3,7 @@
 #include <simpleopenssl/simpleopenssl.h>
 #include "precalculated.h"
 #include "utils.h"
+#include <ctime>
 
 namespace so { namespace ut { namespace x509 {
 
@@ -37,20 +38,55 @@ TEST(CRLUT, revCount)
   EXPECT_EQ(5, revCount);
 }
 
-TEST(CRLUT, getRevokedCount)
+TEST(CRLUT, getRevokedFromPrecalculated)
 {
   // GIVEN 
   auto mcrl = x509::convertPemToCRL(data::validPemCRL);
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue(); 
 
+  const x509::Revoked expected []{
+    x509::Revoked{
+      "Feb 18 10:22:12 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x47}
+    },
+    x509::Revoked{
+      "Feb 18 10:22:22 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x48}
+    },
+    x509::Revoked{
+      "Feb 18 10:22:32 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x49}
+    },
+    x509::Revoked{
+      "Feb 18 10:22:42 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x4A}
+    },
+    x509::Revoked{
+      "Feb 18 10:22:51 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x4B}
+    },
+  };
+    
 
   // WHEN
   const auto revoked = x509::getRevoked(*crl);
  
   // THEN 
   ASSERT_TRUE(revoked);
-  EXPECT_EQ(5, revoked->size());
+  ASSERT_EQ(5, revoked->size());
+  for(size_t i = 0; i < 5; ++i)
+  {
+    const auto &rev = revoked->at(i);
+    EXPECT_EQ(expected[i].dateISO860, rev.dateISO860);
+//    EXPECT_EQ(exp1.date, rev.date);
+    EXPECT_EQ(expected[i].serialNumAsn1, rev.serialNumAsn1);
+  }
 }
 
 TEST(CRLUT, getIssuer)
@@ -113,7 +149,7 @@ TEST(CRLUT, getCrlExtensions)
   EXPECT_EQ("3", utils::toString(sec.data));
 }
 
-TEST(CRLUT, getCrlSignarue)
+TEST(CRLUT, getCrlSignature)
 {
   // GIVEN 
   auto mcrl = x509::convertPemToCRL(data::validPemCRL);

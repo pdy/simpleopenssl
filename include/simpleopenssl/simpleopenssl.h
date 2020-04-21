@@ -1697,7 +1697,8 @@ namespace x509 {
   struct Revoked
   {
     std::string dateISO860;
-    Bytes serialNumber;
+    std::time_t date;
+    Bytes serialNumAsn1;
   };
 
   //---- Cerificates----------
@@ -2344,6 +2345,10 @@ namespace internal {
 
   SO_PRV x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
   {
+    // TODO:
+    // I should do proper error handling heere and get rid off
+    // std::generate_n in calling function.
+    // However I should not block user from setting garbage in his CRL
     const X509_REVOKED *revoked = sk_X509_REVOKED_value(revStack, index);
     if(!revoked)
       return {};
@@ -2353,15 +2358,17 @@ namespace internal {
     if(!serial || !time)
       return {};
 
+    const auto timeStr = asn1::convertToISO8601(*time);
+    const auto date = asn1::convertToStdTime(*time);
+
     Bytes retSerial;
     retSerial.reserve(static_cast<size_t>(serial->length));
     std::copy_n(serial->data, serial->length, std::back_inserter(retSerial));
 
-    const auto timeStr = asn1::convertToISO8601(*time);
-
     return x509::Revoked{
       (timeStr ? *timeStr : ""),
-      retSerial
+      (date ? *date : std::time_t{}),
+      std::move(retSerial)
     };
   }
 
