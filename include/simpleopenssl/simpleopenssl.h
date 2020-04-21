@@ -1751,8 +1751,6 @@ namespace x509 {
   //---- Revocation ----------
   //----------------------------------------------------------------------------------------------
  
-  // TODO:
-  // Add UTs for revocation stuff 
   SO_API X509_CRL_uptr createCrl();
 
   SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
@@ -1763,7 +1761,8 @@ namespace x509 {
   SO_API Result<Issuer> getIssuer(X509_CRL &crl);
   SO_API size_t getRevokedCount(X509_CRL &crl);
   SO_API Result<std::vector<Revoked>> getRevoked(X509_CRL &crl);
-  SO_API Result<Bytes> getSignature(X509_CRL &crl);
+  SO_API Result<Bytes> getSignature(const X509_CRL &crl);
+  SO_API nid::Nid getSignatureAlgorithm(const X509_CRL &crl);
   SO_API std::tuple<Version, long> getVersion(X509_CRL &crl);
  
 } // namespace x509
@@ -3889,7 +3888,7 @@ namespace x509 {
     return internal::ok(std::move(ret));
   }
   
-  SO_API Result<Bytes> getSignature(X509_CRL &crl)
+  SO_API Result<Bytes> getSignature(const X509_CRL &crl)
   {
     // both internal pointers and must not be freed
     const ASN1_BIT_STRING *psig = nullptr;
@@ -3904,6 +3903,11 @@ namespace x509 {
     return internal::ok(std::move(rawDerSequence));
   }
   
+  SO_API nid::Nid getSignatureAlgorithm(const X509_CRL &crl)
+  {
+    return static_cast<nid::Nid>(X509_CRL_get_signature_nid(&crl)); 
+  }
+
   SO_API std::tuple<Version, long> getVersion(X509_CRL &crl)
   {
     const long version = X509_CRL_get_version(&crl);

@@ -113,4 +113,19 @@ TEST(CRLUT, getCrlExtensions)
   EXPECT_EQ("3", utils::toString(sec.data));
 }
 
+TEST(CRLUT, getCrlSignarueAlgo)
+{
+  // GIVEN 
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  ASSERT_TRUE(mcrl);
+  auto crl = mcrl.moveValue(); 
+
+
+  // WHEN
+  const auto algo = x509::getSignatureAlgorithm(*crl);
+ 
+  // THEN 
+  EXPECT_EQ(nid::Nid::SHA1WITHRSAENCRYPTION, algo);
+}
+
 }}} // namespace so { namespace ut { namespace x509 {
