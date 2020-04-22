@@ -1711,6 +1711,7 @@ namespace x509 {
     std::string dateISO860;
     std::time_t date;
     Bytes serialNumAsn1;
+    std::vector<CrlEntryExtension> extensions;
   };
 
   //---- Cerificates----------
@@ -1762,8 +1763,7 @@ namespace x509 {
 
   
   //---- Revocation ----------
-  //----------------------------------------------------------------------------------------------
- 
+  //---------------------------------------------------------------------------------------------- 
   SO_API X509_CRL_uptr createCrl();
 
   SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
@@ -2211,7 +2211,7 @@ namespace internal {
    
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(!X509V3_EXT_print(bio.get(), &ex, 0, 0))
-    {// revocation getExtensions, not yet fully working
+    {
       const auto val = X509_EXTENSION_get_data(&ex);
 
       Bytes data;
@@ -2370,6 +2370,22 @@ namespace internal {
     if(!serial || !time)
       return {};
 
+    std::vector<x509::CrlEntryExtension> retExtensions;
+    {
+      const STACK_OF(X509_EXTENSION) *exts = X509_REVOKED_get0_extensions(revoked);
+      if(exts)
+      {
+        const int count = sk_X509_EXTENSION_num(exts);
+        retExtensions.reserve(static_cast<size_t>(count));
+        for(int i = 0; i < count; ++i)
+        {
+          auto getExtension = internal::getExtension<x509::CrlEntryExtensionId>(*X509_REVOKED_get_ext(revoked, i));
+          if(getExtension)
+            retExtensions.push_back(*getExtension);
+        }
+      }
+    }
+
     const auto timeStr = asn1::convertToISO8601(*time);
     const auto date = asn1::convertToStdTime(*time);
 
@@ -2380,7 +2396,8 @@ namespace internal {
     return x509::Revoked{
       (timeStr ? *timeStr : ""),
       (date ? *date : std::time_t{}),
-      std::move(retSerial)
+      std::move(retSerial),
+      std::move(retExtensions)
     };
   }
 

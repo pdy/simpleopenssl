@@ -49,27 +49,32 @@ TEST(CRLUT, getRevokedFromPrecalculated)
     x509::Revoked{
       "Feb 18 10:22:12 2013 GMT",
       std::time_t{},
-      so::Bytes{0x14, 0x79, 0x47}
+      so::Bytes{0x14, 0x79, 0x47},
+      {}
     },
     x509::Revoked{
       "Feb 18 10:22:22 2013 GMT",
       std::time_t{},
-      so::Bytes{0x14, 0x79, 0x48}
+      so::Bytes{0x14, 0x79, 0x48},
+      {}
     },
     x509::Revoked{
       "Feb 18 10:22:32 2013 GMT",
       std::time_t{},
-      so::Bytes{0x14, 0x79, 0x49}
+      so::Bytes{0x14, 0x79, 0x49},
+      {}
     },
     x509::Revoked{
       "Feb 18 10:22:42 2013 GMT",
       std::time_t{},
-      so::Bytes{0x14, 0x79, 0x4A}
+      so::Bytes{0x14, 0x79, 0x4A},
+      {}
     },
     x509::Revoked{
       "Feb 18 10:22:51 2013 GMT",
       std::time_t{},
-      so::Bytes{0x14, 0x79, 0x4B}
+      so::Bytes{0x14, 0x79, 0x4B},
+      {}
     },
   };
     
