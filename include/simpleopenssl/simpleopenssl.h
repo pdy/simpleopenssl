@@ -387,8 +387,18 @@ namespace ecdsa {
     Bytes r;
     Bytes s;
     
-    inline bool operator ==(const Signature &other) const;
-    inline bool operator !=(const Signature &other) const; 
+    inline bool operator ==(const Signature &other) const
+    {
+      return r.size() == other.r.size() &&
+        s.size() == other.s.size() &&
+        std::equal(r.begin(), r.end(), other.r.begin()) && 
+        std::equal(s.begin(), s.end(), other.s.begin());
+    }
+  
+    inline bool operator !=(const Signature &other) const
+    {
+      return !(*this == other);
+    }
   };
 
 
@@ -2532,19 +2542,6 @@ namespace bignum {
 }// namespace bignum
 
 namespace ecdsa {
-  inline bool Signature::operator ==(const Signature &other) const
-  {
-    return r.size() == other.r.size() &&
-      s.size() == other.s.size() &&
-      std::equal(r.begin(), r.end(), other.r.begin()) && 
-      std::equal(s.begin(), s.end(), other.s.begin());
-  }
-  
-  inline bool Signature::operator !=(const Signature &other) const
-  {
-    return !(*this == other);
-  }
-
   SO_API Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
     return internal::convertPemToKey<EC_KEY_uptr>(pemPub, PEM_read_bio_EC_PUBKEY, nullptr, nullptr, nullptr); 
