@@ -24,76 +24,6 @@ TEST(CRLUT, version)
   EXPECT_EQ(1, std::get<1>(version));
 }
 
-TEST(CRLUT, revCount)
-{
-  // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
-  ASSERT_TRUE(mcrl);
-  auto crl = mcrl.moveValue();
-
-  // WHEN
-  const auto revCount = x509::getRevokedCount(*crl);
- 
-  // THEN 
-  EXPECT_EQ(5, revCount);
-}
-
-TEST(CRLUT, getRevokedFromPrecalculated)
-{
-  // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
-  ASSERT_TRUE(mcrl);
-  auto crl = mcrl.moveValue(); 
-
-  const x509::Revoked expected []{
-    x509::Revoked{
-      "Feb 18 10:22:12 2013 GMT",
-      std::time_t{},
-      so::Bytes{0x14, 0x79, 0x47},
-      {}
-    },
-    x509::Revoked{
-      "Feb 18 10:22:22 2013 GMT",
-      std::time_t{},
-      so::Bytes{0x14, 0x79, 0x48},
-      {}
-    },
-    x509::Revoked{
-      "Feb 18 10:22:32 2013 GMT",
-      std::time_t{},
-      so::Bytes{0x14, 0x79, 0x49},
-      {}
-    },
-    x509::Revoked{
-      "Feb 18 10:22:42 2013 GMT",
-      std::time_t{},
-      so::Bytes{0x14, 0x79, 0x4A},
-      {}
-    },
-    x509::Revoked{
-      "Feb 18 10:22:51 2013 GMT",
-      std::time_t{},
-      so::Bytes{0x14, 0x79, 0x4B},
-      {}
-    },
-  };
-    
-
-  // WHEN
-  const auto revoked = x509::getRevoked(*crl);
- 
-  // THEN 
-  ASSERT_TRUE(revoked);
-  ASSERT_EQ(5, revoked->size());
-  for(size_t i = 0; i < 5; ++i)
-  {
-    const auto &rev = revoked->at(i);
-    EXPECT_EQ(expected[i].dateISO860, rev.dateISO860);
-//    EXPECT_EQ(exp1.date, rev.date);
-    EXPECT_EQ(expected[i].serialNumAsn1, rev.serialNumAsn1);
-  }
-}
-
 TEST(CRLUT, getIssuer)
 {
   // GIVEN 
@@ -202,6 +132,149 @@ TEST(CRLUT, getCrlSignarueAlgo)
  
   // THEN 
   EXPECT_EQ(nid::Nid::SHA1WITHRSAENCRYPTION, algo);
+}
+
+TEST(CRLUT, revCount)
+{
+  // GIVEN 
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  ASSERT_TRUE(mcrl);
+  auto crl = mcrl.moveValue();
+
+  // WHEN
+  const auto revCount = x509::getRevokedCount(*crl);
+ 
+  // THEN 
+  EXPECT_EQ(5, revCount);
+}
+
+TEST(CRLUT, getRevokedFromPrecalculated)
+{
+  // GIVEN 
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  ASSERT_TRUE(mcrl);
+  auto crl = mcrl.moveValue(); 
+
+  const x509::Revoked expected []{
+    x509::Revoked{
+      "Feb 18 10:22:12 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x47},
+      {
+        x509::CrlEntryExtension{
+          x509::CrlEntryExtensionId::REASON,
+          false,
+          "", "",
+          utils::toBytes("Affiliation Changed")
+        },
+        x509::CrlEntryExtension{
+          static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
+          false,
+          "", "",
+          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+        }
+      }
+    },
+    x509::Revoked{
+      "Feb 18 10:22:22 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x48},
+      {
+        x509::CrlEntryExtension{
+          x509::CrlEntryExtensionId::REASON,
+          false,
+          "", "",
+          utils::toBytes("Certificate Hold")
+        },
+        x509::CrlEntryExtension{
+          static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
+          false,
+          "", "",
+          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+        }
+      }
+    },
+    x509::Revoked{
+      "Feb 18 10:22:32 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x49},
+      {
+        x509::CrlEntryExtension{
+          x509::CrlEntryExtensionId::REASON,
+          false,
+          "", "",
+          utils::toBytes("Superseded")
+        },
+        x509::CrlEntryExtension{
+          static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
+          false,
+          "", "",
+          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+        }
+      }
+    },
+    x509::Revoked{
+      "Feb 18 10:22:42 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x4A},
+      {
+        x509::CrlEntryExtension{
+          x509::CrlEntryExtensionId::REASON,
+          false,
+          "", "",
+          utils::toBytes("Key Compromise")
+        },
+        x509::CrlEntryExtension{
+          static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
+          false,
+          "", "",
+          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+        }
+      }
+    },
+    x509::Revoked{
+      "Feb 18 10:22:51 2013 GMT",
+      std::time_t{},
+      so::Bytes{0x14, 0x79, 0x4B},
+      {
+        x509::CrlEntryExtension{
+          x509::CrlEntryExtensionId::REASON,
+          false,
+          "", "",
+          utils::toBytes("Cessation Of Operation")
+        },
+        x509::CrlEntryExtension{
+          static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
+          false,
+          "", "",
+          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+        }
+      }
+    },
+  };
+    
+
+  // WHEN
+  const auto revoked = x509::getRevoked(*crl);
+ 
+  // THEN 
+  ASSERT_TRUE(revoked);
+  ASSERT_EQ(5, revoked->size());
+  for(size_t i = 0; i < 5; ++i)
+  {
+    const auto &rev = revoked->at(i);
+    EXPECT_EQ(expected[i].dateISO860, rev.dateISO860);
+//    EXPECT_EQ(exp1.date, rev.date);
+    EXPECT_EQ(expected[i].serialNumAsn1, rev.serialNumAsn1);
+
+    const auto &exts = rev.extensions;
+    ASSERT_EQ(2, exts.size());
+    for(size_t j = 0; j < exts.size(); ++j)
+    {
+      EXPECT_EQ(expected[i].extensions[j].id , exts[j].id);
+      EXPECT_EQ(expected[i].extensions[j].data, exts[j].data);
+    }
+  }
 }
 
 }}} // namespace so { namespace ut { namespace x509 {
