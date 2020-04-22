@@ -1768,10 +1768,12 @@ namespace x509 {
 
   SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
   SO_API Result<std::string> convertCrlToPem(X509_CRL &crl);
+
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
   SO_API Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl);
   SO_API Result<size_t> getExtensionsCount(X509_CRL &crl);
   SO_API Result<Issuer> getIssuer(X509_CRL &crl);
+  SO_API Result<std::string> getIssuerString(X509_CRL &crl);
   SO_API size_t getRevokedCount(X509_CRL &crl);
   SO_API Result<std::vector<Revoked>> getRevoked(X509_CRL &crl);
   SO_API Result<Bytes> getSignature(const X509_CRL &crl);
@@ -3882,6 +3884,16 @@ namespace x509 {
       return internal::err<Issuer>();
 
     return internal::commonInfo(*getIssuer);
+  }
+
+  SO_API Result<std::string> getIssuerString(X509_CRL &crl)
+  {
+    // this is internal ptr and must not be freed
+    X509_NAME *getIssuer = X509_CRL_get_issuer(&crl);
+    if(!getIssuer)
+      return internal::err<std::string>();
+
+    return internal::nameToString(*getIssuer);
   }
 
   SO_API size_t getRevokedCount(X509_CRL &crl)

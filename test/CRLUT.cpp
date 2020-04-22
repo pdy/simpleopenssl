@@ -113,6 +113,23 @@ TEST(CRLUT, getIssuer)
 
 }
 
+TEST(CRLUT, getIssuerString)
+{
+  // GIVEN 
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  ASSERT_TRUE(mcrl);
+  auto crl = mcrl.moveValue(); 
+  const std::string expected = "CN=Sample Signer Cert,OU=Sample Signer Unit,O=Sample Signer Organization";
+
+
+  // WHEN
+  const auto issuer = x509::getIssuerString(*crl);
+ 
+  // THEN 
+  ASSERT_TRUE(issuer);
+  EXPECT_EQ(expected, *issuer); 
+}
+
 TEST(CRLUT, getCrlExtensionsCount)
 {
   // GIVEN 
