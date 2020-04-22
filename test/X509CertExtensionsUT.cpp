@@ -221,8 +221,7 @@ TEST(X509CertExtensionsUT, addExtensionUsingLibraryStructure)
     x509::CertExtensionId::BASIC_CONSTRAINTS,
     false,
     "",
-    // intel net adapter found at http://oid-info.com
-     "",
+    "",
     utils::toBytes("CA:TRUE")
   }; 
   auto cert = so::make_unique(X509_new());
@@ -299,8 +298,6 @@ TEST(X509CertExtensionsUT, addCustomExtensionToAlreadyExistingStandardExtensions
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
   ASSERT_EQ(4, (*getResult).size());
-//  for(const auto &ex : (*getResult))
-//    std::cout << ex << '\n';
   EXPECT_EQ(expected, (*getResult).at(3));
 }
 
