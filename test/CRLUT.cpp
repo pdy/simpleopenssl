@@ -155,10 +155,14 @@ TEST(CRLUT, getRevokedFromPrecalculated)
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue(); 
 
+
+  // Feb 18 10:22:00 2013 GMT
+  // 20130218102200Z plus asn1 header 0x18 0x0f
+  const auto btTime = utils::toString({0x18, 0x0f}) + "20130218102200Z";
   const x509::Revoked expected []{
     x509::Revoked{
       "Feb 18 10:22:12 2013 GMT",
-      std::time_t{},
+      std::time_t{}, 
       so::Bytes{0x14, 0x79, 0x47},
       {
         x509::CrlEntryExtension{
@@ -171,7 +175,7 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
           false,
           "", "",
-          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+          utils::toBytes(btTime)
         }
       }
     },
@@ -190,7 +194,7 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
           false,
           "", "",
-          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+          utils::toBytes(btTime)
         }
       }
     },
@@ -209,7 +213,7 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
           false,
           "", "",
-          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+          utils::toBytes(btTime)
         }
       }
     },
@@ -228,7 +232,7 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
           false,
           "", "",
-          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+          utils::toBytes(btTime)
         }
       }
     },
@@ -247,7 +251,7 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           static_cast<x509::CrlEntryExtensionId>(nid::Nid::INVALIDITY_DATE),
           false,
           "", "",
-          utils::toBytes("Feb 18 10:22:00 2013 GMT")
+          utils::toBytes(btTime)
         }
       }
     },
