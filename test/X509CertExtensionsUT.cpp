@@ -352,7 +352,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionUsingNid)
   ASSERT_EQ(1, (*getResult).size());
   
   const auto &ext = (*getResult).at(0);
-  EXPECT_EQ(static_cast<int>(basicConstraints), ext.nidRaw());
+  EXPECT_EQ(basicConstraints, ext.nid());
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
   EXPECT_EQ(true, ext.critical);
@@ -385,6 +385,153 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionSingleExtraction)
   EXPECT_EQ(basicConstraintsName, ext.name);
   EXPECT_EQ(true, ext.critical);
   EXPECT_EQ("CA:TRUE", utils::toString(ext.data));
+}
+
+TEST(X509CertExtensionsUT, basicCertExtType_Equals)
+{
+  const auto expected = x509::CertExtension{
+      x509::CertExtensionId::KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  const auto actual = x509::CertExtension{
+      x509::CertExtensionId::KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  EXPECT_EQ(expected, actual); 
+}
+
+TEST(X509CertExtensionsUT, basicCertExtType_DiffrentId)
+{
+  const auto expected = x509::CertExtension{
+      x509::CertExtensionId::KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  const auto actual = x509::CertExtension{
+      x509::CertExtensionId::EXT_KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  EXPECT_NE(expected, actual); 
+}
+
+TEST(X509CertExtensionsUT, basicCertExtType_DiffrentCritical)
+{
+  const auto expected = x509::CertExtension{
+      x509::CertExtensionId::KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  const auto actual = x509::CertExtension{
+      x509::CertExtensionId::EXT_KEY_USAGE,
+      false,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  EXPECT_NE(expected, actual); 
+}
+
+TEST(X509CertExtensionsUT, basicCertExtType_DiffrentName)
+{
+  const auto expected = x509::CertExtension{
+      x509::CertExtensionId::KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  const auto actual = x509::CertExtension{
+      x509::CertExtensionId::EXT_KEY_USAGE,
+      true,
+      "namename",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  EXPECT_NE(expected, actual); 
+}
+
+TEST(X509CertExtensionsUT, basicCertExtType_DiffrentOidNumerical)
+{
+  const auto expected = x509::CertExtension{
+      x509::CertExtensionId::KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  const auto actual = x509::CertExtension{
+      x509::CertExtensionId::EXT_KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.5",
+      {0x01, 0x02}
+  };
+
+  EXPECT_NE(expected, actual); 
+}
+
+TEST(X509CertExtensionsUT, basicCertExtType_DiffrentData)
+{
+  const auto expected = x509::CertExtension{
+      x509::CertExtensionId::KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  const auto actual = x509::CertExtension{
+      x509::CertExtensionId::EXT_KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02, 0x03}
+  };
+
+  EXPECT_NE(expected, actual); 
+}
+
+TEST(X509CertExtensionsUT, basicCertExtType_DiffrentData2)
+{
+  const auto expected = x509::CertExtension{
+      x509::CertExtensionId::KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x02}
+  };
+
+  const auto actual = x509::CertExtension{
+      x509::CertExtensionId::EXT_KEY_USAGE,
+      true,
+      "name",
+      "1.2.3.4",
+      {0x01, 0x03}
+  };
+
+  EXPECT_NE(expected, actual); 
 }
 
 }}}

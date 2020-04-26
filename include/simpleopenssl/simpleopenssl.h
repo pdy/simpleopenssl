@@ -158,8 +158,8 @@ class AddValueRef<T, TSelf, std::true_type>
 {};
 
 template<typename ID>
-struct X509Extension
-{
+struct X509Extension;
+/*{
   ID id;
   bool critical;
   std::string name;
@@ -179,6 +179,7 @@ struct X509Extension
     return !(*this == other);
   }
 };
+*/
 
 struct X509Name
 {
@@ -1793,6 +1794,30 @@ namespace x509 {
 /////////////////////////////////////////////////////////////////////////////////
 
 namespace internal {
+  template<typename ID>
+  struct X509Extension
+  {
+    ID id;
+    bool critical;
+    std::string name;
+    std::string oidNumerical;
+    Bytes data;
+  
+    inline nid::Nid nid() const { return static_cast<nid::Nid>(id); }
+    inline int nidRaw() const { return static_cast<int>(nid()); }
+
+    inline bool operator==(const X509Extension<ID> &other) const
+    {
+      return std::tie(id, critical, name, oidNumerical, data)
+          == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
+    }
+
+    inline bool operator!=(const X509Extension<ID> &other) const
+    {
+      return !(*this == other);
+    }
+  };
+
   SO_PRV std::string errCodeToString(unsigned long errCode)
   {
     static constexpr size_t SIZE = 1024;
