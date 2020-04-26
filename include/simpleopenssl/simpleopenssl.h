@@ -166,13 +166,15 @@ struct X509Extension
   std::string oidNumerical;
   Bytes data;
 
-  bool operator==(const X509Extension<ID> &other) const
+  inline int nidRaw() const { return static_cast<int>(id); }
+
+  inline bool operator==(const X509Extension<ID> &other) const
   {
     return std::tie(id, critical, name, oidNumerical, data)
         == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
   }
 
-  bool operator!=(const X509Extension<ID> &other) const
+  inline bool operator!=(const X509Extension<ID> &other) const
   {
     return !(*this == other);
   }
@@ -1744,6 +1746,7 @@ namespace x509 {
 
   SO_API Result<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false);
   SO_API Result<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical = false);
+  SO_API Result<void> setExtension(X509 &cert, nid::Nid nid, ASN1_OCTET_STRING &octet, bool critical = false);
   SO_API Result<void> setExtension(X509 &cert, const CertExtension &extension); 
   SO_API Result<void> setIssuer(X509 &cert, const X509 &rootCert);
   SO_API Result<void> setIssuer(X509 &cert, const Issuer &issuer);
@@ -3669,7 +3672,12 @@ namespace x509 {
 
   SO_API Result<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical)
   {
-    auto oid = make_unique(OBJ_nid2obj(static_cast<int>(id)));
+    return setExtension(cert, static_cast<nid::Nid>(id), octet, critical); 
+  }
+
+  SO_API Result<void> setExtension(X509 &cert, nid::Nid nid, ASN1_OCTET_STRING &octet, bool critical)
+  {
+    auto oid = make_unique(OBJ_nid2obj(static_cast<int>(nid)));
     if(!oid)
       return internal::err();
  
@@ -3689,7 +3697,7 @@ namespace x509 {
     if(1 != X509_add_ext(&cert, extension.get(), -1))
       return internal::err();
 
-    return internal::ok(); 
+    return internal::ok();
   }
 
   SO_API Result<void> setExtension(X509 &cert, const CertExtension &extension)
