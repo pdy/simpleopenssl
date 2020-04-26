@@ -2549,13 +2549,7 @@ namespace asn1 {
   
   SO_API Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
   {
-    Bytes bt;
-    bt.reserve(str.size());
-    std::transform(str.begin(), str.end(), std::back_inserter(bt),
-        [](char chr){ return static_cast<uint8_t>(chr);
-    });
-
-    return encodeOctet(bt);
+    return encodeOctet(bytes::fromString(str));
   } 
 } // namespace asn1
 
