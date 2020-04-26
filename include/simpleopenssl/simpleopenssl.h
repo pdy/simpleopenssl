@@ -52,6 +52,7 @@
 #include <ctime>
 #include <chrono>
 #include <tuple>
+#include <sstream>
 
 namespace so {
 
@@ -350,6 +351,12 @@ namespace bignum {
   
   SO_API Result<size_t> getByteLen(const BIGNUM &bn);
 }
+
+namespace bytes {
+  SO_API std::string toString(const Bytes &bt);
+  SO_API std::string toString(const Bytes &bt, const Bytes::const_iterator &start);
+  SO_API Bytes fromString(const std::string &str);
+} // namespace bytes
 
 namespace ecdsa {
   enum class Curve : int
@@ -2587,6 +2594,34 @@ namespace bignum {
     return internal::ok(static_cast<size_t>(bnlen));
   }
 }// namespace bignum
+
+namespace bytes {
+  SO_API std::string toString(const Bytes &bt)
+  {
+    std::ostringstream ss;
+    std::copy(bt.begin(), bt.end(), std::ostream_iterator<char>(ss, ""));
+    return ss.str();
+  }
+
+  SO_API std::string toString(const Bytes &bt, const Bytes::const_iterator &start)
+  {
+    std::ostringstream ss;
+    std::copy(start, bt.end(), std::ostream_iterator<char>(ss, ""));
+    return ss.str();
+  }
+
+  SO_API Bytes fromString(const std::string &str)
+  {
+    so::Bytes ret;
+    ret.reserve(str.size());
+    std::transform(str.begin(), str.end(), std::back_inserter(ret), [](char chr){
+        return static_cast<uint8_t>(chr);
+    });
+
+    return ret;
+  }
+
+} // namespace bytes
 
 namespace ecdsa {
   SO_API Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)

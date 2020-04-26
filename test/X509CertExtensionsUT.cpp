@@ -62,21 +62,21 @@ TEST(X509CertExtensionsUT, getExtensions)
       false,
       "X509v3 Subject Key Identifier",
       "2.5.29.14",
-      utils::toBytes("75:71:A7:19:48:19:BC:9D:9D:EA:41:47:DF:94:C4:48:77:99:D3:79")
+      bytes::fromString("75:71:A7:19:48:19:BC:9D:9D:EA:41:47:DF:94:C4:48:77:99:D3:79")
     },
     {
       x509::CertExtensionId::KEY_USAGE,
       true,
       "X509v3 Key Usage",
       "2.5.29.15",
-      utils::toBytes("Certificate Sign, CRL Sign")
+      bytes::fromString("Certificate Sign, CRL Sign")
     },
     {
       x509::CertExtensionId::BASIC_CONSTRAINTS,
       true,
       "X509v3 Basic Constraints",
       "2.5.29.19",
-      utils::toBytes("CA:TRUE")
+      bytes::fromString("CA:TRUE")
     } 
   };
   
@@ -105,7 +105,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsage)
     true,
     "X509v3 Key Usage",
     "2.5.29.15",
-    utils::toBytes("Certificate Sign, CRL Sign")
+    bytes::fromString("Certificate Sign, CRL Sign")
   };
 
   auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
@@ -129,7 +129,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsageByOidNumerical)
     true,
     "X509v3 Key Usage",
     oidToFind,
-    utils::toBytes("Certificate Sign, CRL Sign")
+    bytes::fromString("Certificate Sign, CRL Sign")
   };
 
   auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
@@ -222,7 +222,7 @@ TEST(X509CertExtensionsUT, addExtensionUsingLibraryStructure)
     false,
     "",
     "",
-    utils::toBytes("CA:TRUE")
+    bytes::fromString("CA:TRUE")
   }; 
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
@@ -327,7 +327,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtension)
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
   EXPECT_EQ(true, ext.critical);
-  EXPECT_EQ("CA:TRUE", utils::toString(ext.data));
+  EXPECT_EQ("CA:TRUE", bytes::toString(ext.data));
 }
 
 TEST(X509CertExtensionsUT, addBasicConstraintsExtensionUsingNid)
@@ -356,7 +356,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionUsingNid)
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
   EXPECT_EQ(true, ext.critical);
-  EXPECT_EQ("CA:TRUE", utils::toString(ext.data));
+  EXPECT_EQ("CA:TRUE", bytes::toString(ext.data));
 }
 
 TEST(X509CertExtensionsUT, addBasicConstraintsExtensionSingleExtraction)
@@ -384,7 +384,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionSingleExtraction)
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
   EXPECT_EQ(true, ext.critical);
-  EXPECT_EQ("CA:TRUE", utils::toString(ext.data));
+  EXPECT_EQ("CA:TRUE", bytes::toString(ext.data));
 }
 
 TEST(X509CertExtensionsUT, basicCertExtType_Equals)
