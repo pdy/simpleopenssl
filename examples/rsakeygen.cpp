@@ -55,7 +55,7 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  auto maybeKey = so::rsa::generateKey(static_cast<so::rsa::KeyBits>(keySize), static_cast<so::rsa::Exponent>(exponent));
+  auto maybeKey = so::rsa::create(static_cast<so::rsa::KeyBits>(keySize), static_cast<so::rsa::Exponent>(exponent));
   if(!maybeKey)
   {
     std::cout << "Error when generating the key: " << maybeKey.msg() << "\n";
