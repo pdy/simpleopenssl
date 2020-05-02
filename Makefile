@@ -28,7 +28,10 @@ else
 	STRIP = echo
 endif
 
-OBJ := $(BUILD)/obj
+SRC_TEST := $(wildcard ./test/*cpp)
+
+OBJ_DIR := $(BUILD)/obj
+OBJS_TEST := $(patsubst ./test/%.cpp,$(OBJ_DIR)/%.o, $(SRC_TEST))
 
 .PHONY: all clean runUT
 
@@ -38,7 +41,7 @@ all: dist $(DESTBIN)/UnitTests copydata strip
 debug: all
 
 dist:
-	@mkdir -p $(OBJ) $(DESTBIN)
+	@mkdir -p $(OBJ_DIR) $(DESTBIN)
 	
 clean:
 	@rm -r $(BUILD) $(ROOT_BUILD)
@@ -52,17 +55,12 @@ strip:
 runUT:
 	@cd $(DESTBIN)/ && ./UnitTests && cd -
 
-OBJS_UT := $(OBJ)/Asn1UT.o $(OBJ)/EcdsaSignVerifyUT.o $(OBJ)/EvpSignVerifyUT.o $(OBJ)/EcdsaKeyUT.o \
-	$(OBJ)/EcdsaKeyUT.o $(OBJ)/EcdsaKeyGenUT.o $(OBJ)/EcdsaSignatureConvertersUT.o $(OBJ)/EvpKeyUT.o \
-	$(OBJ)/HashUT.o $(OBJ)/HashBytesUT.o $(OBJ)/HashFileUT.o $(OBJ)/X509UT.o $(OBJ)/X509PemUT.o $(OBJ)/CRLPemUT.o \
-	$(OBJ)/CRLUT.o $(OBJ)/X509CertExtensionsUT.o $(OBJ)/BignumUT.o $(OBJ)/RsaKeyUT.o $(OBJ)/RsaKeyGenUT.o \
-	$(OBJ)/RsaSignVerifyUT.o $(OBJ)/ResultUT.o $(OBJ)/NidUT.o
 
-$(DESTBIN)/UnitTests: $(OBJS_UT)
+$(DESTBIN)/UnitTests: $(OBJS_TEST)
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
 	@echo "$<"
 
-$(OBJ)/%.o: ./test/%.cpp
+$(OBJ_DIR)/%.o: ./test/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
