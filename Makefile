@@ -32,15 +32,23 @@ SRC_TEST := $(wildcard ./test/*cpp)
 SRC_X509_TEST := $(wildcard ./test/x509/*cpp)
 SRC_ECDSA_TEST := $(wildcard ./test/ecdsa/*cpp)
 SRC_RSA_TEST := $(wildcard ./test/rsa/*cpp)
+SRC_HASH_TEST := $(wildcard ./test/hash/*cpp)
 
 OBJ_DIR := $(BUILD)/obj
 OBJS_TEST := $(patsubst ./test/%.cpp,$(OBJ_DIR)/%.o, $(SRC_TEST))
+
 OBJ_X509_DIR := $(OBJ_DIR)/x509
 OBJS_X509_TEST := $(patsubst ./test/x509/%.cpp,$(OBJ_X509_DIR)/%.o, $(SRC_X509_TEST))
+
 OBJ_ECDSA_DIR := $(OBJ_DIR)/ecdsa
 OBJS_ECDSA_TEST := $(patsubst ./test/ecdsa/%.cpp,$(OBJ_ECDSA_DIR)/%.o, $(SRC_ECDSA_TEST))
+
 OBJ_RSA_DIR := $(OBJ_DIR)/rsa
 OBJS_RSA_TEST := $(patsubst ./test/rsa/%.cpp,$(OBJ_RSA_DIR)/%.o, $(SRC_RSA_TEST))
+
+OBJ_HASH_DIR := $(OBJ_DIR)/hash
+OBJS_HASH_TEST := $(patsubst ./test/hash/%.cpp,$(OBJ_HASH_DIR)/%.o, $(SRC_HASH_TEST))
+
 
 .PHONY: all clean runUT
 
@@ -52,6 +60,7 @@ debug: all
 dist:
 	@mkdir -p $(OBJ_DIR) \
 		$(OBJ_X509_DIR) \
+		$(OBJ_HASH_DIR) \
 		$(OBJ_RSA_DIR) \
 		$(OBJ_ECDSA_DIR) \
 		$(DESTBIN)
@@ -69,7 +78,7 @@ runUT:
 	@cd $(DESTBIN)/ && ./UnitTests && cd -
 
 
-$(DESTBIN)/UnitTests: $(OBJS_TEST) $(OBJS_X509_TEST) $(OBJS_RSA_TEST) $(OBJS_ECDSA_TEST)
+$(DESTBIN)/UnitTests: $(OBJS_TEST) $(OBJS_X509_TEST) $(OBJS_HASH_TEST) $(OBJS_RSA_TEST) $(OBJS_ECDSA_TEST)
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
 	@echo "$<"
 
@@ -78,6 +87,10 @@ $(OBJ_DIR)/%.o: ./test/%.cpp
 	@echo "$<"
 
 $(OBJ_X509_DIR)/%.o: ./test/x509/%.cpp
+	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@echo "$<"
+
+$(OBJ_HASH_DIR)/%.o: ./test/hash/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 

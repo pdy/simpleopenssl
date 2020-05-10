@@ -5,7 +5,7 @@
 #include <sstream>
 #include <functional>
 
-#include "utils.h"
+#include "../utils.h"
 
 namespace so { namespace ut { namespace hash {
 
