@@ -9,6 +9,15 @@ namespace so { namespace ut { namespace evp {
 
 namespace evp = ::so::evp;
 
+TEST(EvpKeyUT, create)
+{
+  auto evp = evp::create();
+  ASSERT_TRUE(evp);
+  const auto type = evp::getKeyType(*evp);
+
+  EXPECT_EQ(evp::KeyType::NONE, type);
+}
+
 TEST(EvpKeyUT, pem2PubKeyConversion_shouldSuccess)
 {
   // WHEN

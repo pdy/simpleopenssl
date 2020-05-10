@@ -459,6 +459,11 @@ namespace evp {
     DH    = EVP_PKEY_DH
   };
 
+  SO_API EVP_PKEY_uptr create();
+
+  SO_API Result<void> assign(EVP_PKEY &evp, RSA &rsa);
+  SO_API Result<void> assign(EVP_PKEY &evp, EC_KEY &ec);
+
   SO_API Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   SO_API Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
   SO_API Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der);
@@ -2910,6 +2915,27 @@ namespace ecdsa {
 } //namespace ecdsa
 
 namespace evp {
+  SO_API EVP_PKEY_uptr create()
+  {
+    return make_unique(EVP_PKEY_new());
+  }
+
+  SO_API Result<void> assign(EVP_PKEY &evp, RSA &rsa)
+  {
+    if (1 != EVP_PKEY_assign_RSA(&evp, &rsa))
+        return internal::err();
+    
+    return internal::ok();
+  }
+  
+  SO_API Result<void> assign(EVP_PKEY &evp, EC_KEY &ec)
+  {
+    if (1 != EVP_PKEY_assign_EC_KEY(&evp, &ec))
+        return internal::err();
+    
+    return internal::ok();
+  }
+
   SO_API Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
     return internal::convertPemToKey<EVP_PKEY_uptr>(pemPub, PEM_read_bio_PUBKEY, nullptr, nullptr, nullptr); 
