@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 #include <simpleopenssl/simpleopenssl.h>
 
-#include "precalculated.h"
+#include "../precalculated.h"
 
 
 namespace so { namespace ut { namespace rsa {
