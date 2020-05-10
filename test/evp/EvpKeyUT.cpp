@@ -11,10 +11,12 @@ namespace evp = ::so::evp;
 
 TEST(EvpKeyUT, create)
 {
+  // WHEN
   auto evp = evp::create();
   ASSERT_TRUE(evp);
   const auto type = evp::getKeyType(*evp);
 
+  // THEN
   EXPECT_EQ(evp::KeyType::NONE, type);
 }
 
