@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
 #include <simpleopenssl/simpleopenssl.h>
-#include "precalculated.h"
-#include "utils.h"
+#include "../precalculated.h"
+#include "../utils.h"
 #include <ctime>
 
 namespace so { namespace ut { namespace x509 {

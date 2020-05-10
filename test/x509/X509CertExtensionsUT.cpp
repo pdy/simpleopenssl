@@ -4,8 +4,8 @@
 #include <numeric>
 #include <simpleopenssl/simpleopenssl.h>
 
-#include "precalculated.h"
-#include "utils.h"
+#include "../precalculated.h"
+#include "../utils.h"
 
 namespace so { namespace ut { namespace x509 {
 
