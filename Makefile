@@ -34,6 +34,7 @@ SRC_ECDSA_TEST := $(wildcard ./test/ecdsa/*cpp)
 SRC_RSA_TEST := $(wildcard ./test/rsa/*cpp)
 SRC_HASH_TEST := $(wildcard ./test/hash/*cpp)
 SRC_NID_TEST := $(wildcard ./test/nid/*cpp)
+SRC_EVP_TEST := $(wildcard ./test/evp/*cpp)
 
 OBJ_DIR := $(BUILD)/obj
 OBJS_TEST := $(patsubst ./test/%.cpp,$(OBJ_DIR)/%.o, $(SRC_TEST))
@@ -53,6 +54,8 @@ OBJS_HASH_TEST := $(patsubst ./test/hash/%.cpp,$(OBJ_HASH_DIR)/%.o, $(SRC_HASH_T
 OBJ_NID_DIR := $(OBJ_DIR)/nid
 OBJS_NID_TEST := $(patsubst ./test/nid/%.cpp,$(OBJ_NID_DIR)/%.o, $(SRC_NID_TEST))
 
+OBJ_EVP_DIR := $(OBJ_DIR)/evp
+OBJS_EVP_TEST := $(patsubst ./test/evp/%.cpp,$(OBJ_EVP_DIR)/%.o, $(SRC_EVP_TEST))
 
 
 .PHONY: all clean runUT
@@ -69,6 +72,7 @@ dist:
 		$(OBJ_RSA_DIR) \
 		$(OBJ_ECDSA_DIR) \
 		$(OBJ_NID_DIR) \
+		$(OBJ_EVP_DIR) \
 		$(DESTBIN)
 	
 clean:
@@ -88,7 +92,8 @@ $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	$(OBJS_X509_TEST) $(OBJS_HASH_TEST) \
 	$(OBJS_RSA_TEST) \
 	$(OBJS_ECDSA_TEST) \
-	$(OBJS_NID_TEST)
+	$(OBJS_NID_TEST) \
+	$(OBJS_EVP_TEST)
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
 	@echo "$<"
 
@@ -104,7 +109,11 @@ $(OBJ_HASH_DIR)/%.o: ./test/hash/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-$$(OBJ_NID_DIR)/%.o: ./test/nid/%.cpp
+$(OBJ_NID_DIR)/%.o: ./test/nid/%.cpp
+	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@echo "$<"
+
+$(OBJ_EVP_DIR)/%.o: ./test/evp/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
