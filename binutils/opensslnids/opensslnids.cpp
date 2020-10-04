@@ -36,9 +36,20 @@ struct CloseStream
   T &stream;
 };
 
+struct SONidEntry
+{
+  std::string wholeEnumEntry;
+  std::string enumLeftSide;
+};
+
+std::string toUpper(const std::string &str);
+std::string getNid(const std::string &nidLine, std::string::size_type nidStartPos);
+std::string stripNid(const std::string &nidLine);
 
 std::string formTestSecion(const std::string &nidLine, const size_t pos);
-std::string formSoEntry(const std::string &nidLine, const size_t pos);
+SONidEntry formSoEntry(const std::string &nidLine, const size_t pos);
+std::string formEnumLeftSideName(const SONidEntry &entry);
+std::string formEnumCheck(const std::vector<std::string> &enumValueNames);
 
 int main(int argc, char *argv[])
 {
@@ -103,13 +114,17 @@ int main(int argc, char *argv[])
 
   soOut << "enum class Nid : int\n{\n";
   size_t nidsWritten = 0;
+  std::vector<std::string> enumLeftSideNames;
   for(std::string line; std::getline(in, line);)
   {
     if(const auto pos = line.find("NID_"); pos != std::string::npos)
     {
       try {
         testsOut << formTestSecion(line, pos);
-        soOut << formSoEntry(line, pos);
+        const auto soNidEntry = formSoEntry(line, pos);
+        soOut << soNidEntry.wholeEnumEntry;
+        enumLeftSideNames.push_back(formEnumLeftSideName(soNidEntry));
+
       }catch(const std::runtime_error &e){
         log << e.what();
         throw;
@@ -118,15 +133,12 @@ int main(int argc, char *argv[])
     }
   }
   testsOut << "};\n";
-  soOut << "};\n";
+  soOut << "};\n\n";
+  soOut << formEnumCheck(enumLeftSideNames) << "\n";
   log << "Written nids " << nidsWritten;
 
   return 0;
 }
-
-std::string toUpper(const std::string &str);
-std::string getNid(const std::string &nidLine, std::string::size_type nidStartPos);
-std::string stripNid(const std::string &nidLine);
 
 std::string formTestSecion(const std::string &nidLine, const size_t pos)
 {
@@ -139,12 +151,34 @@ std::string formTestSecion(const std::string &nidLine, const size_t pos)
   return ret;
 }
 
-std::string formSoEntry(const std::string &nidLine, const size_t pos)
+SONidEntry formSoEntry(const std::string &nidLine, const size_t pos)
 { 
   const auto nid = getNid(nidLine, pos);
   const auto upperNid = toUpper(stripNid(nid));
 
-  return "  " + upperNid + " = " + nid + ",\n";
+  return {
+    "  " + upperNid + " = " + nid + ",\n",
+    upperNid
+  };
+}
+
+std::string formEnumLeftSideName(const SONidEntry &entry)
+{
+  return "::so::nid::Nid::" + entry.enumLeftSide;
+}
+
+std::string formEnumCheck(const std::vector<std::string> &enumValueNames)
+{
+  std::string ret = "using NidEnumTest = EnumCheck<nid::Nid,";
+  for(const auto &entry : enumValueNames)
+  {
+    ret += entry;
+    ret += ",";
+  }
+
+  ret += ">;";
+
+  return ret;
 }
 
 std::string getNid(const std::string &nidLine, std::string::size_type nidStartPos)
