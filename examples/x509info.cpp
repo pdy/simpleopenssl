@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 
 void handleCrl(const std::string &fileName)
 {
-  auto maybeX509 = x509::convertPemToCRL(fileName);
+  auto maybeX509 = x509::convertPemFileToCRL(fileName);
   if(!maybeX509)
   {
     log << maybeX509.msg();
@@ -158,7 +158,45 @@ void handleCrl(const std::string &fileName)
       }
     }
   }
- 
+
+  const auto maybeRevoked = x509::getRevoked(*crl);
+  if(!maybeRevoked)
+  {
+    log << maybeRevoked.msg();
+    return;
+  }
+  
+  const auto &revokedList = maybeRevoked.value();
+  log << "Revoked Certificates ( " << revokedList.size() << " )" << (revokedList.empty() ? "" : ":");
+  if(!revokedList.empty())
+  {
+    for(const auto &revoked : revokedList)
+    {
+      log << "\tSerial: " << bin2Hex(revoked.serialNumAsn1); 
+      log << "\t  Revocation date: " << revoked.dateISO860;
+      if(!revoked.extensions.empty())
+        log << "\t  CRL entry extensions:";
+
+      for(const auto &revExt : revoked.extensions)
+      {
+        if(revExt.id != x509::CrlEntryExtensionId::UNDEF)
+        {
+          log << "\t\t" << revExt.name << " [" << revExt.oidNumerical << "]";
+          log << "\t\t  " << bin2Text(revExt.data);
+          if(revExt.critical)
+            log << "\t\t  critical: true";
+        }
+        else
+        {
+          log << "\t\toid: " << revExt.oidNumerical;
+          log << "\t\t  " << bin2Hex(revExt.data);
+          if(revExt.critical)
+            log << "\t\t  critical: true";
+        }        
+      }
+    }
+  }
+
   const auto sig = x509::getSignature(*crl);
   if(!sig)
   {
