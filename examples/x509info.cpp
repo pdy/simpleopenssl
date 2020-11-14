@@ -32,12 +32,15 @@ using namespace so;
 std::string bin2Hex(const so::Bytes &buff);
 std::string bin2Text(const so::Bytes &buff);
 void logHex(const std::string &hexStr, size_t newLine);
+void handleCert(const std::string &fileName);
+void handleCrl(const std::string &fileName);
 
 int main(int argc, char *argv[])
 {
   cmdline::parser arg;
   arg.add("help", 'h', "Print help.");
-  arg.add<std::string>("file", 'f', "PEM cert file to be printed.", true);
+  arg.add<std::string>("file", 'f', "PEM cert or crl file to be printed.", true);
+  arg.add<std::string>("type", 't', "Type of input - 'cert' (default) or 'crl'", false);
  
   if(!arg.parse(argc, const_cast<const char* const*>(argv)))
   {
@@ -63,11 +66,118 @@ int main(int argc, char *argv[])
   }
   
   const std::string file = arg.get<std::string>("file");
-  auto maybeX509 = x509::convertPemFileToX509(file);
+
+  const std::string type = [&]{
+    if(arg.exist("type"))
+      return arg.get<std::string>("type"); 
+
+    return std::string{"cert"};
+  }();
+
+  if(type != "cert" && type != "crl")
+  {
+    log << "--type or -t argument is invalid!";
+    log << arg.usage();
+    return 0;
+  }
+
+  if(type == "cert")
+    handleCert(file);
+  else if(type == "crl")
+    handleCrl(file);
+
+  return 0;
+}
+
+
+void handleCrl(const std::string &fileName)
+{
+  auto maybeX509 = x509::convertPemToCRL(fileName);
   if(!maybeX509)
   {
     log << maybeX509.msg();
-    return 0;
+    return;
+  }
+
+  auto crl = maybeX509.moveValue();
+
+  const auto[version, versionRaw] = x509::getVersion(*crl);
+  switch(version)
+  {
+    case x509::Version::v1:
+      log << "Version: 1 (" << versionRaw << ")";
+      break;
+    case x509::Version::v2:
+      log << "Version: 2 (" << versionRaw << ")";
+      break;
+    case x509::Version::v3:
+      log << "Version: 3 (" << versionRaw << ")";
+      break;
+    case x509::Version::vx:
+      log << "Version: " << versionRaw;
+      break;
+  }
+   
+  auto maybeIssuer = x509::getIssuer(*crl);
+  if(!maybeIssuer)
+  {
+    log << maybeIssuer.msg();
+    return;
+  }
+  const auto issuer = maybeIssuer.moveValue();
+  log << "Issuer:";
+  log << "\tCommonName: " << issuer.commonName;
+  log << "\tCountryName: " << issuer.countryName;
+  log << "\tLocalityName: " << issuer.localityName;
+  log << "\tOrganizationName: " << issuer.organizationName;
+  log << "\tStateOrProvinceName: " << issuer.stateOrProvinceName;
+
+  const auto extensions = x509::getExtensions(*crl);
+  if(!extensions)
+  {
+    log << extensions.msg();
+    return;
+  }
+  log << "ExtensionCount: " << extensions->size();
+
+  if(!extensions->empty())
+  {
+    for(const auto &ext : extensions.value())
+    {
+      if(ext.id != x509::CrlExtensionId::UNDEF)
+      {
+        log << "\t" << ext.name << " [" << ext.oidNumerical << "]";
+        log << "\t  critical: " << (ext.critical ? "true" : "false");
+        log << "\t  " << bin2Text(ext.data);
+      }
+      else
+      {
+        log << "\toid: " << ext.oidNumerical;
+        log << "\t  critical: " << (ext.critical ? "true" : "false");
+        log << "\t  " << bin2Hex(ext.data);
+      }
+    }
+  }
+ 
+  const auto sig = x509::getSignature(*crl);
+  if(!sig)
+  {
+    log << sig.msg();
+    return;
+  } 
+  const auto sigType = x509::getSignatureAlgorithm(*crl);
+  log << "Signature: " << nid::getLongName(sigType).value();
+  logHex(bin2Hex(*sig), 36);
+
+}
+
+void handleCert(const std::string &fileName)
+{
+  auto maybeX509 = x509::convertPemFileToX509(fileName);
+  if(!maybeX509)
+  {
+    log << maybeX509.msg();
+    return;
   }
 
   auto cert = maybeX509.moveValue();
@@ -93,7 +203,7 @@ int main(int argc, char *argv[])
   if(!serial)
   {
     log << serial.msg();
-    return 0;
+    return;
   }
   log << "Serial: " << bin2Hex(*serial);
 
@@ -101,7 +211,7 @@ int main(int argc, char *argv[])
   if(!maybeSubject)
   {
     log << maybeSubject.msg();
-    return 0;
+    return;
   }
 
   const auto subject = maybeSubject.moveValue();
@@ -117,7 +227,7 @@ int main(int argc, char *argv[])
   if(!maybeIssuer)
   {
     log << maybeIssuer.msg();
-    return 0;
+    return;
   }
   const auto issuer = maybeIssuer.moveValue();
   log << "Issuer:";
@@ -131,7 +241,7 @@ int main(int argc, char *argv[])
   if(!maybePubKey)
   {
     log << maybePubKey.msg();
-    return 0;
+    return;
   }
   
   auto pubKey = maybePubKey.moveValue(); 
@@ -139,10 +249,9 @@ int main(int argc, char *argv[])
   if(!pubKeyBytes)
   {
     log << pubKeyBytes.msg();
-    return 0;
+    return;
   }
-
-  
+ 
   const std::string keyInfo = [&]{
     if(auto rsa = evp::convertToRsa(*pubKey))
     {
@@ -166,7 +275,7 @@ int main(int argc, char *argv[])
   if(!extensions)
   {
     log << extensions.msg();
-    return 0;
+    return;
   }
   log << "ExtensionCount: " << extensions->size();
   
@@ -193,13 +302,11 @@ int main(int argc, char *argv[])
   if(!sig)
   {
     log << sig.msg();
-    return 0;
+    return;
   } 
   const auto sigType = x509::getSignatureAlgorithm(*cert);
   log << "Signature: " << nid::getLongName(sigType).value();
   logHex(bin2Hex(*sig), 36);
-
-  return 0;
 }
 
 std::string bin2Hex(const so::Bytes &buff)
