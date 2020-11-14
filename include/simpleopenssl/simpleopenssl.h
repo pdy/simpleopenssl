@@ -1764,6 +1764,7 @@ namespace x509 {
 
   SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
   SO_API Result<std::string> convertCrlToPem(X509_CRL &crl);
+  SO_API Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrlFile);
 
   SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
   SO_API Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl);
@@ -3915,7 +3916,28 @@ namespace x509 {
 
     return internal::ok(std::move(ret));
   }
-  
+ 
+  SO_API Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrl)
+  {
+    BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
+
+    // I'd rather do copy here than drop const in argument or use
+    // const_cast in BIO_read_filename
+    std::vector<char> fn;
+    fn.reserve(pemCrl.size() + 1);
+    std::copy_n(pemCrl.begin(), pemCrl.size(), std::back_inserter(fn));
+    fn.push_back('\0');
+
+    if(0 >= BIO_read_filename(bio.get(), fn.data()))
+      return internal::err<X509_CRL_uptr>(); 
+
+    auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));
+    if(!ret)
+      return internal::err<X509_CRL_uptr>();
+
+    return internal::ok(std::move(ret));
+  }
+
   SO_API Result<std::string> convertCrlToPem(X509_CRL &crl)
   {
     return internal::convertToPem(PEM_write_bio_X509_CRL, &crl); 
