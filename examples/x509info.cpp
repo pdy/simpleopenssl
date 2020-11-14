@@ -176,15 +176,15 @@ int main(int argc, char *argv[])
     {
       if(ext.id != x509::CertExtensionId::UNDEF)
       {
-        log << "\tname: " << ext.name << " [" << ext.oidNumerical << "]";
+        log << "\t" << ext.name << " [" << ext.oidNumerical << "]";
         log << "\t  critical: " << (ext.critical ? "true" : "false");
-        log << "\t  data: " << bin2Text(ext.data);
+        log << "\t  " << bin2Text(ext.data);
       }
       else
       {
         log << "\toid: " << ext.oidNumerical;
         log << "\t  critical: " << (ext.critical ? "true" : "false");
-        log << "\t  data: " << bin2Hex(ext.data);
+        log << "\t  " << bin2Hex(ext.data);
       }
     }
   }
