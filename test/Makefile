@@ -57,8 +57,7 @@ OBJS_NID_TEST := $(patsubst ./nid/%.cpp,$(OBJ_NID_DIR)/%.o, $(SRC_NID_TEST))
 OBJ_EVP_DIR := $(OBJ_DIR)/evp
 OBJS_EVP_TEST := $(patsubst ./evp/%.cpp,$(OBJ_EVP_DIR)/%.o, $(SRC_EVP_TEST))
 
-
-.PHONY: all clean runUT
+.PHONY: all clean
 
 DESTBIN := $(BUILD)/bin
 
@@ -84,10 +83,6 @@ copydata:
 
 strip:
 	$(STRIP) $(DESTBIN)/UnitTests
-
-runUT:
-	@cd $(DESTBIN)/ && ./UnitTests && cd -
-
 
 $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	$(OBJS_X509_TEST) $(OBJS_HASH_TEST) \
