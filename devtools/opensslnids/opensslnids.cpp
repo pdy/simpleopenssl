@@ -40,6 +40,7 @@ struct SONidEntry
 {
   std::string wholeEnumEntry;
   std::string enumLeftSide;
+  std::string enumRightSide;
 };
 
 std::string toUpper(const std::string &str);
@@ -49,7 +50,6 @@ std::string stripNid(const std::string &nidLine);
 std::string formTestSecion(const std::string &nidLine, const size_t pos);
 SONidEntry formSoEntry(const std::string &nidLine, const size_t pos);
 std::string formEnumLeftSideName(const SONidEntry &entry);
-std::string formEnumCheck(const std::vector<std::string> &enumValueNames);
 
 int main(int argc, char *argv[])
 {
@@ -107,14 +107,26 @@ int main(int argc, char *argv[])
   }
   const CloseStream<decltype(soOut)> soOutGuard(soOut);
 
+  const std::string ecdsaCurveOutFile = "./ecdsacurve.txt";
+  std::ofstream ecOut(ecdsaCurveOutFile);
+  if(!ecOut.is_open())
+  {
+    log << "Can't open " << ecdsaCurveOutFile;
+    return 0;
+  }
+  const CloseStream<decltype(ecOut)> ecOutGuard(ecOut);
+
   log << "Writing to " << testsOutFile;
   log << "Writing to " << soOutFile;
+  log << "Writing to " << ecdsaCurveOutFile;
 
   testsOut << "const static NidUTInput NID_VALIDITY_UT_VALUES[] {\n";
 
   soOut << "enum class Nid : int\n{\n";
+
+  ecOut << "enum class Curve : int\n{\n";
+
   size_t nidsWritten = 0;
-  std::vector<std::string> enumLeftSideNames;
   for(std::string line; std::getline(in, line);)
   {
     if(const auto pos = line.find("NID_"); pos != std::string::npos)
@@ -123,7 +135,9 @@ int main(int argc, char *argv[])
         testsOut << formTestSecion(line, pos);
         const auto soNidEntry = formSoEntry(line, pos);
         soOut << soNidEntry.wholeEnumEntry;
-        enumLeftSideNames.push_back(formEnumLeftSideName(soNidEntry));
+
+        if(soNidEntry.enumLeftSide.rfind("SECP", 0) == 0 || soNidEntry.enumLeftSide.rfind("SECT", 0) == 0)
+          ecOut << soNidEntry.wholeEnumEntry;
 
       }catch(const std::runtime_error &e){
         log << e.what();
@@ -134,7 +148,7 @@ int main(int argc, char *argv[])
   }
   testsOut << "};\n";
   soOut << "};\n\n";
-  soOut << formEnumCheck(enumLeftSideNames) << "\n";
+  ecOut << "};\n\n";
   log << "Written nids " << nidsWritten;
 
   return 0;
@@ -158,27 +172,9 @@ SONidEntry formSoEntry(const std::string &nidLine, const size_t pos)
 
   return {
     "  " + upperNid + " = " + nid + ",\n",
-    upperNid
+    upperNid,
+    nid
   };
-}
-
-std::string formEnumLeftSideName(const SONidEntry &entry)
-{
-  return "::so::nid::Nid::" + entry.enumLeftSide;
-}
-
-std::string formEnumCheck(const std::vector<std::string> &enumValueNames)
-{
-  std::string ret = "using NidEnumTest = EnumCheck<nid::Nid,";
-  for(const auto &entry : enumValueNames)
-  {
-    ret += entry;
-    ret += ",";
-  }
-
-  ret += ">;";
-
-  return ret;
 }
 
 std::string getNid(const std::string &nidLine, std::string::size_type nidStartPos)
