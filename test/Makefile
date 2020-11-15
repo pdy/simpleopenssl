@@ -64,6 +64,7 @@ DESTBIN := $(BUILD)/bin
 
 all: dist $(DESTBIN)/UnitTests copydata strip
 debug: all
+release: all
 
 dist:
 	@mkdir -p $(OBJ_DIR) \
@@ -76,7 +77,7 @@ dist:
 		$(DESTBIN)
 	
 clean:
-	@rm -r $(BUILD) $(ROOT_BUILD)
+	@rm -r $(ROOT_BUILD)
 
 copydata:
 	@cp -r ./data $(DESTBIN)/
