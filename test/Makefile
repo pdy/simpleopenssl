@@ -34,33 +34,33 @@ else
 endif
 
 SRC_TEST := $(wildcard $(TEST_PATH)/*cpp)
-SRC_X509_TEST := $(wildcard ./x509/*cpp)
-SRC_ECDSA_TEST := $(wildcard ./ecdsa/*cpp)
-SRC_RSA_TEST := $(wildcard ./rsa/*cpp)
-SRC_HASH_TEST := $(wildcard ./hash/*cpp)
-SRC_NID_TEST := $(wildcard ./nid/*cpp)
-SRC_EVP_TEST := $(wildcard ./evp/*cpp)
+SRC_X509_TEST := $(wildcard $(TEST_PATH)/x509/*cpp)
+SRC_ECDSA_TEST := $(wildcard $(TEST_PATH)/ecdsa/*cpp)
+SRC_RSA_TEST := $(wildcard $(TEST_PATH)/rsa/*cpp)
+SRC_HASH_TEST := $(wildcard $(TEST_PATH)/hash/*cpp)
+SRC_NID_TEST := $(wildcard $(TEST_PATH)/nid/*cpp)
+SRC_EVP_TEST := $(wildcard $(TEST_PATH)/evp/*cpp)
 
 OBJ_DIR := $(BUILD)/obj
-OBJS_TEST := $(patsubst ./%.cpp,$(OBJ_DIR)/%.o, $(SRC_TEST))
+OBJS_TEST := $(patsubst $(TEST_PATH)/%.cpp,$(OBJ_DIR)/%.o, $(SRC_TEST))
 
 OBJ_X509_DIR := $(OBJ_DIR)/x509
-OBJS_X509_TEST := $(patsubst ./x509/%.cpp,$(OBJ_X509_DIR)/%.o, $(SRC_X509_TEST))
+OBJS_X509_TEST := $(patsubst $(TEST_PATH)/x509/%.cpp,$(OBJ_X509_DIR)/%.o, $(SRC_X509_TEST))
 
 OBJ_ECDSA_DIR := $(OBJ_DIR)/ecdsa
-OBJS_ECDSA_TEST := $(patsubst ./ecdsa/%.cpp,$(OBJ_ECDSA_DIR)/%.o, $(SRC_ECDSA_TEST))
+OBJS_ECDSA_TEST := $(patsubst $(TEST_PATH)/ecdsa/%.cpp,$(OBJ_ECDSA_DIR)/%.o, $(SRC_ECDSA_TEST))
 
 OBJ_RSA_DIR := $(OBJ_DIR)/rsa
-OBJS_RSA_TEST := $(patsubst ./rsa/%.cpp,$(OBJ_RSA_DIR)/%.o, $(SRC_RSA_TEST))
+OBJS_RSA_TEST := $(patsubst $(TEST_PATH)/rsa/%.cpp,$(OBJ_RSA_DIR)/%.o, $(SRC_RSA_TEST))
 
 OBJ_HASH_DIR := $(OBJ_DIR)/hash
-OBJS_HASH_TEST := $(patsubst ./hash/%.cpp,$(OBJ_HASH_DIR)/%.o, $(SRC_HASH_TEST))
+OBJS_HASH_TEST := $(patsubst $(TEST_PATH)/hash/%.cpp,$(OBJ_HASH_DIR)/%.o, $(SRC_HASH_TEST))
 
 OBJ_NID_DIR := $(OBJ_DIR)/nid
-OBJS_NID_TEST := $(patsubst ./nid/%.cpp,$(OBJ_NID_DIR)/%.o, $(SRC_NID_TEST))
+OBJS_NID_TEST := $(patsubst $(TEST_PATH)/nid/%.cpp,$(OBJ_NID_DIR)/%.o, $(SRC_NID_TEST))
 
 OBJ_EVP_DIR := $(OBJ_DIR)/evp
-OBJS_EVP_TEST := $(patsubst ./evp/%.cpp,$(OBJ_EVP_DIR)/%.o, $(SRC_EVP_TEST))
+OBJS_EVP_TEST := $(patsubst $(TEST_PATH)/evp/%.cpp,$(OBJ_EVP_DIR)/%.o, $(SRC_EVP_TEST))
 
 .PHONY: all clean
 
@@ -84,7 +84,7 @@ clean:
 	@rm -r $(ROOT_BUILD)
 
 copydata:
-	@cp -r ./data $(DESTBIN)/
+	@cp -r $(TEST_PATH)/data $(DESTBIN)/
 
 strip:
 	$(STRIP) $(DESTBIN)/UnitTests
@@ -98,32 +98,32 @@ $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
 	@echo "$<"
 
-$(OBJ_DIR)/%.o: ./%.cpp
+$(OBJ_DIR)/%.o: $(TEST_PATH)/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-$(OBJ_X509_DIR)/%.o: ./x509/%.cpp
+$(OBJ_X509_DIR)/%.o: $(TEST_PATH)/x509/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-$(OBJ_HASH_DIR)/%.o: ./hash/%.cpp
+$(OBJ_HASH_DIR)/%.o: $(TEST_PATH)/hash/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-$(OBJ_NID_DIR)/%.o: ./nid/%.cpp
+$(OBJ_NID_DIR)/%.o: $(TEST_PATH)/nid/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-$(OBJ_EVP_DIR)/%.o: ./evp/%.cpp
+$(OBJ_EVP_DIR)/%.o: $(TEST_PATH)/evp/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-(OBJ_RSA_DIR)/%.o: ./rsa/%.cpp
+(OBJ_RSA_DIR)/%.o: $(TEST_PATH)/rsa/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
 
-$(OBJ_ECDSA_DIR)/%.o: ./ecdsa/%.cpp
+$(OBJ_ECDSA_DIR)/%.o: $(TEST_PATH)/ecdsa/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
