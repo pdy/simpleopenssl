@@ -216,13 +216,13 @@ TEST(EcdsaKeyUT, curveOf_AgainstPrecalculatedData)
   const auto actual = ecdsa::getCurve(*priv);
 
   //THEN
-  EXPECT_EQ(ecdsa::Curve::secp256k1, *actual);
+  EXPECT_EQ(ecdsa::Curve::SECP256K1, *actual);
 }
 
 TEST(EcdsaKeyUT, extractPublicKeyOK)
 {
   // GIVEN
-  auto maybePriv = ecdsa::create(ecdsa::Curve::secp160r2);
+  auto maybePriv = ecdsa::create(ecdsa::Curve::SECP160R2);
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
@@ -245,7 +245,7 @@ TEST(EcdsaKeyUT, extractPublicKeyOK)
 TEST(EcdsaKeyUT, extractedPublicKeyCantBeUsedForSign)
 {
   // GIVEN
-  auto maybePriv = ecdsa::create(ecdsa::Curve::secp160r2);
+  auto maybePriv = ecdsa::create(ecdsa::Curve::SECP160R2);
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 
@@ -265,7 +265,7 @@ TEST(EcdsaKeyUT, extractedPublicKeyCantBeUsedForSign)
 TEST(EcdsaKeyUT, checkKeyOK)
 {
   // GIVEN
-  auto maybeKey = ecdsa::create(ecdsa::Curve::secp112r1);
+  auto maybeKey = ecdsa::create(ecdsa::Curve::SECP112R1);
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
   
@@ -285,7 +285,7 @@ TEST(EcdsaKeyUT, checkKeyFail)
 TEST(EcdsaKeyUT, getPubKeySize)
 {
   // GIVEN
-  auto maybeKey = ecdsa::create(ecdsa::Curve::secp112r1);
+  auto maybeKey = ecdsa::create(ecdsa::Curve::SECP112R1);
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
   
@@ -312,7 +312,7 @@ TEST(EcdsaKeyUT, getPubKeySizeOnEmptyKey)
 
 TEST(EcdsaKeyUT, curveToString)
 {
-  const ecdsa::Curve curve = ecdsa::Curve::secp112r2;
+  const ecdsa::Curve curve = ecdsa::Curve::SECP112R2;
 
   const auto curveName = ecdsa::convertCurveToString(curve);
 

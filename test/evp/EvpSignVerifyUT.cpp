@@ -94,7 +94,7 @@ TEST_P(EvpSignVerifyUT, signVerify_ShouldSignAndVerifyWithEcdsaGeneratedKeys)
   const EvpSignVerifyInput input{ GetParam() };
   std::vector<uint8_t> data(256);
   std::iota(data.begin(), data.end(), 0); 
-  auto key = ecdsa::create(ecdsa::Curve::sect571r1);
+  auto key = ecdsa::create(ecdsa::Curve::SECT571R1);
   ASSERT_TRUE(key);
 
   auto keyUptr = key.moveValue();

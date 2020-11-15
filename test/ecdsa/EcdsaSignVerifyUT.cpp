@@ -115,7 +115,7 @@ TEST_P(EcdsaSignVerifyUT, signVerify_ApiIntegrity)
   const SignVerifyInput input { GetParam() };
   std::vector<uint8_t> data(256);
   std::iota(data.begin(), data.end(), 0); 
-  auto key = ecdsa::create(ecdsa::Curve::secp224r1);
+  auto key = ecdsa::create(ecdsa::Curve::SECP224R1);
   ASSERT_TRUE(key);
 
   auto keyUptr = key.moveValue();
@@ -135,7 +135,7 @@ TEST_P(EcdsaSignVerifyUT, signVerify_IntegrityWithEvp)
   const SignVerifyInput input { GetParam() };
   std::vector<uint8_t> data(256);
   std::iota(data.begin(), data.end(), 0); 
-  auto key = ecdsa::create(ecdsa::Curve::sect233k1);
+  auto key = ecdsa::create(ecdsa::Curve::SECT233K1);
   ASSERT_TRUE(key);
 
   auto keyUptr = key.moveValue();
