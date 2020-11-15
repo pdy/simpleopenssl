@@ -41,26 +41,26 @@ SRC_HASH_TEST := $(wildcard $(TEST_PATH)/hash/*cpp)
 SRC_NID_TEST := $(wildcard $(TEST_PATH)/nid/*cpp)
 SRC_EVP_TEST := $(wildcard $(TEST_PATH)/evp/*cpp)
 
-OBJ_PATH := $(BUILD)/obj
-OBJS_TEST := $(patsubst $(TEST_PATH)/%.cpp,$(OBJ_PATH)/%.o, $(SRC_TEST))
+OBJ_DIR := $(BUILD)/obj
+OBJS_TEST := $(patsubst $(TEST_PATH)/%.cpp,$(OBJ_DIR)/%.o, $(SRC_TEST))
 
-OBJ_X509_PATH := $(OBJ_PATH)/x509
-OBJS_X509_TEST := $(patsubst $(TEST_PATH)/x509/%.cpp,$(OBJ_X509_PATH)/%.o, $(SRC_X509_TEST))
+OBJ_X509_DIR := $(OBJ_DIR)/x509
+OBJS_X509_TEST := $(patsubst $(TEST_PATH)/x509/%.cpp,$(OBJ_X509_DIR)/%.o, $(SRC_X509_TEST))
 
-OBJ_ECDSA_PATH := $(OBJ_PATH)/ecdsa
-OBJS_ECDSA_TEST := $(patsubst $(TEST_PATH)/ecdsa/%.cpp,$(OBJ_ECDSA_PATH)/%.o, $(SRC_ECDSA_TEST))
+OBJ_ECDSA_DIR := $(OBJ_DIR)/ecdsa
+OBJS_ECDSA_TEST := $(patsubst $(TEST_PATH)/ecdsa/%.cpp,$(OBJ_ECDSA_DIR)/%.o, $(SRC_ECDSA_TEST))
 
-OBJ_RSA_PATH := $(OBJ_PATH)/rsa
-OBJS_RSA_TEST := $(patsubst $(TEST_PATH)/rsa/%.cpp,$(OBJ_RSA_PATH)/%.o, $(SRC_RSA_TEST))
+OBJ_RSA_DIR := $(OBJ_DIR)/rsa
+OBJS_RSA_TEST := $(patsubst $(TEST_PATH)/rsa/%.cpp,$(OBJ_RSA_DIR)/%.o, $(SRC_RSA_TEST))
 
-OBJ_HASH_PATH := $(OBJ_PATH)/hash
-OBJS_HASH_TEST := $(patsubst $(TEST_PATH)/hash/%.cpp,$(OBJ_HASH_PATH)/%.o, $(SRC_HASH_TEST))
+OBJ_HASH_DIR := $(OBJ_DIR)/hash
+OBJS_HASH_TEST := $(patsubst $(TEST_PATH)/hash/%.cpp,$(OBJ_HASH_DIR)/%.o, $(SRC_HASH_TEST))
 
-OBJ_NID_PATH := $(OBJ_PATH)/nid
-OBJS_NID_TEST := $(patsubst $(TEST_PATH)/nid/%.cpp,$(OBJ_NID_PATH)/%.o, $(SRC_NID_TEST))
+OBJ_NID_DIR := $(OBJ_DIR)/nid
+OBJS_NID_TEST := $(patsubst $(TEST_PATH)/nid/%.cpp,$(OBJ_NID_DIR)/%.o, $(SRC_NID_TEST))
 
-OBJ_EVP_PATH := $(OBJ_PATH)/evp
-OBJS_EVP_TEST := $(patsubst $(TEST_PATH)/evp/%.cpp,$(OBJ_EVP_PATH)/%.o, $(SRC_EVP_TEST))
+OBJ_EVP_DIR := $(OBJ_DIR)/evp
+OBJS_EVP_TEST := $(patsubst $(TEST_PATH)/evp/%.cpp,$(OBJ_EVP_DIR)/%.o, $(SRC_EVP_TEST))
 
 .PHONY: all clean
 
@@ -71,13 +71,13 @@ debug: all
 release: all
 
 dist:
-	@mkdir -p $(OBJ_PATH) \
-		$(OBJ_X509_PATH) \
-		$(OBJ_HASH_PATH) \
-		$(OBJ_RSA_PATH) \
-		$(OBJ_ECDSA_PATH) \
-		$(OBJ_NID_PATH) \
-		$(OBJ_EVP_PATH) \
+	@mkdir -p $(OBJ_DIR) \
+		$(OBJ_X509_DIR) \
+		$(OBJ_HASH_DIR) \
+		$(OBJ_RSA_DIR) \
+		$(OBJ_ECDSA_DIR) \
+		$(OBJ_NID_DIR) \
+		$(OBJ_EVP_DIR) \
 		$(DESTBIN)
 	
 clean:
@@ -98,32 +98,32 @@ $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
 	@echo "$<"
 
-$(OBJ_PATH)/%.o: $(TEST_PATH)/%.cpp
+$(OBJ_DIR)/%.o: $(TEST_PATH)/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-$(OBJ_X509_PATH)/%.o: $(TEST_PATH)/x509/%.cpp
+$(OBJ_X509_DIR)/%.o: $(TEST_PATH)/x509/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-$(OBJ_HASH_PATH)/%.o: $(TEST_PATH)/hash/%.cpp
+$(OBJ_HASH_DIR)/%.o: $(TEST_PATH)/hash/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-$(OBJ_NID_PATH)/%.o: $(TEST_PATH)/nid/%.cpp
+$(OBJ_NID_DIR)/%.o: $(TEST_PATH)/nid/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-$(OBJ_EVP_PATH)/%.o: $(TEST_PATH)/evp/%.cpp
+$(OBJ_EVP_DIR)/%.o: $(TEST_PATH)/evp/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
-(OBJ_RSA_PATH)/%.o: $(TEST_PATH)/rsa/%.cpp
+(OBJ_RSA_DIR)/%.o: $(TEST_PATH)/rsa/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
 
-$(OBJ_ECDSA_PATH)/%.o: $(TEST_PATH)/ecdsa/%.cpp
+$(OBJ_ECDSA_DIR)/%.o: $(TEST_PATH)/ecdsa/%.cpp
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
