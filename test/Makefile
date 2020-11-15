@@ -14,7 +14,7 @@ LD_FLAGS := -L../3rd/gtest/lib -L../3rd/openssl/lib
 GTEST_LIBS := -lgtest -lgmock -lgmock_main
 OPENSSL_LIBS := -lssl -lcrypto
 
-LD_LIBS := -pthread $(OPENSSL_LIBS)
+LD_LIBS := -Wl,-Bstatic $(OPENSSL_LIBS) -Wl,-Bdynamic -pthread -ldl
 
 INCLUDES := -I../include/ -isystem../3rd/openssl/include -isystem../3rd/gtest/include
 ROOT_BUILD := ../build
