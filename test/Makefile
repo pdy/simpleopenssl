@@ -3,21 +3,26 @@ print-%  : ; @echo $* = $($*)
 CXX := clang++
 STRIP := strip
 
+PROJ_ROOT := ..
+OPENSSL_PATH := $(PROJ_ROOT)/3rd/openssl_1.1.0f
+GTEST_PATH := $(PROJ_ROOT)/3rd/gtest
+TEST_PATH := $(PROJ_ROOT)/test
+
 # suppress GTEST warnings
 TEST_FLAGS := -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-prototypes -Wno-weak-vtables \
 	-Wno-missing-variable-declarations -Wno-gnu-zero-variadic-macro-arguments
 
 FLAGS := -std=c++11 -Wno-deprecated-register -Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-padded
 
-LD_FLAGS := -L../3rd/gtest/lib -L../3rd/openssl/lib
+LD_FLAGS := -L$(GTEST_PATH)/lib -L$(OPENSSL_PATH)/lib
 
 GTEST_LIBS := -lgtest -lgmock -lgmock_main
 OPENSSL_LIBS := -lssl -lcrypto
 
 LD_LIBS := -Wl,-Bstatic $(OPENSSL_LIBS) -Wl,-Bdynamic -pthread -ldl
 
-INCLUDES := -I../include/ -isystem../3rd/openssl/include -isystem../3rd/gtest/include
-ROOT_BUILD := ../build
+INCLUDES := -I$(PROJ_ROOT)/include/ -isystem$(OPENSSL_PATH)/include -isystem$(GTEST_PATH)/include
+ROOT_BUILD := $(PROJ_ROOT)/build
 
 ifeq ($(MAKECMDGOALS),release)
 	BUILD = $(ROOT_BUILD)/release
@@ -28,7 +33,7 @@ else
 	STRIP = echo
 endif
 
-SRC_TEST := $(wildcard ./*cpp)
+SRC_TEST := $(wildcard $(TEST_PATH)/*cpp)
 SRC_X509_TEST := $(wildcard ./x509/*cpp)
 SRC_ECDSA_TEST := $(wildcard ./ecdsa/*cpp)
 SRC_RSA_TEST := $(wildcard ./rsa/*cpp)
