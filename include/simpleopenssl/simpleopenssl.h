@@ -25,6 +25,7 @@
 */
 
 // openssl
+#include <cstdint>
 #include <iterator>
 #include <openssl/asn1.h>
 #include <openssl/ssl.h>
@@ -201,7 +202,6 @@ struct X509Name
   }
 };
 
-SO_PRV std::string errCodeToString(unsigned long errCode);
 } //namespace internal
 
 template<typename T>
@@ -219,39 +219,13 @@ public:
   explicit Result(unsigned long opensslErrorCode, T &&value)
     : m_value {std::move(value)}, m_opensslErrCode{opensslErrorCode} {}
      
-  explicit operator bool() const noexcept
-  {
-    return hasValue(); 
-  }
- 
-  T&& moveValue()
-  {
-    return std::move(m_value);
-  }
-
-  unsigned long errorCode() const noexcept
-  {
-    return m_opensslErrCode;
-  }
-
-  bool hasValue() const noexcept
-  { 
-    return !hasError(); 
-  }
-
-  bool hasError() const noexcept
-  {
-    return 0 != m_opensslErrCode;
-  }
-
-  std::string msg() const
-  {
-    if(0 == m_opensslErrCode)
-      return "ok";
-
-    return internal::errCodeToString(m_opensslErrCode); 
-  }
-
+  explicit inline operator bool() const noexcept;
+  inline T&& moveValue();
+  inline unsigned long errorCode() const noexcept;
+  inline bool hasValue() const noexcept;
+  inline bool hasError() const noexcept; 
+  inline std::string msg() const;
+  
 private:
   friend internal::AddValueRef<T, Result<T>, typename internal::is_uptr<T>::type>;
 
@@ -266,29 +240,11 @@ public:
   explicit Result(unsigned long opensslErrorCode)
     : m_opensslErrCode{opensslErrorCode} {}
  
-  explicit operator bool() const noexcept
-  {
-    return !hasError();
-  }
-
-  bool hasError() const noexcept
-  {
-    return 0 != m_opensslErrCode;
-  }
-
-  unsigned long errorCode() const noexcept
-  {
-    return m_opensslErrCode;
-  }
-
-  std::string msg() const
-  {
-    if(0 == m_opensslErrCode)
-      return "ok";
-
-    return internal::errCodeToString(m_opensslErrCode); 
-  }
-
+  explicit inline operator bool() const noexcept;
+  inline bool hasError() const noexcept;
+  inline unsigned long errorCode() const noexcept;  
+  inline std::string msg() const;
+  
 private:
   unsigned long m_opensslErrCode;
 };
@@ -1789,6 +1745,80 @@ namespace x509 {
 /////////////////////////////////////////////////////////////////////////////////
 
 namespace internal {
+  SO_PRV std::string errCodeToString(unsigned long errCode)
+  {
+    static constexpr size_t SIZE = 1024;
+    char buff[SIZE];
+    std::memset(buff, 0x00, SIZE);
+    ERR_error_string_n(errCode, buff, SIZE);
+    return std::string(buff);
+  }
+} // namespace internal
+
+
+template<typename T>
+inline Result<T>::operator bool() const noexcept
+{
+  return hasValue(); 
+}
+
+template<typename T>
+inline T&& Result<T>::moveValue()
+{
+  return std::move(m_value);
+}
+
+template<typename T>
+inline unsigned long Result<T>::errorCode() const noexcept
+{
+  return m_opensslErrCode;
+}
+
+template<typename T>
+inline bool Result<T>::hasValue() const noexcept
+{ 
+  return !hasError(); 
+}
+
+template<typename T>
+inline bool Result<T>::hasError() const noexcept
+{
+  return 0 != m_opensslErrCode;
+}
+
+template<typename T>
+inline std::string Result<T>::msg() const
+{
+  if(0 == m_opensslErrCode)
+    return "ok";
+
+  return internal::errCodeToString(m_opensslErrCode); 
+}
+  
+inline Result<void>::operator bool() const noexcept
+{
+  return !hasError();
+}
+
+inline bool Result<void>::hasError() const noexcept
+{
+  return 0 != m_opensslErrCode;
+}
+
+inline unsigned long Result<void>::errorCode() const noexcept
+{
+  return m_opensslErrCode;
+}
+
+inline std::string Result<void>::msg() const
+{
+  if(0 == m_opensslErrCode)
+    return "ok";
+
+  return internal::errCodeToString(m_opensslErrCode); 
+}
+
+namespace internal {
   template<typename ID>
   struct X509Extension
   {
@@ -1812,15 +1842,6 @@ namespace internal {
       return !(*this == other);
     }
   };
-
-  SO_PRV std::string errCodeToString(unsigned long errCode)
-  {
-    static constexpr size_t SIZE = 1024;
-    char buff[SIZE];
-    std::memset(buff, 0x00, SIZE);
-    ERR_error_string_n(errCode, buff, SIZE);
-    return std::string(buff);
-  }
 
   template<typename T>
   struct uptr_underlying_type
