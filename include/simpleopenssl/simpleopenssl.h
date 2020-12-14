@@ -452,6 +452,8 @@ namespace hash {
 } // namespace hash
 
 namespace nid {
+
+  // Generated with devtools/opensslnids
   enum class Nid : int
   {
     UNDEF = NID_undef,
