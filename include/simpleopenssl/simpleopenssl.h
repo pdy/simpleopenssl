@@ -25,8 +25,6 @@
 */
 
 // openssl
-#include <cstdint>
-#include <iterator>
 #include <openssl/asn1.h>
 #include <openssl/ssl.h>
 #include <openssl/ec.h>
@@ -54,6 +52,7 @@
 #include <chrono>
 #include <tuple>
 #include <sstream>
+#include <iterator>
 
 namespace so {
 
