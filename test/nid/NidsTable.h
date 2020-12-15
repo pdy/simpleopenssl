@@ -26,6 +26,8 @@
 
 #include <simpleopenssl/simpleopenssl.h>
 
+// Generated with devtools/opensslinids
+
 struct NidUTInput
 {
   int rawNid;
