@@ -180,27 +180,8 @@ struct X509Name
   std::string generationQualifier;
   std::string dnQualifier;
 
-  inline bool operator ==(const X509Name &other) const
-  {
-    return commonName == other.commonName
-      && surname == other.surname
-      && countryName == other.countryName
-      && localityName == other.localityName
-      && stateOrProvinceName == other.stateOrProvinceName
-      && organizationName == other.organizationName
-      && organizationalUnitName == other.organizationalUnitName
-      && title == other.title
-      && name == other.name
-      && givenName == other.givenName
-      && initials == other.initials
-      && generationQualifier == other.generationQualifier
-      && dnQualifier == other.dnQualifier;
-  }
-
-  inline bool operator !=(const X509Name &other) const
-  {
-    return !(*this == other);
-  }
+  inline bool operator ==(const X509Name &other) const; 
+  inline bool operator !=(const X509Name &other) const;
 };
 
 } //namespace internal
@@ -1748,6 +1729,28 @@ namespace x509 {
 /////////////////////////////////////////////////////////////////////////////////
 
 namespace internal {
+  inline bool X509Name::operator ==(const X509Name &other) const
+  {
+    return commonName == other.commonName
+      && surname == other.surname
+      && countryName == other.countryName
+      && localityName == other.localityName
+      && stateOrProvinceName == other.stateOrProvinceName
+      && organizationName == other.organizationName
+      && organizationalUnitName == other.organizationalUnitName
+      && title == other.title
+      && name == other.name
+      && givenName == other.givenName
+      && initials == other.initials
+      && generationQualifier == other.generationQualifier
+      && dnQualifier == other.dnQualifier;
+  }
+
+  inline bool X509Name::operator !=(const X509Name &other) const
+  {
+    return !(*this == other);
+  }
+
   SO_PRV std::string errCodeToString(unsigned long errCode)
   {
     static constexpr size_t SIZE = 1024;
