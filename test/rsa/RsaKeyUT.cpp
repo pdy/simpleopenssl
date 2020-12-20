@@ -119,7 +119,7 @@ TEST(RsaKeyUT, privKey2PemConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybePemPriv);
-  EXPECT_EQ(pemPriv, *maybePemPriv); 
+  EXPECT_EQ(pemPriv, maybePemPriv.value); 
 }
 
 TEST(RsaKeyUT, pubKey2PemConversion_ok)
@@ -137,7 +137,7 @@ TEST(RsaKeyUT, pubKey2PemConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybePemPub);
-  EXPECT_EQ(pemPub, *maybePemPub); 
+  EXPECT_EQ(pemPub, maybePemPub.value); 
 }
 
 TEST(RsaKeyUT, privKey2PemConversion_shouldFailWhenGivenPubKey)
@@ -172,7 +172,7 @@ TEST(RsaKeyUT, pubKey2PemConversion_shouldSuccessWhenGivenPrivKey)
 
   // THEN
   EXPECT_TRUE(maybePemPub);
-  EXPECT_EQ(data::rsa3072PubKeyPem, *maybePemPub); 
+  EXPECT_EQ(data::rsa3072PubKeyPem, maybePemPub.value); 
 }
 
 TEST(RsaKeyUT, privKey2DerConversion_ok)
@@ -190,7 +190,7 @@ TEST(RsaKeyUT, privKey2DerConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybeDerPriv);
-  EXPECT_EQ(data::rsa3072PrivKeyDer, *maybeDerPriv);
+  EXPECT_EQ(data::rsa3072PrivKeyDer, maybeDerPriv.value);
 }
 
 TEST(RsaKeyUT, derToPrivKeyConversion_ok)
@@ -228,7 +228,7 @@ TEST(RsaKeyUT, pubKey2DerConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybeDerPub);
-  EXPECT_EQ(data::rsa3072PubKeyDer, *maybeDerPub);
+  EXPECT_EQ(data::rsa3072PubKeyDer, maybeDerPub.value);
 }
 
 TEST(RsaKeyUT, derToPubKeyConversion_ok)
@@ -256,10 +256,10 @@ TEST(RsaKeyUT, extractPublicKeyOK)
   // WHEN
   const auto signResult = rsa::signSha256(data, *priv);
   ASSERT_TRUE(signResult);
-  const auto verResult = rsa::verifySha256Signature(*signResult, data, *pub);
+  const auto verResult = rsa::verifySha256Signature(signResult.value, data, *pub);
   // THEN
   ASSERT_TRUE(verResult);
-  EXPECT_TRUE(*verResult);
+  EXPECT_TRUE(verResult.value);
 }
 
 TEST(RsaKeyUT, extractPublicPartFromFreshStructureShouldFail)
@@ -360,7 +360,7 @@ TEST(RsaKeyUT, getKeyBitsOK)
 
   // THEN
   ASSERT_TRUE(result);
-  EXPECT_EQ(rsa::KeyBits::_2048_, *result);
+  EXPECT_EQ(rsa::KeyBits::_2048_, result.value);
 }
 
 TEST(RsaKeyUT, getKeyBitsFromFreshStructShouldFail)

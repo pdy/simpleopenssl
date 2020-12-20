@@ -76,9 +76,9 @@ TEST_P(EcdsaSignVerifyUT, verify_AgainstPrecalculatedSignature)
 
   // THEN
   ASSERT_TRUE(verifiedPem);
-  EXPECT_TRUE(*verifiedPem);
+  EXPECT_TRUE(verifiedPem.value);
   ASSERT_TRUE(verifiedDer);
-  EXPECT_TRUE(*verifiedDer);
+  EXPECT_TRUE(verifiedDer.value);
 }
 
 TEST_P(EcdsaSignVerifyUT, signVerify_AgainstPrecalculatedKey)
@@ -96,17 +96,17 @@ TEST_P(EcdsaSignVerifyUT, signVerify_AgainstPrecalculatedKey)
   // WHEN
   const auto sigPem = input.signer(input.signedData, *keyPem); 
   ASSERT_TRUE(sigPem);
-  const auto verifiedPem = input.verifier(*sigPem, input.signedData, *keyPem);
+  const auto verifiedPem = input.verifier(sigPem.value, input.signedData, *keyPem);
   ASSERT_TRUE(verifiedPem);
 
   const auto sigDer = input.signer(input.signedData, *keyDer); 
   ASSERT_TRUE(sigPem);
-  const auto verifiedDer = input.verifier(*sigDer, input.signedData, *keyDer);
+  const auto verifiedDer = input.verifier(sigDer.value, input.signedData, *keyDer);
   ASSERT_TRUE(verifiedDer);
 
   // THEN
-  EXPECT_TRUE(*verifiedPem);
-  EXPECT_TRUE(*verifiedDer);
+  EXPECT_TRUE(verifiedPem.value);
+  EXPECT_TRUE(verifiedDer.value);
 }
 
 TEST_P(EcdsaSignVerifyUT, signVerify_ApiIntegrity)
@@ -122,11 +122,11 @@ TEST_P(EcdsaSignVerifyUT, signVerify_ApiIntegrity)
   
   // WHEN
   const auto sig = input.signer(data, *keyUptr);
-  const auto verResult = input.verifier(*sig, data, *keyUptr);
+  const auto verResult = input.verifier(sig.value, data, *keyUptr);
 
   // THEN
   ASSERT_TRUE(verResult);
-  ASSERT_TRUE(*verResult);
+  ASSERT_TRUE(verResult.value);
 }
 
 TEST_P(EcdsaSignVerifyUT, signVerify_IntegrityWithEvp)
@@ -141,17 +141,17 @@ TEST_P(EcdsaSignVerifyUT, signVerify_IntegrityWithEvp)
   auto keyUptr = key.moveValue();
   
   const auto sig = input.signer(data, *keyUptr);
-  const auto verResult = input.verifier(*sig, data, *keyUptr);
+  const auto verResult = input.verifier(sig.value, data, *keyUptr);
 
   // WHEN
   auto evpKey = ecdsa::convertToEvp(*keyUptr);
-  const auto evpVerResult = input.evpVerifier(*sig, data, *evpKey.moveValue());
+  const auto evpVerResult = input.evpVerifier(sig.value, data, *evpKey.moveValue());
   
   // THEN
   ASSERT_TRUE(verResult);
-  EXPECT_TRUE(*verResult);
+  EXPECT_TRUE(verResult.value);
   ASSERT_TRUE(evpVerResult);
-  EXPECT_TRUE(*evpVerResult);
+  EXPECT_TRUE(evpVerResult.value);
 }
 
 const auto testCases = ::testing::Values(

@@ -64,7 +64,7 @@ TEST(X509UT, x509ToPem)
 
   //THEN
   ASSERT_TRUE(actual);
-  EXPECT_EQ(pemCert, *actual);
+  EXPECT_EQ(pemCert, actual.value);
 }
 
 }}}

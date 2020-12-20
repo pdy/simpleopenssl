@@ -64,6 +64,6 @@ TEST(CRLPemUT, crlToPem)
 
   //THEN
   ASSERT_TRUE(actual);
-  EXPECT_EQ(pemCrl, *actual);
+  EXPECT_EQ(pemCrl, actual.value);
 }
 }}}

@@ -50,12 +50,12 @@ TEST(X509UT, getIssuerOK)
 
   // THEN
   ASSERT_TRUE(actual);
-  EXPECT_EQ("UK", (*actual).countryName);
-  EXPECT_EQ("Unorganized", (*actual).organizationName);
-  EXPECT_EQ("Sample Unit Name", (*actual).organizationalUnitName);
-  EXPECT_EQ("Joe Briggs", (*actual).commonName);
-  EXPECT_EQ("", (*actual).localityName);
-  EXPECT_EQ("", (*actual).stateOrProvinceName);
+  EXPECT_EQ("UK", (actual.value).countryName);
+  EXPECT_EQ("Unorganized", (actual.value).organizationName);
+  EXPECT_EQ("Sample Unit Name", (actual.value).organizationalUnitName);
+  EXPECT_EQ("Joe Briggs", (actual.value).commonName);
+  EXPECT_EQ("", (actual.value).localityName);
+  EXPECT_EQ("", (actual.value).stateOrProvinceName);
 }
 
 TEST(X509UT, getSubjectOK)
@@ -74,11 +74,11 @@ TEST(X509UT, getSubjectOK)
   
   // THEN
   ASSERT_TRUE(actual);
-  EXPECT_EQ("UK", (*actual).countryName);
-  EXPECT_EQ("Unorganized", (*actual).organizationName);
-  EXPECT_EQ("Joe Briggs", (*actual).commonName);
-  EXPECT_EQ("", (*actual).localityName);
-  EXPECT_EQ("", (*actual).stateOrProvinceName);
+  EXPECT_EQ("UK", (actual.value).countryName);
+  EXPECT_EQ("Unorganized", (actual.value).organizationName);
+  EXPECT_EQ("Joe Briggs", (actual.value).commonName);
+  EXPECT_EQ("", (actual.value).localityName);
+  EXPECT_EQ("", (actual.value).stateOrProvinceName);
 }
 
 TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
@@ -99,7 +99,7 @@ TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
   // THEN
   ASSERT_TRUE(setResult);
   ASSERT_TRUE(getResult);
-  EXPECT_EQ(*rootCertSubj, *getResult); 
+  EXPECT_EQ(rootCertSubj.value, getResult.value); 
 }
 
 TEST(X509UT, setGetIssuerAPIIntegrityOK)
@@ -120,7 +120,7 @@ TEST(X509UT, setGetIssuerAPIIntegrityOK)
   // THEN
   ASSERT_TRUE(setResult);
   ASSERT_TRUE(getResult);
-  EXPECT_EQ(info, *getResult);
+  EXPECT_EQ(info, getResult.value);
 }
 
 TEST(X509UT, setGetSubjectAPIIntegrityOK)
@@ -140,7 +140,7 @@ TEST(X509UT, setGetSubjectAPIIntegrityOK)
   // THEN
   ASSERT_TRUE(setResult);
   ASSERT_TRUE(getResult);
-  EXPECT_EQ(info, *getResult);
+  EXPECT_EQ(info, getResult.value);
 }
 
 TEST(X509UT, getVersionOK)
@@ -247,7 +247,7 @@ TEST(X509UT, getValidityOK)
 
   // THEN
   ASSERT_TRUE(validity);
-  EXPECT_EQ(expected, *validity);
+  EXPECT_EQ(expected, validity.value);
 }
 
 TEST(X509UT, getSetValidityAPIIntegrityOK)
@@ -269,7 +269,7 @@ TEST(X509UT, getSetValidityAPIIntegrityOK)
   // THEN
   EXPECT_TRUE(setResult);
   ASSERT_TRUE(maybeValidity);
-  EXPECT_EQ(expected, *maybeValidity);
+  EXPECT_EQ(expected, maybeValidity.value);
 }
 
 TEST(X509UT, getSetPubKeyWithGeneratedKey)
@@ -314,9 +314,9 @@ TEST(X509UT, getSetPubKeyWithGeneratedKey)
   ASSERT_FALSE(pubSignResult);
   
   // 5.
-  const auto verResult = ::so::evp::verifySha1Signature(*signResult, data, *extractedPub);
+  const auto verResult = ::so::evp::verifySha1Signature(signResult.value, data, *extractedPub);
   ASSERT_TRUE(verResult); 
-  EXPECT_TRUE(*verResult);
+  EXPECT_TRUE(verResult.value);
 }
 
 TEST(X509UT, setGetPubWithPrecalculatedKeys)
@@ -344,9 +344,9 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
   ASSERT_TRUE(signResult);
   const auto pubSignResult = ::so::evp::signSha1(data, *pub);
   ASSERT_FALSE(pubSignResult); 
-  const auto verResult = ::so::evp::verifySha1Signature(*signResult, data, *pub);
+  const auto verResult = ::so::evp::verifySha1Signature(signResult.value, data, *pub);
   ASSERT_TRUE(verResult); 
-  EXPECT_TRUE(*verResult);
+  EXPECT_TRUE(verResult.value);
 
   // 3.
   auto cert = ::so::make_unique(X509_new());
@@ -360,9 +360,9 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
   ASSERT_TRUE(maybeExtractedPub);
   auto extractedPub = maybeExtractedPub.moveValue();
 
-  const auto ver2Result = ::so::evp::verifySha1Signature(*signResult, data, *extractedPub);
+  const auto ver2Result = ::so::evp::verifySha1Signature(signResult.value, data, *extractedPub);
   ASSERT_TRUE(ver2Result);
-  ASSERT_TRUE(*ver2Result);
+  ASSERT_TRUE(ver2Result.value);
 }
 
 TEST(X509UT, certSignSha256VerifyAPIIntegrity)
@@ -387,7 +387,7 @@ TEST(X509UT, certSignSha256VerifyAPIIntegrity)
   // THEN
   ASSERT_TRUE(signResult);
   ASSERT_TRUE(verResult);
-  EXPECT_TRUE(*verResult);  
+  EXPECT_TRUE(verResult.value);  
 }
 
 TEST(X509UT, certSignSha1VerifyAPIIntegrity)
@@ -412,7 +412,7 @@ TEST(X509UT, certSignSha1VerifyAPIIntegrity)
   // THEN
   ASSERT_TRUE(signResult);
   ASSERT_TRUE(verResult);
-  EXPECT_TRUE(*verResult);  
+  EXPECT_TRUE(verResult.value);  
 }
 
 TEST(X509UT, certSignSha384VerifyAPIIntegrity)
@@ -437,7 +437,7 @@ TEST(X509UT, certSignSha384VerifyAPIIntegrity)
   // THEN
   ASSERT_TRUE(signResult);
   ASSERT_TRUE(verResult);
-  EXPECT_TRUE(*verResult);  
+  EXPECT_TRUE(verResult.value);  
 }
 
 TEST(X509UT, getSerialNumberWithPrecalculatedData)
@@ -454,7 +454,7 @@ TEST(X509UT, getSerialNumberWithPrecalculatedData)
 
   // THEN
   ASSERT_TRUE(maybeSerial);
-  auto serial = *maybeSerial;
+  auto serial = maybeSerial.value;
   EXPECT_EQ(expected, serial);
 }
 
@@ -472,7 +472,7 @@ TEST(X509UT, getSerialNumberFromPEMFile)
 
   // THEN
   ASSERT_TRUE(maybeSerial);
-  auto serial = *maybeSerial;
+  auto serial = maybeSerial.value;
   EXPECT_EQ(expected, serial);
 }
 
@@ -490,7 +490,7 @@ TEST(X509UT, getSerialNumber)
 
   // THEN
   ASSERT_TRUE(maybeSerial);
-  auto serial = *maybeSerial;
+  auto serial = maybeSerial.value;
   EXPECT_EQ(expectedSerialArray, serial);
 }
 
@@ -509,7 +509,7 @@ TEST(X509UT, getSetSerialNumberAPIIntegrity)
   // THEN
   ASSERT_TRUE(setResult);
   ASSERT_TRUE(getResult);
-  auto serial = *getResult;
+  auto serial = getResult.value;
   EXPECT_EQ(expected, serial);
 }
 
@@ -529,7 +529,7 @@ TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
   // THEN
   ASSERT_TRUE(setResult);
   ASSERT_TRUE(getResult);
-  auto serial = *getResult;
+  auto serial = getResult.value;
   EXPECT_EQ(expected, serial);
 }
 
@@ -545,7 +545,7 @@ TEST(X509UT, getEcdsaSignature)
 
   // THEN
   ASSERT_TRUE(maybeSig);
-  const auto& sig = *maybeSig;
+  const auto& sig = maybeSig.value;
   ASSERT_EQ(48, sig.r.size()); // it's secp384r1
   ASSERT_EQ(48, sig.s.size()); // it's secp384r1
 }
@@ -607,12 +607,12 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
   ASSERT_TRUE(maybeEcdsaSignature);
 
   // WHEN
-  const auto der = ecdsa::convertToDer(*maybeEcdsaSignature);
+  const auto der = ecdsa::convertToDer(maybeEcdsaSignature.value);
   ASSERT_TRUE(der);
 
   // THEN
-  EXPECT_EQ(maybeSignature.value().size(), der.value().size());
-  EXPECT_EQ(maybeSignature.value(), der.value());
+  EXPECT_EQ(maybeSignature.value.size(), der.value.size());
+  EXPECT_EQ(maybeSignature.value, der.value);
 }
 
 TEST(X509UT, isCA)

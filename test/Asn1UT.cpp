@@ -42,7 +42,7 @@ TEST(Asn1UT, asn1TimeToStdTimeOK)
 
   // THEN
   ASSERT_TRUE(actual);
-  EXPECT_EQ(now, *actual);
+  EXPECT_EQ(now, actual.value);
 }
 
 TEST(Asn1UT, asn1ApiTimeConvertersIntegrityOK)
@@ -58,7 +58,7 @@ TEST(Asn1UT, asn1ApiTimeConvertersIntegrityOK)
   ASSERT_TRUE(stdTime);
 
   // THEN
-  EXPECT_EQ(now, *stdTime);
+  EXPECT_EQ(now, stdTime.value);
 }
 
 class Asn1ObjectEncodeUT : public testing::TestWithParam<std::string>
@@ -77,7 +77,7 @@ TEST_P(Asn1ObjectEncodeUT, encodeDecodeApiIntegrity)
   
   // THEN
   ASSERT_TRUE(actual);
-  EXPECT_EQ(input, *actual);
+  EXPECT_EQ(input, actual.value);
 }
 
 INSTANTIATE_TEST_CASE_P(
