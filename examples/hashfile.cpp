@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
   if(!hash)
     std::cout << "ERROR: " << hash.msg() << "\n";
   else
-    std::cout << bin2Hex(*hash) << "\n";
+    std::cout << bin2Hex(hash.value) << "\n";
      
   return 0;
 }

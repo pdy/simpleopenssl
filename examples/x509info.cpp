@@ -138,9 +138,9 @@ void handleCrl(const std::string &fileName)
     log << extensions.msg();
     return;
   }
-  log << "ExtensionCount: " << extensions->size();
+  log << "ExtensionCount: " << extensions.value.size();
 
-  if(!extensions->empty())
+  if(!extensions.value.empty())
   {
     for(const auto &ext : extensions.value)
     {
@@ -205,7 +205,7 @@ void handleCrl(const std::string &fileName)
   } 
   const auto sigType = x509::getSignatureAlgorithm(*crl);
   log << "Signature: " << nid::getLongName(sigType).value;
-  logHex(bin2Hex(*sig), 36);
+  logHex(bin2Hex(sig.value), 36);
 
 }
 
@@ -243,7 +243,7 @@ void handleCert(const std::string &fileName)
     log << serial.msg();
     return;
   }
-  log << "Serial: " << bin2Hex(*serial);
+  log << "Serial: " << bin2Hex(serial.value);
 
   auto maybeSubject = x509::getSubject(*cert);
   if(!maybeSubject)
@@ -307,7 +307,7 @@ void handleCert(const std::string &fileName)
   }();
 
   log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value << " " << keyInfo;
-  logHex(bin2Hex(*pubKeyBytes), 30);
+  logHex(bin2Hex(pubKeyBytes.value), 30);
 
   const auto extensions = x509::getExtensions(*cert);
   if(!extensions)
@@ -315,9 +315,9 @@ void handleCert(const std::string &fileName)
     log << extensions.msg();
     return;
   }
-  log << "ExtensionCount: " << extensions->size();
+  log << "ExtensionCount: " << extensions.value.size();
   
-  if(!extensions->empty())
+  if(!extensions.value.empty())
   {
     for(const auto &ext : extensions.value)
     {
@@ -344,7 +344,7 @@ void handleCert(const std::string &fileName)
   } 
   const auto sigType = x509::getSignatureAlgorithm(*cert);
   log << "Signature: " << nid::getLongName(sigType).value;
-  logHex(bin2Hex(*sig), 36);
+  logHex(bin2Hex(sig.value), 36);
 }
 
 std::string bin2Hex(const so::Bytes &buff)

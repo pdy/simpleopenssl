@@ -118,8 +118,8 @@ int savePem(RSA &key, int keySize)
   const std::string privName = namePrefix(keySize) + "_priv.pem";
   const std::string pubName = namePrefix(keySize) + "_pub.pem";
   std::cout << "Generated " << privName << " and " << pubName << "\n";
-  saveFile(privName, *pemPriv);
-  saveFile(pubName, *pemPub);
+  saveFile(privName, pemPriv.value);
+  saveFile(pubName, pemPub.value);
 
   return 0;
 }
@@ -143,8 +143,8 @@ int saveDer(RSA &key, int keySize)
   const std::string privName = namePrefix(keySize) + "_priv.der";
   const std::string pubName = namePrefix(keySize) + "_pub.der";
   std::cout << "Generated " << privName << " and " << pubName << "\n";
-  saveFile(privName, *derPriv);
-  saveFile(pubName, *derPub);
+  saveFile(privName, derPriv.value);
+  saveFile(pubName, derPub.value);
 
   return 0;
 }
