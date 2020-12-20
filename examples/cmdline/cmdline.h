@@ -463,7 +463,7 @@ namespace cmdline{
                             errors.push_back("undefined option: --"+name);
                             continue;
                         }
-                        if (options[name]->has.value){
+                        if (options[name]->has_value()){
                             if (i+1>=argc){
                                 errors.push_back("option needs value: --"+name);
                                 continue;
@@ -503,7 +503,7 @@ namespace cmdline{
                         continue;
                     }
 
-                    if (i+1<argc && options[lookup[last]]->has.value){
+                    if (i+1<argc && options[lookup[last]]->has_value()){
                         set_option(lookup[last], argv[i+1]);
                         i++;
                     }
@@ -624,7 +624,7 @@ namespace cmdline{
         public:
             virtual ~option_base(){}
 
-            virtual bool has.value const=0;
+            virtual bool has_value() const=0;
             virtual bool set()=0;
             virtual bool set(const std::string &value)=0;
             virtual bool has_set() const=0;
@@ -644,9 +644,9 @@ namespace cmdline{
                                  const std::string &desc)
                     :nam(name), snam(short_name), desc(desc), has(false){
             }
-            ~option_without.value{}
+            ~option_without_value(){}
 
-            bool has.value const { return false; }
+            bool has_value() const { return false; }
 
             bool set(){
                 has=true;
@@ -704,13 +704,13 @@ namespace cmdline{
                     , def(def), actual(def) {
                 this->desc=full_description(desc);
             }
-            ~option_with.value{}
+            ~option_with_value(){}
 
             const T &get() const {
                 return actual;
             }
 
-            bool has.value const { return true; }
+            bool has_value() const { return true; }
 
             bool set(){
                 return false;
