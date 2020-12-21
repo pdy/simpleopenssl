@@ -144,6 +144,7 @@ CUSTOM_DELETER_UPTR(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 
 namespace internal {
 
+  /*
 template<typename T, typename TSelf, typename Tag>
 class AddValueRef {};
 
@@ -151,14 +152,17 @@ template<typename T, typename TSelf>
 class AddValueRef<T, TSelf, std::false_type>
 {
 public:
-  const T& operator*() const { return value(); }
-  const T* operator->() const { return &(value()); }
-  const T& value() const { return static_cast<const TSelf*>(this)->m_value; }
+  const T& operator*() const { return value; }
+  const T* operator->() const { return &(value); }
+  const T& value const { return static_cast<const TSelf*>(this)->value; }
 };
 
 template<typename T, typename TSelf>
 class AddValueRef<T, TSelf, std::true_type>
 {};
+*/
+
+static constexpr int OSSL_NO_ERR_CODE = 0;
 
 template<typename ID>
 struct X509Extension;
@@ -187,48 +191,27 @@ struct X509Name
 } //namespace internal
 
 template<typename T>
-class Result : public internal::AddValueRef<T, Result<T>, typename internal::is_uptr<T>::type>
+struct Result 
 {
-public: 
-  template
-  < 
-    typename T_ = T,
-    typename = typename std::enable_if<std::is_default_constructible<T_>::value>::type
-  >
-  explicit Result(unsigned long opensslErrorCode)
-    : m_value {}, m_opensslErrCode{opensslErrorCode} {}  
+  T value;
+  unsigned long opensslErrCode;
 
-  explicit Result(unsigned long opensslErrorCode, T &&value)
-    : m_value {std::move(value)}, m_opensslErrCode{opensslErrorCode} {}
-     
   explicit inline operator bool() const noexcept;
   inline T&& moveValue();
-  inline unsigned long errorCode() const noexcept;
   inline bool hasValue() const noexcept;
   inline bool hasError() const noexcept; 
   inline std::string msg() const;
-  
-private:
-  friend internal::AddValueRef<T, Result<T>, typename internal::is_uptr<T>::type>;
-
-  T m_value;
-  unsigned long m_opensslErrCode;
+ 
 };
 
 template<>
-class Result<void>
-{
-public:
-  explicit Result(unsigned long opensslErrorCode)
-    : m_opensslErrCode{opensslErrorCode} {}
- 
+struct Result<void>
+{ 
+  unsigned long opensslErrCode;
+  
   explicit inline operator bool() const noexcept;
   inline bool hasError() const noexcept;
-  inline unsigned long errorCode() const noexcept;  
-  inline std::string msg() const;
-  
-private:
-  unsigned long m_opensslErrCode;
+  inline std::string msg() const; 
 };
 
 
@@ -1771,13 +1754,7 @@ inline Result<T>::operator bool() const noexcept
 template<typename T>
 inline T&& Result<T>::moveValue()
 {
-  return std::move(m_value);
-}
-
-template<typename T>
-inline unsigned long Result<T>::errorCode() const noexcept
-{
-  return m_opensslErrCode;
+  return std::move(value);
 }
 
 template<typename T>
@@ -1789,16 +1766,16 @@ inline bool Result<T>::hasValue() const noexcept
 template<typename T>
 inline bool Result<T>::hasError() const noexcept
 {
-  return 0 != m_opensslErrCode;
+  return internal::OSSL_NO_ERR_CODE != opensslErrCode;
 }
 
 template<typename T>
 inline std::string Result<T>::msg() const
 {
-  if(0 == m_opensslErrCode)
+  if(hasValue())
     return "ok";
 
-  return internal::errCodeToString(m_opensslErrCode); 
+  return internal::errCodeToString(opensslErrCode); 
 }
   
 inline Result<void>::operator bool() const noexcept
@@ -1808,20 +1785,15 @@ inline Result<void>::operator bool() const noexcept
 
 inline bool Result<void>::hasError() const noexcept
 {
-  return 0 != m_opensslErrCode;
-}
-
-inline unsigned long Result<void>::errorCode() const noexcept
-{
-  return m_opensslErrCode;
+  return internal::OSSL_NO_ERR_CODE != opensslErrCode;
 }
 
 inline std::string Result<void>::msg() const
 {
-  if(0 == m_opensslErrCode)
+  if(!hasError())
     return "ok";
 
-  return internal::errCodeToString(m_opensslErrCode); 
+  return internal::errCodeToString(opensslErrCode); 
 }
 
 namespace internal {
@@ -1858,9 +1830,8 @@ namespace internal {
   template<typename T>
   SO_PRV Result<T> err(T &&val)
   {
-    return Result<T>(ERR_get_error(), std::move(val));
+    return Result<T>{ std::move(val), ERR_get_error() };
   }
-  
  
   template
   <
@@ -1886,28 +1857,28 @@ namespace internal {
   template<typename T>
   SO_PRV Result<T> err(unsigned long errCode)
   { 
-    return Result<T>(errCode);
+    return Result<T>{ T{}, errCode };
   }
 
   template<typename T>
   SO_PRV Result<T> ok(T &&val)
   {
-    return Result<T>(0, std::move(val));
+    return Result<T>{ std::move(val), internal::OSSL_NO_ERR_CODE };
   }
 
   SO_PRV Result<void> errVoid()
   {
-    return Result<void>(ERR_get_error());
+    return Result<void>{ ERR_get_error() };
   }
 
   SO_PRV Result<void> errVoid(unsigned long errCode)
   {
-    return Result<void>(errCode);
+    return Result<void>{ errCode };
   }
 
   SO_PRV Result<void> okVoid()
   {
-    return Result<void>(0);
+    return Result<void>{ internal::OSSL_NO_ERR_CODE };
   }
 
   /*
@@ -2005,70 +1976,70 @@ namespace internal {
     const auto error = [](unsigned long errCode){ return internal::err<internal::X509Name>(errCode); }; 
     const auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName)
-      return error(commonName.errorCode());
+      return error(commonName.opensslErrCode);
 
     const auto surname = nameEntry2String(name, NID_surname);
     if(!surname)
-      return error(surname.errorCode());
+      return error(surname.opensslErrCode);
       
     const auto countryName = nameEntry2String(name, NID_countryName);
     if(!countryName)
-      return error(countryName.errorCode());
+      return error(countryName.opensslErrCode);
 
     const auto localityName = nameEntry2String(name, NID_localityName);
     if(!localityName)
-      return error(localityName.errorCode());
+      return error(localityName.opensslErrCode);
 
     const auto stateOrProvinceName = nameEntry2String(name, NID_stateOrProvinceName);
     if(!stateOrProvinceName)
-      return error(stateOrProvinceName.errorCode());
+      return error(stateOrProvinceName.opensslErrCode);
 
     const auto organizationName = nameEntry2String(name, NID_organizationName);
     if(!organizationName)
-      return error(organizationName.errorCode());
+      return error(organizationName.opensslErrCode);
 
     const auto organizationalUnitName = nameEntry2String(name, NID_organizationalUnitName);
     if(!organizationalUnitName)
-      return error(organizationalUnitName.errorCode());
+      return error(organizationalUnitName.opensslErrCode);
  
     const auto title = nameEntry2String(name, NID_title);
     if(!title)
-      return error(title.errorCode());
+      return error(title.opensslErrCode);
 
     const auto nameE = nameEntry2String(name, NID_name);
     if(!nameE)
-      return error(nameE.errorCode());
+      return error(nameE.opensslErrCode);
 
     const auto givenName = nameEntry2String(name, NID_givenName);
     if(!givenName)
-      return error(givenName.errorCode());
+      return error(givenName.opensslErrCode);
 
     const auto initials = nameEntry2String(name, NID_initials);
     if(!initials)
-      return error(initials.errorCode());
+      return error(initials.opensslErrCode);
 
     const auto generationQualifier = nameEntry2String(name, NID_generationQualifier);
     if(!generationQualifier)
-      return error(generationQualifier.errorCode());
+      return error(generationQualifier.opensslErrCode);
 
     const auto dnQualifier = nameEntry2String(name, NID_dnQualifier);
     if(!dnQualifier)
-      return error(dnQualifier.errorCode());
+      return error(dnQualifier.opensslErrCode);
 
     return internal::ok<internal::X509Name>({ 
-        *commonName,
-        *surname,
-        *countryName,
-        *localityName,
-        *stateOrProvinceName,
-        *organizationName,
-        *organizationalUnitName,
-        *title,
-        *nameE,
-        *givenName,
-        *initials,
-        *generationQualifier,
-        *dnQualifier
+        commonName.value,
+        surname.value,
+        countryName.value,
+        localityName.value,
+        stateOrProvinceName.value,
+        organizationName.value,
+        organizationalUnitName.value,
+        title.value,
+        nameE.value,
+        givenName.value,
+        initials.value,
+        generationQualifier.value,
+        dnQualifier.value
     });
   }
 
@@ -2269,9 +2240,9 @@ namespace internal {
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
     const int nid = OBJ_obj2nid(asn1Obj);
     const int critical = X509_EXTENSION_get_critical(&ex);
-    const auto oidStr = asn1::convertObjToStr(*asn1Obj, asn1::Form::NUMERICAL);
+    auto oidStr = asn1::convertObjToStr(*asn1Obj, asn1::Form::NUMERICAL);
     if(!oidStr)
-      return internal::err<RetType>(oidStr.errorCode());
+      return internal::err<RetType>(oidStr.opensslErrCode);
  
     if(nid == NID_undef)
     {
@@ -2286,7 +2257,7 @@ namespace internal {
             static_cast<ID>(nid),
             static_cast<bool>(critical),
             "",
-            std::move(*oidStr),
+            oidStr.moveValue(),
             std::move(data)
       });
     }
@@ -2304,7 +2275,7 @@ namespace internal {
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
-        std::move(*oidStr),
+        oidStr.moveValue(),
         std::move(data)
       });
     }
@@ -2320,7 +2291,7 @@ namespace internal {
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
-        std::move(*oidStr),
+        oidStr.moveValue(),
         std::move(data)
       }); 
   }
@@ -2463,7 +2434,7 @@ namespace internal {
         {
           auto getExtension = internal::getExtension<x509::CrlEntryExtensionId>(*X509_REVOKED_get_ext(revoked, i));
           if(getExtension)
-            retExtensions.push_back(*getExtension);
+            retExtensions.push_back(getExtension.value);
         }
       }
     }
@@ -2476,8 +2447,8 @@ namespace internal {
     std::copy_n(serial->data, serial->length, std::back_inserter(retSerial));
 
     return x509::Revoked{
-      (timeStr ? *timeStr : ""),
-      (date ? *date : std::time_t{}),
+      (timeStr ? timeStr.value : ""),
+      (date ? date.value : std::time_t{}),
       std::move(retSerial),
       std::move(retExtensions)
     };
@@ -2608,9 +2579,9 @@ namespace bignum {
   {
     const auto sz = getByteLen(bn);
     if(!sz)
-      return internal::err<Bytes>(sz.errorCode());
+      return internal::err<Bytes>(sz.opensslErrCode);
 
-    Bytes ret(*sz);
+    Bytes ret(sz.value);
     BN_bn2bin(&bn, ret.data());
     return internal::ok(std::move(ret));
   }
@@ -2677,7 +2648,7 @@ namespace ecdsa {
   { 
     const auto check = ecdsa::checkKey(ec);
     if(!check)
-      return internal::err<std::string>(check.errorCode());
+      return internal::err<std::string>(check.opensslErrCode);
   
     return internal::convertToPem(PEM_write_bio_ECPrivateKey, &ec, nullptr, nullptr, 0, nullptr, nullptr); 
   }
@@ -2701,7 +2672,7 @@ namespace ecdsa {
   {
     const auto check = ecdsa::checkKey(ec);
     if(!check)
-      return internal::err<Bytes>(check.errorCode());
+      return internal::err<Bytes>(check.opensslErrCode);
 
     return internal::convertKeyToDer(ec, i2d_ECPrivateKey);
   }
@@ -2745,11 +2716,11 @@ namespace ecdsa {
   {
     auto maybeR = bignum::convertToBignum(signature.r);
     if(!maybeR)
-      return internal::err<Bytes>(maybeR.errorCode());
+      return internal::err<Bytes>(maybeR.opensslErrCode);
 
     auto maybeS = bignum::convertToBignum(signature.s);
     if(!maybeS)
-      return internal::err<Bytes>(maybeS.errorCode());
+      return internal::err<Bytes>(maybeS.opensslErrCode);
  
     auto sig = make_unique(ECDSA_SIG_new()); 
     if(!sig)
@@ -2869,7 +2840,7 @@ namespace ecdsa {
     if(!digest)
       return digest;
 
-    return internal::ecdsaSign(*digest, key);
+    return internal::ecdsaSign(digest.value, key);
   }
 
   SO_API Result<Bytes> signSha224(const Bytes &message, EC_KEY &key)
@@ -2878,7 +2849,7 @@ namespace ecdsa {
     if(!digest)
       return digest; 
 
-    return internal::ecdsaSign(*digest, key);
+    return internal::ecdsaSign(digest.value, key);
   }
 
   SO_API Result<Bytes> signSha256(const Bytes &message, EC_KEY &key)
@@ -2887,7 +2858,7 @@ namespace ecdsa {
     if(!digest)
       return digest; 
 
-    return internal::ecdsaSign(*digest, key);
+    return internal::ecdsaSign(digest.value, key);
   }
 
   SO_API Result<Bytes> signSha384(const Bytes &message, EC_KEY &key)
@@ -2896,7 +2867,7 @@ namespace ecdsa {
     if(!digest)
       return digest;
 
-    return internal::ecdsaSign(*digest, key);
+    return internal::ecdsaSign(digest.value, key);
   }
   
   SO_API Result<Bytes> signSha512(const Bytes &message, EC_KEY &key)
@@ -2905,52 +2876,52 @@ namespace ecdsa {
     if(!digest)
       return digest;
 
-    return internal::ecdsaSign(*digest, key);
+    return internal::ecdsaSign(digest.value, key);
   }
 
   SO_API Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha1(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, *digest, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
   SO_API Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha224(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, *digest, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
   SO_API Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha256(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, *digest, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
   SO_API Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha384(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, *digest, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
   SO_API Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha512(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, *digest, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 } //namespace ecdsa
 
@@ -3008,7 +2979,7 @@ namespace evp {
 
   SO_API std::string convertPubkeyTypeToString(KeyType pubKeyType)
   {
-    return nid::getLongName(static_cast<int>(pubKeyType)).value();
+    return nid::getLongName(static_cast<int>(pubKeyType)).value;
   }
 
   SO_API Result<EC_KEY_uptr> convertToEcdsa(EVP_PKEY &key)
@@ -3275,7 +3246,7 @@ namespace rsa {
   { 
     const auto check = rsa::checkKey(rsa);
     if(!check)
-      return internal::err<std::string>(check.errorCode());
+      return internal::err<std::string>(check.opensslErrCode);
   
     return internal::convertToPem(PEM_write_bio_RSAPrivateKey, &rsa, nullptr, nullptr, 0, nullptr, nullptr); 
   }
@@ -3299,7 +3270,7 @@ namespace rsa {
   {
     const auto check = rsa::checkKey(rsa);
     if(!check)
-      return internal::err<Bytes>(check.errorCode());
+      return internal::err<Bytes>(check.opensslErrCode);
 
     return internal::convertKeyToDer(rsa, i2d_RSAPrivateKey);
   }
@@ -3354,7 +3325,7 @@ namespace rsa {
     // get public key.
     const auto pub = rsa::getPublic(rsa);
     if(!pub)
-      return internal::err<KeyBits>(pub.errorCode());
+      return internal::err<KeyBits>(pub.opensslErrCode);
 
     return internal::ok(static_cast<KeyBits>(RSA_bits(&rsa)));
   }
@@ -3378,7 +3349,7 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha1, digest.value(), privKey); 
+    return internal::rsaSign(NID_sha1, digest.value, privKey); 
   }
 
   SO_API Result<Bytes> signSha224(const Bytes &msg, RSA &privKey)
@@ -3387,7 +3358,7 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha224, digest.value(), privKey); 
+    return internal::rsaSign(NID_sha224, digest.value, privKey); 
   }
 
   SO_API Result<Bytes> signSha256(const Bytes &msg, RSA &privKey)
@@ -3396,7 +3367,7 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha256, digest.value(), privKey); 
+    return internal::rsaSign(NID_sha256, digest.value, privKey); 
   }
 
   SO_API Result<Bytes> signSha384(const Bytes &msg, RSA &privKey)
@@ -3405,7 +3376,7 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha384, digest.value(), privKey); 
+    return internal::rsaSign(NID_sha384, digest.value, privKey); 
   }
   
   SO_API Result<Bytes> signSha512(const Bytes &msg, RSA &privKey)
@@ -3414,52 +3385,52 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha512, digest.value(), privKey); 
+    return internal::rsaSign(NID_sha512, digest.value, privKey); 
   }
   
   SO_API Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha1(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha1, signature, digest.value(), pubKey); 
+    return internal::rsaVerify(NID_sha1, signature, digest.value, pubKey); 
   }
   
   SO_API Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha224(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha224, signature, digest.value(), pubKey); 
+    return internal::rsaVerify(NID_sha224, signature, digest.value, pubKey); 
   }
 
   SO_API Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha256(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha256, signature, digest.value(), pubKey); 
+    return internal::rsaVerify(NID_sha256, signature, digest.value, pubKey); 
   }
 
   SO_API Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha384(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha384, signature, digest.value(), pubKey); 
+    return internal::rsaVerify(NID_sha384, signature, digest.value, pubKey); 
   }
 
   SO_API Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha512(message);
     if(!digest)
-      return internal::err<bool>(digest.errorCode());
+      return internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha512, signature, digest.value(), pubKey); 
+    return internal::rsaVerify(NID_sha512, signature, digest.value, pubKey); 
   }
 } // namespace rsa
 
@@ -3649,7 +3620,7 @@ namespace x509 {
     // internal pointers
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
-    return internal::ok(ecdsa::Signature{ *bignum::convertToBytes(*r), *bignum::convertToBytes(*s) });
+    return internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
   }
 
   SO_API Result<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId)
@@ -3665,7 +3636,7 @@ namespace x509 {
   {
     auto maybeObj = asn1::encodeObject(oidNumerical);
     if(!maybeObj)
-      return internal::err<CertExtension>(maybeObj.errorCode());
+      return internal::err<CertExtension>(maybeObj.opensslErrCode);
 
     auto obj = maybeObj.moveValue();
     const int loc = X509_get_ext_by_OBJ(&cert, obj.get(), -1);
@@ -3679,19 +3650,19 @@ namespace x509 {
   {
     using RetType = std::vector<CertExtension>;
     const auto extsCount = getExtensionsCount(cert);
-    if(!extsCount)
-      return internal::err<RetType>(extsCount.errorCode());
+    if(!extsCount.value)
+      return internal::err<RetType>(extsCount.opensslErrCode);
 
-    if(0 == *extsCount)
+    if(0 == extsCount.value)
       return internal::ok(RetType{});
 
     RetType ret;
-    ret.reserve(*extsCount); 
-    for(int index = 0; index < static_cast<int>(*extsCount); ++index)
+    ret.reserve(extsCount.value); 
+    for(int index = 0; index < static_cast<int>(extsCount.value); ++index)
     {
       auto getExtension = internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
       if(!getExtension)
-        return internal::err<RetType>(getExtension.errorCode());
+        return internal::err<RetType>(getExtension.opensslErrCode);
 
       ret.push_back(getExtension.moveValue());
     }
@@ -3740,13 +3711,13 @@ namespace x509 {
 
     auto notBeforeTime = asn1::convertToStdTime(*notBefore);
     if(!notBeforeTime)
-      return internal::err<Validity>(notBeforeTime.errorCode());
+      return internal::err<Validity>(notBeforeTime.opensslErrCode);
 
     auto notAfterTime = asn1::convertToStdTime(*notAfter);
     if(!notAfterTime)
-      return internal::err<Validity>(notAfterTime.errorCode());
+      return internal::err<Validity>(notAfterTime.opensslErrCode);
 
-    return internal::ok(Validity{*notAfterTime, *notBeforeTime});
+    return internal::ok(Validity{notAfterTime.value, notBeforeTime.value});
   }
 
   SO_API Result<bool> verifySignature(X509 &cert, EVP_PKEY &pkey)
@@ -3768,7 +3739,7 @@ namespace x509 {
   {
     auto maybeAsn1Oid = asn1::encodeObject(oidNumerical);
     if(!maybeAsn1Oid)
-      return internal::errVoid(maybeAsn1Oid.errorCode());
+      return internal::errVoid(maybeAsn1Oid.opensslErrCode);
 
     auto extension = make_unique(X509_EXTENSION_new());
     if(!extension)
@@ -3825,7 +3796,7 @@ namespace x509 {
   {
     auto maybeData = asn1::encodeOctet(extension.data);
     if(!maybeData)
-      return internal::errVoid(maybeData.errorCode());
+      return internal::errVoid(maybeData.opensslErrCode);
 
     auto data = maybeData.moveValue();
     if(x509::CertExtensionId::UNDEF == extension.id)
@@ -3850,7 +3821,7 @@ namespace x509 {
   {
     auto maybeIssuer = internal::infoToX509Name(info);
     if(!maybeIssuer)
-      return internal::errVoid(maybeIssuer.errorCode());
+      return internal::errVoid(maybeIssuer.opensslErrCode);
 
     auto getIssuer = maybeIssuer.moveValue();
     if(1 != X509_set_issuer_name(&cert, getIssuer.get()))
@@ -3871,7 +3842,7 @@ namespace x509 {
   {
     auto maybeInt = asn1::encodeInteger(bytes);
     if(!maybeInt)
-      return internal::errVoid(maybeInt.errorCode());
+      return internal::errVoid(maybeInt.opensslErrCode);
 
     auto integer = maybeInt.moveValue();
     if(1 != X509_set_serialNumber(&cert, integer.get()))
@@ -3884,7 +3855,7 @@ namespace x509 {
   {
     auto maybeSubject = internal::infoToX509Name(info); 
     if(!maybeSubject)
-      return internal::errVoid(maybeSubject.errorCode());
+      return internal::errVoid(maybeSubject.opensslErrCode);
 
     auto subject = maybeSubject.moveValue();
     if(1 != X509_set_subject_name(&cert, subject.get()))
@@ -3990,26 +3961,26 @@ namespace x509 {
     // internal pointers
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
-    return internal::ok(ecdsa::Signature{ *bignum::convertToBytes(*r), *bignum::convertToBytes(*s) });
+    return internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
   }
   
   SO_API Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl)
   {
     using RetType = std::vector<CrlExtension>;
     const auto extsCount = getExtensionsCount(crl);
-    if(!extsCount)
-      return internal::err<RetType>(extsCount.errorCode());
+    if(!extsCount.value)
+      return internal::err<RetType>(extsCount.opensslErrCode);
 
-    if(0 == *extsCount)
+    if(0 == extsCount.value)
       return internal::ok(RetType{});
 
     RetType ret;
-    ret.reserve(*extsCount); 
-    for(int index = 0; index < static_cast<int>(*extsCount); ++index)
+    ret.reserve(extsCount.value); 
+    for(int index = 0; index < static_cast<int>(extsCount.value); ++index)
     {
       auto getExtension = internal::getExtension<CrlExtensionId>(*X509_CRL_get_ext(&crl, index));
       if(!getExtension)
-        return internal::err<RetType>(getExtension.errorCode());
+        return internal::err<RetType>(getExtension.opensslErrCode);
 
       ret.push_back(getExtension.moveValue());
     }

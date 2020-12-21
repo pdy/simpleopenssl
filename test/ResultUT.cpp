@@ -37,10 +37,10 @@ TEST(ResultUT, okUsageWithBytes)
   EXPECT_TRUE(expected);
   EXPECT_TRUE(expected.hasValue());
   EXPECT_FALSE(expected.hasError());
-  EXPECT_EQ(static_cast<unsigned long>(0), expected.errorCode());
+  EXPECT_EQ(static_cast<unsigned long>(0), expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
-  EXPECT_EQ((::so::Bytes{0x00, 0x01}), *expected);
-  EXPECT_EQ((::so::Bytes{0x00, 0x01}), expected.value());
+  EXPECT_EQ((::so::Bytes{0x00, 0x01}), expected.value);
+  EXPECT_EQ((::so::Bytes{0x00, 0x01}), expected.value);
 }
 
 TEST(ResultUT, errUsageWithBytes)
@@ -52,9 +52,9 @@ TEST(ResultUT, errUsageWithBytes)
   EXPECT_FALSE(expected);
   EXPECT_FALSE(expected.hasValue());
   EXPECT_TRUE(expected.hasError());
-  EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
-  EXPECT_EQ((::so::Bytes{}), *expected);
-  EXPECT_EQ((::so::Bytes{}), expected.value());
+  EXPECT_EQ(static_cast<unsigned long>(5), expected.opensslErrCode);
+  EXPECT_EQ((::so::Bytes{}), expected.value);
+  EXPECT_EQ((::so::Bytes{}), expected.value);
 }
 
 TEST(ResultUT, okUsageWithUptrs)
@@ -66,7 +66,7 @@ TEST(ResultUT, okUsageWithUptrs)
   EXPECT_TRUE(expected);
   EXPECT_TRUE(expected.hasValue());
   EXPECT_FALSE(expected.hasError());
-  EXPECT_EQ(static_cast<unsigned long>(0), expected.errorCode());
+  EXPECT_EQ(static_cast<unsigned long>(0), expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
 }
 
@@ -79,7 +79,7 @@ TEST(ResultUT, errUsageWithUptrs)
   EXPECT_FALSE(expected);
   EXPECT_FALSE(expected.hasValue());
   EXPECT_TRUE(expected.hasError());
-  EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
+  EXPECT_EQ(static_cast<unsigned long>(5), expected.opensslErrCode);
 }
 
 TEST(ResultUT, okUsageWithVoid)
@@ -90,10 +90,11 @@ TEST(ResultUT, okUsageWithVoid)
   // THEN  
   EXPECT_TRUE(expected);
   EXPECT_FALSE(expected.hasError());
-  EXPECT_EQ(static_cast<unsigned long>(0), expected.errorCode());
+  EXPECT_EQ(static_cast<unsigned long>(0), expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
 }
 
+/*
 TEST(ResultUT, errUsageWithVoid)
 {
   // WHEN  
@@ -102,8 +103,9 @@ TEST(ResultUT, errUsageWithVoid)
   // THEN
   EXPECT_FALSE(expected);
   EXPECT_TRUE(expected.hasError());
-  EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
+  EXPECT_EQ(static_cast<unsigned long>(5), expected.opensslErrCode);
 }
+*/
 
 TEST(ResultUT, okUsageWithUnsignedLong)
 {
@@ -113,10 +115,10 @@ TEST(ResultUT, okUsageWithUnsignedLong)
   // THEN  
   EXPECT_TRUE(expected);
   EXPECT_TRUE(expected.hasValue());
-  EXPECT_EQ(10ul, *expected);
-  EXPECT_EQ(10ul, expected.value());
+  EXPECT_EQ(10ul, expected.value);
+  EXPECT_EQ(10ul, expected.value);
   EXPECT_FALSE(expected.hasError());
-  EXPECT_EQ(static_cast<unsigned long>(0), expected.errorCode());
+  EXPECT_EQ(static_cast<unsigned long>(0), expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
 }
 
@@ -129,7 +131,7 @@ TEST(ResultUT, errUsageWithUnsignedLong)
   EXPECT_FALSE(expected);
   EXPECT_FALSE(expected.hasValue());
   EXPECT_TRUE(expected.hasError());
-  EXPECT_EQ(static_cast<unsigned long>(5), expected.errorCode());
+  EXPECT_EQ(static_cast<unsigned long>(5), expected.opensslErrCode);
 }
 
 }}} // namespace so { namespace ut { namespace bignum {

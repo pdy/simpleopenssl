@@ -138,11 +138,11 @@ void handleCrl(const std::string &fileName)
     log << extensions.msg();
     return;
   }
-  log << "ExtensionCount: " << extensions->size();
+  log << "ExtensionCount: " << extensions.value.size();
 
-  if(!extensions->empty())
+  if(!extensions.value.empty())
   {
-    for(const auto &ext : extensions.value())
+    for(const auto &ext : extensions.value)
     {
       if(ext.id != x509::CrlExtensionId::UNDEF)
       {
@@ -166,7 +166,7 @@ void handleCrl(const std::string &fileName)
     return;
   }
   
-  const auto &revokedList = maybeRevoked.value();
+  const auto &revokedList = maybeRevoked.value;
   log << "Revoked Certificates ( " << revokedList.size() << " )" << (revokedList.empty() ? "" : ":");
   if(!revokedList.empty())
   {
@@ -204,8 +204,8 @@ void handleCrl(const std::string &fileName)
     return;
   } 
   const auto sigType = x509::getSignatureAlgorithm(*crl);
-  log << "Signature: " << nid::getLongName(sigType).value();
-  logHex(bin2Hex(*sig), 36);
+  log << "Signature: " << nid::getLongName(sigType).value;
+  logHex(bin2Hex(sig.value), 36);
 
 }
 
@@ -243,7 +243,7 @@ void handleCert(const std::string &fileName)
     log << serial.msg();
     return;
   }
-  log << "Serial: " << bin2Hex(*serial);
+  log << "Serial: " << bin2Hex(serial.value);
 
   auto maybeSubject = x509::getSubject(*cert);
   if(!maybeSubject)
@@ -294,20 +294,20 @@ void handleCert(const std::string &fileName)
     if(auto rsa = evp::convertToRsa(*pubKey))
     {
       auto key = rsa.moveValue();
-      return "(" + std::to_string(static_cast<int>(rsa::getKeyBits(*key).value())) + " bit)";
+      return "(" + std::to_string(static_cast<int>(rsa::getKeyBits(*key).value)) + " bit)";
     }
     else if(auto ec = evp::convertToEcdsa(*pubKey))
     {
       auto key = ec.moveValue();
-      return ecdsa::convertCurveToString(ecdsa::getCurve(*key).value()).value() +
-        " (" + std::to_string(ecdsa::getKeySize(*key).value()) + " bit)";
+      return ecdsa::convertCurveToString(ecdsa::getCurve(*key).value).value +
+        " (" + std::to_string(ecdsa::getKeySize(*key).value) + " bit)";
     }
 
     return std::string(); 
   }();
 
-  log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value() << " " << keyInfo;
-  logHex(bin2Hex(*pubKeyBytes), 30);
+  log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value << " " << keyInfo;
+  logHex(bin2Hex(pubKeyBytes.value), 30);
 
   const auto extensions = x509::getExtensions(*cert);
   if(!extensions)
@@ -315,11 +315,11 @@ void handleCert(const std::string &fileName)
     log << extensions.msg();
     return;
   }
-  log << "ExtensionCount: " << extensions->size();
+  log << "ExtensionCount: " << extensions.value.size();
   
-  if(!extensions->empty())
+  if(!extensions.value.empty())
   {
-    for(const auto &ext : extensions.value())
+    for(const auto &ext : extensions.value)
     {
       if(ext.id != x509::CertExtensionId::UNDEF)
       {
@@ -343,8 +343,8 @@ void handleCert(const std::string &fileName)
     return;
   } 
   const auto sigType = x509::getSignatureAlgorithm(*cert);
-  log << "Signature: " << nid::getLongName(sigType).value();
-  logHex(bin2Hex(*sig), 36);
+  log << "Signature: " << nid::getLongName(sigType).value;
+  logHex(bin2Hex(sig.value), 36);
 }
 
 std::string bin2Hex(const so::Bytes &buff)

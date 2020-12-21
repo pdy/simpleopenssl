@@ -59,8 +59,8 @@ TEST(NidUT, checkStringName)
     const char *sn = OBJ_nid2sn(nid.rawNid);
     const char *ln = OBJ_nid2ln(nid.rawNid);
 
-    EXPECT_EQ(nid::getShortName(nid.soNid).value(),std::string(sn));
-    EXPECT_EQ(nid::getLongName(nid.soNid).value(), std::string(ln));
+    EXPECT_EQ(nid::getShortName(nid.soNid).value,std::string(sn));
+    EXPECT_EQ(nid::getLongName(nid.soNid).value, std::string(ln));
   }
 }
 

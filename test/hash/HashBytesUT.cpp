@@ -62,7 +62,7 @@ TEST_P(HashBytesUT, hash)
 
   // THEN
   ASSERT_TRUE(btHash);
-  EXPECT_EQ(input.expectedHexString, utils::bin2Hex(*btHash));
+  EXPECT_EQ(input.expectedHexString, utils::bin2Hex(btHash.value));
 }
 
 const auto testCases = ::testing::Values(

@@ -64,8 +64,8 @@ TEST_P(HashUT, hash)
   // THEN
   ASSERT_TRUE(btHash);
   ASSERT_TRUE(strHash);
-  EXPECT_EQ(input.expectedHexString, utils::bin2Hex(*btHash));
-  EXPECT_EQ(input.expectedHexString, utils::bin2Hex(*strHash));
+  EXPECT_EQ(input.expectedHexString, utils::bin2Hex(btHash.value));
+  EXPECT_EQ(input.expectedHexString, utils::bin2Hex(strHash.value));
 }
 
 const auto testCases = ::testing::Values(

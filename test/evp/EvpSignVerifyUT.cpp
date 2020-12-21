@@ -67,7 +67,7 @@ TEST_P(EvpSignVerifyUT, verify_PrecalculatedSignature)
 
   // THEN
   ASSERT_TRUE(verified);
-  EXPECT_TRUE(*verified);
+  EXPECT_TRUE(verified.value);
 }
 
 TEST_P(EvpSignVerifyUT, signVerify_WithPrecalculatedKey)
@@ -81,11 +81,11 @@ TEST_P(EvpSignVerifyUT, signVerify_WithPrecalculatedKey)
   // WHEN
   const auto sig = input.signer(input.signedData, *key); 
   ASSERT_TRUE(sig);
-  const auto verified = input.verifier(*sig, input.signedData, *key);
+  const auto verified = input.verifier(sig.value, input.signedData, *key);
   ASSERT_TRUE(verified);
 
   // THEN
-  EXPECT_TRUE(*verified);
+  EXPECT_TRUE(verified.value);
 }
 
 TEST_P(EvpSignVerifyUT, signVerify_ShouldSignAndVerifyWithEcdsaGeneratedKeys)
@@ -105,11 +105,11 @@ TEST_P(EvpSignVerifyUT, signVerify_ShouldSignAndVerifyWithEcdsaGeneratedKeys)
   // WHEN
   const auto sig = input.signer(data, *evpKey);
   ASSERT_TRUE(sig);
-  const auto verResult = input.verifier(*sig, data, *evpKey);
+  const auto verResult = input.verifier(sig.value, data, *evpKey);
 
   // THEN
   ASSERT_TRUE(verResult);
-  ASSERT_TRUE(*verResult);
+  ASSERT_TRUE(verResult.value);
 }
 
 const auto testCases = ::testing::Values(

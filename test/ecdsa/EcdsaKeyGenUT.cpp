@@ -49,8 +49,8 @@ TEST_P(EcdsaKeyGenUT, shouldExtractCurveInfoFromGeneratedKey)
   const auto curve = ecdsa::getCurve(*key);
   ASSERT_TRUE(curve);
   ASSERT_EQ(1, EC_KEY_check_key(key.get()));
-  EXPECT_EQ(input.curve, *curve);
-  EXPECT_EQ(input.opensslNid, static_cast<int>(*curve));
+  EXPECT_EQ(input.curve, curve.value);
+  EXPECT_EQ(input.opensslNid, static_cast<int>(curve.value));
 }
 
 

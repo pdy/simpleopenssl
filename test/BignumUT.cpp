@@ -39,11 +39,11 @@ TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
   auto maybeBignum = bignum::convertToBignum(buffer);
   ASSERT_TRUE(maybeBignum);
   auto bignum = maybeBignum.moveValue();
-  ASSERT_EQ(SIZE, *bignum::getByteLen(*bignum));
+  ASSERT_EQ(SIZE, bignum::getByteLen(*bignum).value);
 
   auto maybeReturnedBuffer = bignum::convertToBytes(*bignum);
   ASSERT_TRUE(maybeReturnedBuffer);
-  auto returnedBuffer = *maybeReturnedBuffer;
+  auto returnedBuffer = maybeReturnedBuffer.value;
   ASSERT_EQ(SIZE, returnedBuffer.size());
 
   EXPECT_EQ(buffer, returnedBuffer);

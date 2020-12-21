@@ -119,7 +119,7 @@ TEST(EcdsaKeyUT, privKey2PemConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybePemPriv);
-  EXPECT_EQ(pemPriv, *maybePemPriv); 
+  EXPECT_EQ(pemPriv, maybePemPriv.value); 
 }
 
 TEST(EcdsaKeyUT, pubKey2PemConversion_ok)
@@ -137,7 +137,7 @@ TEST(EcdsaKeyUT, pubKey2PemConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybePemPub);
-  EXPECT_EQ(pemPub, *maybePemPub); 
+  EXPECT_EQ(pemPub, maybePemPub.value); 
 }
 
 TEST(EcdsaKeyUT, privKey2DerConversion_ok)
@@ -155,7 +155,7 @@ TEST(EcdsaKeyUT, privKey2DerConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybeDerPriv);
-  EXPECT_EQ(data::secp256k1PrivKeyDer, *maybeDerPriv);
+  EXPECT_EQ(data::secp256k1PrivKeyDer, maybeDerPriv.value);
 }
 
 TEST(EcdsaKeyUT, derToPrivKeyConversion_ok)
@@ -193,7 +193,7 @@ TEST(EcdsaKeyUT, pubKey2DerConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybeDerPub);
-  EXPECT_EQ(data::secp256PubKeyDer, *maybeDerPub);
+  EXPECT_EQ(data::secp256PubKeyDer, maybeDerPub.value);
 }
 
 TEST(EcdsaKeyUT, derToPubKeyConversion_ok)
@@ -216,7 +216,7 @@ TEST(EcdsaKeyUT, curveOf_AgainstPrecalculatedData)
   const auto actual = ecdsa::getCurve(*priv);
 
   //THEN
-  EXPECT_EQ(ecdsa::Curve::SECP256K1, *actual);
+  EXPECT_EQ(ecdsa::Curve::SECP256K1, actual.value);
 }
 
 TEST(EcdsaKeyUT, extractPublicKeyOK)
@@ -235,11 +235,11 @@ TEST(EcdsaKeyUT, extractPublicKeyOK)
   // WHEN
   const auto signResult = ecdsa::signSha256(data, *priv);
   ASSERT_TRUE(signResult);
-  const auto verResult = ecdsa::verifySha256Signature(*signResult, data, *pub);
+  const auto verResult = ecdsa::verifySha256Signature(signResult.value, data, *pub);
 
   // THEN
   ASSERT_TRUE(verResult);
-  EXPECT_TRUE(*verResult);
+  EXPECT_TRUE(verResult.value);
 }
 
 TEST(EcdsaKeyUT, extractedPublicKeyCantBeUsedForSign)
@@ -294,7 +294,7 @@ TEST(EcdsaKeyUT, getPubKeySize)
  
   // THEN 
   ASSERT_TRUE(size);
-  EXPECT_EQ(112, *size);
+  EXPECT_EQ(112, size.value);
 }
 
 TEST(EcdsaKeyUT, getPubKeySizeOnEmptyKey)
@@ -317,7 +317,7 @@ TEST(EcdsaKeyUT, curveToString)
   const auto curveName = ecdsa::convertCurveToString(curve);
 
   ASSERT_TRUE(curveName);
-  EXPECT_EQ("secp112r2", *curveName );
+  EXPECT_EQ("secp112r2", curveName.value );
 }
 
 }}} // namespace so { namespace ut { namespace ecdsa {

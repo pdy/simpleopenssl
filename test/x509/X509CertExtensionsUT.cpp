@@ -58,7 +58,7 @@ TEST(X509CertExtensionsUT, getExtensionCountShouldEqualToZero)
   // THEN
   const size_t expected = 0;  
   EXPECT_TRUE(extCount);
-  EXPECT_EQ(expected, *extCount);
+  EXPECT_EQ(expected, extCount.value);
 }
 
 TEST(X509CertExtensionsUT, getExtensionsCountShouldEqualToThree)
@@ -73,7 +73,7 @@ TEST(X509CertExtensionsUT, getExtensionsCountShouldEqualToThree)
   
   // THEN
   ASSERT_TRUE(extCount);
-  EXPECT_EQ(3, *extCount);
+  EXPECT_EQ(3, extCount.value);
 }
 
 TEST(X509CertExtensionsUT, getExtensions)
@@ -115,9 +115,9 @@ TEST(X509CertExtensionsUT, getExtensions)
   // THEN
   ASSERT_TRUE(extCount);
   ASSERT_TRUE(extensions);
-  ASSERT_EQ(*extCount, (*extensions).size());
-  ASSERT_EQ(expected.size(), (*extensions).size());
-  ASSERT_EQ(expected, (*extensions));
+  ASSERT_EQ(extCount.value, (extensions.value).size());
+  ASSERT_EQ(expected.size(), (extensions.value).size());
+  ASSERT_EQ(expected, (extensions.value));
 }
 
 TEST(X509CertExtensionsUT, getExtensionKeyUsage)
@@ -140,7 +140,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsage)
   
   // THEN
   ASSERT_TRUE(extension);
-  EXPECT_EQ(expected, *extension);
+  EXPECT_EQ(expected, extension.value);
 }
 
 TEST(X509CertExtensionsUT, getExtensionKeyUsageByOidNumerical)
@@ -164,7 +164,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsageByOidNumerical)
   
   // THEN
   ASSERT_TRUE(extension);
-  EXPECT_EQ(expected, *extension);
+  EXPECT_EQ(expected, extension.value);
 }
 
 TEST(X509CertExtensionsUT, getExtensionShouldReturnErrorWhenExtensionDoesNotExists)
@@ -205,8 +205,8 @@ TEST(X509CertExtensionsUT, addCustomExtensionAPIIntegrity)
   // THEN
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
-  ASSERT_EQ(1, (*getResult).size());
-  EXPECT_EQ(expected, (*getResult).at(0));
+  ASSERT_EQ(1, (getResult.value).size());
+  EXPECT_EQ(expected, (getResult.value).at(0));
 }
 
 TEST(X509CertExtensionsUT, addCustomExtensionUsingLibraryStructure)
@@ -233,8 +233,8 @@ TEST(X509CertExtensionsUT, addCustomExtensionUsingLibraryStructure)
   // THEN
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
-  ASSERT_EQ(1, (*getResult).size());
-  EXPECT_EQ(expected, (*getResult).at(0));
+  ASSERT_EQ(1, (getResult.value).size());
+  EXPECT_EQ(expected, (getResult.value).at(0));
 }
 
 TEST(X509CertExtensionsUT, addExtensionUsingLibraryStructure)
@@ -260,11 +260,11 @@ TEST(X509CertExtensionsUT, addExtensionUsingLibraryStructure)
   // THEN
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
-  EXPECT_EQ(x509::CertExtensionId::BASIC_CONSTRAINTS, (*getResult).id);
-  EXPECT_EQ(false, (*getResult).critical);
-  EXPECT_EQ("X509v3 Basic Constraints", (*getResult).name);
-  EXPECT_EQ("2.5.29.19", (*getResult).oidNumerical);
-  EXPECT_EQ(expected.data, (*getResult).data);
+  EXPECT_EQ(x509::CertExtensionId::BASIC_CONSTRAINTS, (getResult.value).id);
+  EXPECT_EQ(false, (getResult.value).critical);
+  EXPECT_EQ("X509v3 Basic Constraints", (getResult.value).name);
+  EXPECT_EQ("2.5.29.19", (getResult.value).oidNumerical);
+  EXPECT_EQ(expected.data, (getResult.value).data);
 }
 
 TEST(X509CertExtensionsUT, addCustomExtensionAndGetByOID_APIIntegrity)
@@ -292,7 +292,7 @@ TEST(X509CertExtensionsUT, addCustomExtensionAndGetByOID_APIIntegrity)
   // THEN
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
-  EXPECT_EQ(expected, (*getResult));
+  EXPECT_EQ(expected, (getResult.value));
 }
 
 TEST(X509CertExtensionsUT, addCustomExtensionToAlreadyExistingStandardExtensions)
@@ -320,8 +320,8 @@ TEST(X509CertExtensionsUT, addCustomExtensionToAlreadyExistingStandardExtensions
   // THEN
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
-  ASSERT_EQ(4, (*getResult).size());
-  EXPECT_EQ(expected, (*getResult).at(3));
+  ASSERT_EQ(4, (getResult.value).size());
+  EXPECT_EQ(expected, (getResult.value).at(3));
 }
 
 TEST(X509CertExtensionsUT, addBasicConstraintsExtension)
@@ -343,9 +343,9 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtension)
   // THEN
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
-  ASSERT_EQ(1, (*getResult).size());
+  ASSERT_EQ(1, (getResult.value).size());
   
-  const auto &ext = (*getResult).at(0);
+  const auto &ext = (getResult.value).at(0);
   EXPECT_EQ(basicConstraints, ext.id);
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
@@ -372,9 +372,9 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionUsingNid)
   // THEN
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
-  ASSERT_EQ(1, (*getResult).size());
+  ASSERT_EQ(1, (getResult.value).size());
   
-  const auto &ext = (*getResult).at(0);
+  const auto &ext = (getResult.value).at(0);
   EXPECT_EQ(basicConstraints, ext.nid());
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
@@ -402,7 +402,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionSingleExtraction)
   ASSERT_TRUE(addResult);
   ASSERT_TRUE(getResult);
   
-  const auto &ext = (*getResult);
+  const auto &ext = (getResult.value);
   EXPECT_EQ(basicConstraints, ext.id);
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
