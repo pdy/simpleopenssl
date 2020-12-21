@@ -1854,11 +1854,7 @@ namespace internal {
     return internal::err(std::move(tmp));
   }
 
-  template
-  <
-    typename T,
-    typename std::enable_if<!std::is_same<T, void>::value, int>::type = 0
-  >
+  template<typename T>
   SO_PRV Result<T> err(unsigned long errCode)
   { 
     return Result<T>{ T{}, errCode };
@@ -1870,17 +1866,17 @@ namespace internal {
     return Result<T>{ std::move(val), internal::OSSL_NO_ERR_CODE };
   }
 
-  SO_PRV Result<void> err()
+  SO_PRV Result<void> errVoid()
   {
     return Result<void>{ ERR_get_error() };
   }
 
-  SO_PRV Result<void> err(unsigned long errCode)
+  SO_PRV Result<void> errVoid(unsigned long errCode)
   {
     return Result<void>{ errCode };
   }
 
-  SO_PRV Result<void> ok()
+  SO_PRV Result<void> okVoid()
   {
     return Result<void>{ internal::OSSL_NO_ERR_CODE };
   }
@@ -2938,17 +2934,17 @@ namespace evp {
   SO_API Result<void> assign(EVP_PKEY &evp, RSA &rsa)
   {
     if (1 != EVP_PKEY_assign_RSA(&evp, &rsa))
-        return internal::err();
+        return internal::errVoid();
     
-    return internal::ok();
+    return internal::okVoid();
   }
   
   SO_API Result<void> assign(EVP_PKEY &evp, EC_KEY &ec)
   {
     if (1 != EVP_PKEY_assign_EC_KEY(&evp, &ec))
-        return internal::err();
+        return internal::errVoid();
     
-    return internal::ok();
+    return internal::okVoid();
   }
 
   SO_API Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
@@ -3654,7 +3650,7 @@ namespace x509 {
   {
     using RetType = std::vector<CertExtension>;
     const auto extsCount = getExtensionsCount(cert);
-    if(!extsCount)
+    if(!extsCount.value)
       return internal::err<RetType>(extsCount.opensslErrCode);
 
     if(0 == extsCount.value)
@@ -3743,26 +3739,26 @@ namespace x509 {
   {
     auto maybeAsn1Oid = asn1::encodeObject(oidNumerical);
     if(!maybeAsn1Oid)
-      return internal::err(maybeAsn1Oid.opensslErrCode);
+      return internal::errVoid(maybeAsn1Oid.opensslErrCode);
 
     auto extension = make_unique(X509_EXTENSION_new());
     if(!extension)
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
-      return internal::err();
+      return internal::errVoid();
 
     auto asn1Oid = maybeAsn1Oid.moveValue();
     if(1 != X509_EXTENSION_set_object(extension.get(), asn1Oid.get()))
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_data(extension.get(), &octet))
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_add_ext(&cert, extension.get(), -1))
-      return internal::err();
+      return internal::errVoid();
 
-    return internal::ok();
+    return internal::okVoid();
 
   }
 
@@ -3775,32 +3771,32 @@ namespace x509 {
   {
     auto oid = make_unique(OBJ_nid2obj(static_cast<int>(nid)));
     if(!oid)
-      return internal::err();
+      return internal::errVoid();
  
     auto extension = make_unique(X509_EXTENSION_new());
     if(!extension)
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_object(extension.get(), oid.get()))
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_data(extension.get(), &octet))
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_add_ext(&cert, extension.get(), -1))
-      return internal::err();
+      return internal::errVoid();
 
-    return internal::ok();
+    return internal::okVoid();
   }
 
   SO_API Result<void> setExtension(X509 &cert, const CertExtension &extension)
   {
     auto maybeData = asn1::encodeOctet(extension.data);
     if(!maybeData)
-      return internal::err(maybeData.opensslErrCode);
+      return internal::errVoid(maybeData.opensslErrCode);
 
     auto data = maybeData.moveValue();
     if(x509::CertExtensionId::UNDEF == extension.id)
@@ -3813,94 +3809,94 @@ namespace x509 {
   {
     X509_NAME *getIssuer = X509_get_subject_name(&rootCert);
     if(!getIssuer)
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_set_issuer_name(&cert, getIssuer))
-      return internal::err();
+      return internal::errVoid();
 
-    return internal::ok();
+    return internal::okVoid();
   }
 
   SO_API Result<void> setIssuer(X509 &cert, const Issuer &info)
   {
     auto maybeIssuer = internal::infoToX509Name(info);
     if(!maybeIssuer)
-      return internal::err(maybeIssuer.opensslErrCode);
+      return internal::errVoid(maybeIssuer.opensslErrCode);
 
     auto getIssuer = maybeIssuer.moveValue();
     if(1 != X509_set_issuer_name(&cert, getIssuer.get()))
-      return internal::err(); 
+      return internal::errVoid(); 
 
-    return internal::ok();
+    return internal::okVoid();
   }
 
   SO_API Result<void> setPubKey(X509 &cert, EVP_PKEY &pkey)
   {
     if(1 != X509_set_pubkey(&cert, &pkey))
-      return internal::err();
+      return internal::errVoid();
 
-    return internal::ok();
+    return internal::okVoid();
   }
  
   SO_API Result<void> setSerial(X509 &cert, const Bytes &bytes)
   {
     auto maybeInt = asn1::encodeInteger(bytes);
     if(!maybeInt)
-      return internal::err(maybeInt.opensslErrCode);
+      return internal::errVoid(maybeInt.opensslErrCode);
 
     auto integer = maybeInt.moveValue();
     if(1 != X509_set_serialNumber(&cert, integer.get()))
-      return internal::err();
+      return internal::errVoid();
 
-    return internal::ok();
+    return internal::okVoid();
   }
 
   SO_API Result<void> setSubject(X509 &cert, const Subject &info)
   {
     auto maybeSubject = internal::infoToX509Name(info); 
     if(!maybeSubject)
-      return internal::err(maybeSubject.opensslErrCode);
+      return internal::errVoid(maybeSubject.opensslErrCode);
 
     auto subject = maybeSubject.moveValue();
     if(1 != X509_set_subject_name(&cert, subject.get()))
-      return internal::err();
+      return internal::errVoid();
 
-    return internal::ok();
+    return internal::okVoid();
   }
 
   SO_API Result<void> setValidity(X509 &cert, const Validity &validity)
   {
     ASN1_TIME_uptr notAfterTime = make_unique(ASN1_TIME_set(nullptr, validity.notAfter));
     if(!notAfterTime)
-      return internal::err();
+      return internal::errVoid();
 
     ASN1_TIME_uptr notBeforeTime = make_unique(ASN1_TIME_set(nullptr, validity.notBefore));
     if(!notBeforeTime)
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_set1_notBefore(&cert, notBeforeTime.get()))
-      return internal::err();
+      return internal::errVoid();
 
     if(1 != X509_set1_notAfter(&cert, notAfterTime.get()))
-      return internal::err();
+      return internal::errVoid();
 
-    return internal::ok();
+    return internal::okVoid();
   }
 
   SO_API Result<void> setVersion(X509 &cert, Version version)
   {
     if(1 != X509_set_version(&cert, static_cast<long>(version)))
-      return internal::err();
+      return internal::errVoid();
     
-    return internal::ok();
+    return internal::okVoid();
   }
 
   SO_API Result<void> setVersion(X509 &cert, long version)
   {
     if(1 != X509_set_version(&cert, version))
-      return internal::err();
+      return internal::errVoid();
     
-    return internal::ok();
+    return internal::okVoid();
   }
 
   SO_API X509_CRL_uptr createCrl()
@@ -3972,7 +3968,7 @@ namespace x509 {
   {
     using RetType = std::vector<CrlExtension>;
     const auto extsCount = getExtensionsCount(crl);
-    if(!extsCount)
+    if(!extsCount.value)
       return internal::err<RetType>(extsCount.opensslErrCode);
 
     if(0 == extsCount.value)

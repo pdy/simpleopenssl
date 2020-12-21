@@ -85,7 +85,7 @@ TEST(ResultUT, errUsageWithUptrs)
 TEST(ResultUT, okUsageWithVoid)
 {
   // WHEN
-  const auto expected = ::so::internal::ok(); 
+  const auto expected = ::so::internal::okVoid(); 
 
   // THEN  
   EXPECT_TRUE(expected);
@@ -98,7 +98,7 @@ TEST(ResultUT, okUsageWithVoid)
 TEST(ResultUT, errUsageWithVoid)
 {
   // WHEN  
-  const auto expected = ::so::internal::err<void>(5);
+  const auto expected = ::so::internal::errVoid(5);
  
   // THEN
   EXPECT_FALSE(expected);
