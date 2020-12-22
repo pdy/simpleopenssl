@@ -60,9 +60,9 @@ TEST(CRLUT, getIssuer)
  
   // THEN 
   ASSERT_TRUE(issuer);
-  EXPECT_EQ("Sample Signer Cert", issuer.value.commonName);
-  EXPECT_EQ("Sample Signer Organization", issuer.value.organizationName);
-  EXPECT_EQ("Sample Signer Unit", issuer.value.organizationalUnitName);
+  EXPECT_EQ("Sample Signer Cert", issuer->commonName);
+  EXPECT_EQ("Sample Signer Organization", issuer->organizationName);
+  EXPECT_EQ("Sample Signer Unit", issuer->organizationalUnitName);
 
 }
 
@@ -112,14 +112,14 @@ TEST(CRLUT, getCrlExtensions)
  
   // THEN 
   ASSERT_TRUE(exts);
-  ASSERT_EQ(2, exts.value.size());
+  ASSERT_EQ(2, exts->size());
   
-  const auto first = exts.value.at(0);
+  const auto first = exts->at(0);
   EXPECT_EQ(nid::Nid::AUTHORITY_KEY_IDENTIFIER, static_cast<nid::Nid>(first.id));
   EXPECT_EQ(std::string("keyid:BE:12:01:CC:AA:EA:11:80:DA:2E:AD:B2:EA:C7:B5:FB:9F:F9:AD:34\n"),
             utils::toString(first.data));
 
-  const auto sec = exts.value.at(1);
+  const auto sec = exts->at(1);
   EXPECT_EQ(x509::CrlExtensionId::CRL_NUMBER, sec.id);
   EXPECT_EQ("3", utils::toString(sec.data));
 }
@@ -286,10 +286,10 @@ TEST(CRLUT, getRevokedFromPrecalculated)
  
   // THEN 
   ASSERT_TRUE(revoked);
-  ASSERT_EQ(5, revoked.value.size());
+  ASSERT_EQ(5, revoked->size());
   for(size_t i = 0; i < 5; ++i)
   {
-    const auto &rev = revoked.value.at(i);
+    const auto &rev = revoked->at(i);
     EXPECT_EQ(expected[i].dateISO860, rev.dateISO860);
 //    EXPECT_EQ(exp1.date, rev.date);
     EXPECT_EQ(expected[i].serialNumAsn1, rev.serialNumAsn1);
