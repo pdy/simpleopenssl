@@ -22,6 +22,7 @@
 */
 
 #include "cmdline/cmdline.h"
+#define SO_IMPLEMEMENTATION
 #include <simpleopenssl/simpleopenssl.h>
 
 #include <iostream>
