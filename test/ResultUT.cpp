@@ -35,8 +35,7 @@ TEST(ResultUT, okUsageWithBytes)
  
   // THEN
   EXPECT_TRUE(expected);
-  EXPECT_TRUE(expected.hasValue());
-  EXPECT_FALSE(expected.hasError());
+  EXPECT_TRUE(expected.ok());
   EXPECT_EQ(static_cast<unsigned long>(0), expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
   EXPECT_EQ((::so::Bytes{0x00, 0x01}), expected.value);
@@ -50,8 +49,7 @@ TEST(ResultUT, errUsageWithBytes)
  
   // THEN
   EXPECT_FALSE(expected);
-  EXPECT_FALSE(expected.hasValue());
-  EXPECT_TRUE(expected.hasError());
+  EXPECT_FALSE(expected.ok());
   EXPECT_EQ(static_cast<unsigned long>(5), expected.opensslErrCode);
   EXPECT_EQ((::so::Bytes{}), expected.value);
   EXPECT_EQ((::so::Bytes{}), expected.value);
@@ -61,11 +59,10 @@ TEST(ResultUT, okUsageWithUptrs)
 {
   // WHEN
   const auto expected = ::so::internal::ok(::so::make_unique<BIGNUM>(nullptr));
-
+  
   // THEN
   EXPECT_TRUE(expected);
-  EXPECT_TRUE(expected.hasValue());
-  EXPECT_FALSE(expected.hasError());
+  EXPECT_TRUE(expected.ok());
   EXPECT_EQ(static_cast<unsigned long>(0), expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
 }
@@ -74,11 +71,10 @@ TEST(ResultUT, errUsageWithUptrs)
 {
   // WHEN 
   const auto expected = ::so::internal::err<::so::BIGNUM_uptr>(5);
- 
+  
   // THEN
   EXPECT_FALSE(expected);
-  EXPECT_FALSE(expected.hasValue());
-  EXPECT_TRUE(expected.hasError());
+  EXPECT_FALSE(expected.ok());
   EXPECT_EQ(static_cast<unsigned long>(5), expected.opensslErrCode);
 }
 
@@ -89,12 +85,10 @@ TEST(ResultUT, okUsageWithVoid)
 
   // THEN  
   EXPECT_TRUE(expected);
-  EXPECT_FALSE(expected.hasError());
   EXPECT_EQ(static_cast<unsigned long>(0), expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
 }
 
-/*
 TEST(ResultUT, errUsageWithVoid)
 {
   // WHEN  
@@ -102,22 +96,18 @@ TEST(ResultUT, errUsageWithVoid)
  
   // THEN
   EXPECT_FALSE(expected);
-  EXPECT_TRUE(expected.hasError());
   EXPECT_EQ(static_cast<unsigned long>(5), expected.opensslErrCode);
 }
-*/
 
 TEST(ResultUT, okUsageWithUnsignedLong)
 {
   // WHEN
   const auto expected = ::so::internal::ok(10ul); 
-
+  
   // THEN  
   EXPECT_TRUE(expected);
-  EXPECT_TRUE(expected.hasValue());
+  EXPECT_TRUE(expected.ok());
   EXPECT_EQ(10ul, expected.value);
-  EXPECT_EQ(10ul, expected.value);
-  EXPECT_FALSE(expected.hasError());
   EXPECT_EQ(static_cast<unsigned long>(0), expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
 }
@@ -126,11 +116,10 @@ TEST(ResultUT, errUsageWithUnsignedLong)
 {
   // WHEN  
   const auto expected = ::so::internal::err<unsigned long>(5);
- 
+  
   // THEN
   EXPECT_FALSE(expected);
-  EXPECT_FALSE(expected.hasValue());
-  EXPECT_TRUE(expected.hasError());
+  EXPECT_FALSE(expected.ok());
   EXPECT_EQ(static_cast<unsigned long>(5), expected.opensslErrCode);
 }
 

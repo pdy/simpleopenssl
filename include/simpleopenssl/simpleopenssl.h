@@ -144,23 +144,29 @@ CUSTOM_DELETER_UPTR(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 
 namespace internal {
 
-  /*
+template<typename UPTRTag, typename ArithTag>
+struct IsUptrOrArithmeticTag : std::false_type {};
+
+template<>
+struct IsUptrOrArithmeticTag<std::true_type, std::true_type> : std::true_type {};
+
+template<>
+struct IsUptrOrArithmeticTag<std::false_type, std::true_type> : std::true_type {};
+
+template<>
+struct IsUptrOrArithmeticTag<std::true_type, std::false_type> : std::true_type {};
+
+template<typename T>
+struct IsUptrOrArithmeticTrait : public IsUptrOrArithmeticTag<typename ::so::internal::is_uptr<T>::type, typename std::is_arithmetic<T>::type> {};
+
 template<typename T, typename TSelf, typename Tag>
-class AddValueRef {};
+struct AddArrowOperator {};
 
 template<typename T, typename TSelf>
-class AddValueRef<T, TSelf, std::false_type>
+struct AddArrowOperator<T, TSelf, std::false_type>
 {
-public:
-  const T& operator*() const { return value; }
-  const T* operator->() const { return &(value); }
-  const T& value const { return static_cast<const TSelf*>(this)->value; }
+  const T* operator->() const { return &(static_cast<const TSelf*>(this)->value); }
 };
-
-template<typename T, typename TSelf>
-class AddValueRef<T, TSelf, std::true_type>
-{};
-*/
 
 static constexpr int OSSL_NO_ERR_CODE = 0;
 
@@ -191,17 +197,18 @@ struct X509Name
 } //namespace internal
 
 template<typename T>
-struct Result 
+struct Result : public internal::AddArrowOperator<T, Result<T>, typename internal::IsUptrOrArithmeticTrait<T>::type>
 {
   T value;
   unsigned long opensslErrCode;
 
+  Result(T &&value_, unsigned long err_)
+    :value{std::move(value_)}, opensslErrCode{err_} {} 
+
   explicit inline operator bool() const noexcept;
   inline T&& moveValue();
-  inline bool hasValue() const noexcept;
-  inline bool hasError() const noexcept; 
+  inline bool ok() const noexcept;
   inline std::string msg() const;
- 
 };
 
 template<>
@@ -210,7 +217,7 @@ struct Result<void>
   unsigned long opensslErrCode;
   
   explicit inline operator bool() const noexcept;
-  inline bool hasError() const noexcept;
+  inline bool ok() const noexcept;
   inline std::string msg() const; 
 };
 
@@ -1748,7 +1755,7 @@ namespace internal {
 template<typename T>
 inline Result<T>::operator bool() const noexcept
 {
-  return hasValue(); 
+  return ok(); 
 }
 
 template<typename T>
@@ -1758,21 +1765,15 @@ inline T&& Result<T>::moveValue()
 }
 
 template<typename T>
-inline bool Result<T>::hasValue() const noexcept
+inline bool Result<T>::ok() const noexcept
 { 
-  return !hasError(); 
-}
-
-template<typename T>
-inline bool Result<T>::hasError() const noexcept
-{
-  return internal::OSSL_NO_ERR_CODE != opensslErrCode;
+  return internal::OSSL_NO_ERR_CODE == opensslErrCode; 
 }
 
 template<typename T>
 inline std::string Result<T>::msg() const
 {
-  if(hasValue())
+  if(ok())
     return "ok";
 
   return internal::errCodeToString(opensslErrCode); 
@@ -1780,17 +1781,17 @@ inline std::string Result<T>::msg() const
   
 inline Result<void>::operator bool() const noexcept
 {
-  return !hasError();
+  return ok();
 }
 
-inline bool Result<void>::hasError() const noexcept
+inline bool Result<void>::ok() const noexcept
 {
-  return internal::OSSL_NO_ERR_CODE != opensslErrCode;
+  return internal::OSSL_NO_ERR_CODE == opensslErrCode;
 }
 
 inline std::string Result<void>::msg() const
 {
-  if(!hasError())
+  if(ok())
     return "ok";
 
   return internal::errCodeToString(opensslErrCode); 
