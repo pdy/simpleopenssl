@@ -138,9 +138,9 @@ void handleCrl(const std::string &fileName)
     log << extensions.msg();
     return;
   }
-  log << "ExtensionCount: " << extensions.value.size();
+  log << "ExtensionCount: " << extensions->size();
 
-  if(!extensions.value.empty())
+  if(!extensions->empty())
   {
     for(const auto &ext : extensions.value)
     {
@@ -315,9 +315,9 @@ void handleCert(const std::string &fileName)
     log << extensions.msg();
     return;
   }
-  log << "ExtensionCount: " << extensions.value.size();
+  log << "ExtensionCount: " << extensions->size();
   
-  if(!extensions.value.empty())
+  if(!extensions->empty())
   {
     for(const auto &ext : extensions.value)
     {
