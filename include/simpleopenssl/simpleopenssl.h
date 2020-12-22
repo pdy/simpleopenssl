@@ -60,9 +60,6 @@ namespace so {
 
 using Bytes = std::vector<uint8_t>;
 
-#define SO_API static inline
-#define SO_PRV static
-
 namespace internal {
   template<typename T>
   struct is_uptr : std::false_type {}; 
@@ -94,12 +91,12 @@ public:                                             \
   }                                                 \
 };                                                  \
 }                                                   \
-using Type ## _uptr = internal::CustomDeleterUniquePtr<Type>; \
+using Type ## _uptr = ::so::internal::CustomDeleterUniquePtr<Type>; \
 namespace internal {                                          \
-template<> struct is_uptr<internal::CustomDeleterUniquePtr<Type>> : std::true_type {};}
+template<> struct is_uptr<::so::internal::CustomDeleterUniquePtr<Type>> : std::true_type {};}
 
-template<typename T, typename D = internal::CustomDeleter<T>>
-SO_API auto make_unique(T *ptr) -> std::unique_ptr<T, D>
+template<typename T, typename D = ::so::internal::CustomDeleter<T>>
+auto make_unique(T *ptr) -> std::unique_ptr<T, D>
 {
   return std::unique_ptr<T, D>(ptr);
 }
@@ -169,35 +166,12 @@ struct AddArrowOperator<T, TSelf, std::false_type>
 };
 
 static constexpr int OSSL_NO_ERR_CODE = 0;
-
-template<typename ID>
-struct X509Extension;
-
-struct X509Name
-{
-  // as of https://tools.ietf.org/html/rfc2459
-  std::string commonName;
-  std::string surname;
-  std::string countryName;
-  std::string localityName;
-  std::string stateOrProvinceName;
-  std::string organizationName;
-  std::string organizationalUnitName;
-  std::string title;
-  std::string name;
-  std::string givenName;
-  std::string initials;
-  std::string generationQualifier;
-  std::string dnQualifier;
-
-  inline bool operator ==(const X509Name &other) const; 
-  inline bool operator !=(const X509Name &other) const;
-};
+std::string errCodeToString(unsigned long);
 
 } //namespace internal
 
 template<typename T>
-struct Result : public internal::AddArrowOperator<T, Result<T>, typename internal::IsUptrOrArithmeticTrait<T>::type>
+struct Result : public ::so::internal::AddArrowOperator<T, Result<T>, typename ::so::internal::IsUptrOrArithmeticTrait<T>::type>
 {
   T value;
   unsigned long opensslErrCode;
@@ -205,10 +179,29 @@ struct Result : public internal::AddArrowOperator<T, Result<T>, typename interna
   Result(T &&value_, unsigned long err_)
     :value{std::move(value_)}, opensslErrCode{err_} {} 
 
-  explicit inline operator bool() const noexcept;
-  inline T&& moveValue();
-  inline bool ok() const noexcept;
-  inline std::string msg() const;
+  explicit operator bool() const noexcept
+  {
+    return ok();
+  }
+
+  T&& moveValue()
+  {
+    return std::move(value);
+  }
+
+  bool ok() const noexcept
+  {
+    return ::so::internal::OSSL_NO_ERR_CODE == opensslErrCode;
+  }
+
+  std::string msg() const
+  {
+    if(ok())
+      return "ok";
+
+    return ::so::internal::errCodeToString(opensslErrCode);
+  }
+
 };
 
 template<>
@@ -216,9 +209,23 @@ struct Result<void>
 { 
   unsigned long opensslErrCode;
   
-  explicit inline operator bool() const noexcept;
-  inline bool ok() const noexcept;
-  inline std::string msg() const; 
+  explicit operator bool() const noexcept
+  {
+    return ok();
+  }
+
+  bool ok() const noexcept
+  {
+    return ::so::internal::OSSL_NO_ERR_CODE == opensslErrCode;
+  }
+
+  std::string msg() const
+  {
+    if(ok())
+      return "ok";
+
+    return ::so::internal::errCodeToString(opensslErrCode);
+  }
 };
 
 
@@ -229,8 +236,8 @@ struct Result<void>
 /////////////////////////////////////////////////////////////////////////////////
 
 
-SO_API void init();
-SO_API void cleanUp();
+void init();
+void cleanUp();
 
 namespace asn1 {
   enum class Form : int
@@ -239,30 +246,30 @@ namespace asn1 {
     NUMERICAL = 1
   };
 
-  SO_API Result<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form = Form::NAME);
-  SO_API Result<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time);
-  SO_API Result<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time);
-  SO_API Result<std::string> convertToISO8601(const ASN1_TIME &asnTime);
+  Result<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form = Form::NAME);
+  Result<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time);
+  Result<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time);
+  Result<std::string> convertToISO8601(const ASN1_TIME &asnTime);
 
-  SO_API Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
-  SO_API Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
-  SO_API Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
-  SO_API Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
+  Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
+  Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
 } // namepsace asn1
 
 namespace bignum {
-  SO_API BIGNUM_uptr create();
+  BIGNUM_uptr create();
 
-  SO_API Result<BIGNUM_uptr> convertToBignum(const Bytes &bt);
-  SO_API Result<Bytes> convertToBytes(const BIGNUM &bn);
+  Result<BIGNUM_uptr> convertToBignum(const Bytes &bt);
+  Result<Bytes> convertToBytes(const BIGNUM &bn);
   
-  SO_API Result<size_t> getByteLen(const BIGNUM &bn);
+  Result<size_t> getByteLen(const BIGNUM &bn);
 }
 
 namespace bytes {
-  SO_API std::string toString(const Bytes &bt);
-  SO_API std::string toString(const Bytes &bt, const Bytes::const_iterator &start);
-  SO_API Bytes fromString(const std::string &str);
+  std::string toString(const Bytes &bt);
+  std::string toString(const Bytes &bt, const Bytes::const_iterator &start);
+  Bytes fromString(const std::string &str);
 } // namespace bytes
 
 namespace ecdsa {
@@ -306,7 +313,7 @@ namespace ecdsa {
     Bytes r;
     Bytes s;
     
-    inline bool operator ==(const Signature &other) const
+    bool operator ==(const Signature &other) const
     {
       return r.size() == other.r.size() &&
         s.size() == other.s.size() &&
@@ -314,48 +321,48 @@ namespace ecdsa {
         std::equal(s.begin(), s.end(), other.s.begin());
     }
   
-    inline bool operator !=(const Signature &other) const
+    bool operator !=(const Signature &other) const
     {
       return !(*this == other);
     }
   };
 
 
-  SO_API EC_KEY_uptr create();
-  SO_API Result<EC_KEY_uptr> create(Curve curve);
+  EC_KEY_uptr create();
+  Result<EC_KEY_uptr> create(Curve curve);
 
-  SO_API Result<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
-  SO_API Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub);
-  SO_API Result<std::string> convertPrivKeyToPem(EC_KEY &ec);
-  SO_API Result<std::string> convertPubKeyToPem(EC_KEY &ec);
+  Result<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
+  Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub);
+  Result<std::string> convertPrivKeyToPem(EC_KEY &ec);
+  Result<std::string> convertPubKeyToPem(EC_KEY &ec);
 
-  SO_API Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der);
-  SO_API Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der);
-  SO_API Result<Bytes> convertPrivKeyToDer(EC_KEY &ec);
-  SO_API Result<Bytes> convertPubKeyToDer(EC_KEY &ec);
+  Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der);
+  Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der);
+  Result<Bytes> convertPrivKeyToDer(EC_KEY &ec);
+  Result<Bytes> convertPubKeyToDer(EC_KEY &ec);
 
-  SO_API Result<Bytes> convertToDer(const Signature &signature); 
-  SO_API Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
-  SO_API Result<Signature> convertToSignature(const Bytes &derSigBytes);
-  SO_API Result<std::string> convertCurveToString(Curve curve);
+  Result<Bytes> convertToDer(const Signature &signature); 
+  Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
+  Result<Signature> convertToSignature(const Bytes &derSigBytes);
+  Result<std::string> convertCurveToString(Curve curve);
 
-  SO_API Result<bool> checkKey(const EC_KEY &ecKey);
-  SO_API Result<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
-  SO_API Result<Curve> getCurve(const EC_KEY &key);
-  SO_API Result<EC_KEY_uptr> getPublic(const EC_KEY &key);
-  SO_API Result<size_t> getKeySize(const EC_KEY &key);
+  Result<bool> checkKey(const EC_KEY &ecKey);
+  Result<EC_KEY_uptr> copyKey(const EC_KEY &ecKey);
+  Result<Curve> getCurve(const EC_KEY &key);
+  Result<EC_KEY_uptr> getPublic(const EC_KEY &key);
+  Result<size_t> getKeySize(const EC_KEY &key);
  
-  SO_API Result<Bytes> signSha1(const Bytes &message, EC_KEY &key);
-  SO_API Result<Bytes> signSha224(const Bytes &message, EC_KEY &key);
-  SO_API Result<Bytes> signSha256(const Bytes &message, EC_KEY &key);
-  SO_API Result<Bytes> signSha384(const Bytes &message, EC_KEY &key);
-  SO_API Result<Bytes> signSha512(const Bytes &message, EC_KEY &key);
+  Result<Bytes> signSha1(const Bytes &message, EC_KEY &key);
+  Result<Bytes> signSha224(const Bytes &message, EC_KEY &key);
+  Result<Bytes> signSha256(const Bytes &message, EC_KEY &key);
+  Result<Bytes> signSha384(const Bytes &message, EC_KEY &key);
+  Result<Bytes> signSha512(const Bytes &message, EC_KEY &key);
   
-  SO_API Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
-  SO_API Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
-  SO_API Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
-  SO_API Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
-  SO_API Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
+  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
+  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
+  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
+  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
+  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
 } // namespace ecdsa
 
 namespace evp {
@@ -368,59 +375,59 @@ namespace evp {
     DH    = EVP_PKEY_DH
   };
 
-  SO_API EVP_PKEY_uptr create();
+  EVP_PKEY_uptr create();
 
-  SO_API Result<void> assign(EVP_PKEY &evp, RSA &rsa);
-  SO_API Result<void> assign(EVP_PKEY &evp, EC_KEY &ec);
+  Result<void> assign(EVP_PKEY &evp, RSA &rsa);
+  Result<void> assign(EVP_PKEY &evp, EC_KEY &ec);
 
-  SO_API Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
-  SO_API Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
-  SO_API Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der);
-  SO_API Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
-  SO_API Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
-  SO_API Result<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
-  SO_API std::string convertPubkeyTypeToString(KeyType pubKeyType);
-  SO_API Result<EC_KEY_uptr> convertToEcdsa(EVP_PKEY &key);
-  SO_API Result<RSA_uptr> convertToRsa(EVP_PKEY &key);
+  Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
+  Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der);
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
+  Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
+  Result<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
+  std::string convertPubkeyTypeToString(KeyType pubKeyType);
+  Result<EC_KEY_uptr> convertToEcdsa(EVP_PKEY &key);
+  Result<RSA_uptr> convertToRsa(EVP_PKEY &key);
 
-  SO_API KeyType getKeyType(const EVP_PKEY &pubkey);
+  KeyType getKeyType(const EVP_PKEY &pubkey);
 
-  SO_API Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
-  SO_API Result<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
-  SO_API Result<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
-  SO_API Result<Bytes> signSha384(const Bytes &msg, EVP_PKEY &privKey);
-  SO_API Result<Bytes> signSha512(const Bytes &msg, EVP_PKEY &privKey);
+  Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
+  Result<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
+  Result<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
+  Result<Bytes> signSha384(const Bytes &msg, EVP_PKEY &privKey);
+  Result<Bytes> signSha512(const Bytes &msg, EVP_PKEY &privKey);
   
-  SO_API Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
-  SO_API Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
-  SO_API Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
-  SO_API Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
-  SO_API Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
 } // namepsace evp
 
 namespace hash {
-  SO_API Result<Bytes> md4(const Bytes &data);
-  SO_API Result<Bytes> md4(const std::string &str);
-  SO_API Result<Bytes> md5(const Bytes &data);
-  SO_API Result<Bytes> md5(const std::string &str);
-  SO_API Result<Bytes> sha1(const Bytes &data);
-  SO_API Result<Bytes> sha1(const std::string &str);
-  SO_API Result<Bytes> sha224(const Bytes &data);
-  SO_API Result<Bytes> sha224(const std::string &str);
-  SO_API Result<Bytes> sha256(const Bytes &data);
-  SO_API Result<Bytes> sha256(const std::string &str);
-  SO_API Result<Bytes> sha384(const Bytes &data);
-  SO_API Result<Bytes> sha384(const std::string &str);
-  SO_API Result<Bytes> sha512(const Bytes &data);
-  SO_API Result<Bytes> sha512(const std::string &str);
+  Result<Bytes> md4(const Bytes &data);
+  Result<Bytes> md4(const std::string &str);
+  Result<Bytes> md5(const Bytes &data);
+  Result<Bytes> md5(const std::string &str);
+  Result<Bytes> sha1(const Bytes &data);
+  Result<Bytes> sha1(const std::string &str);
+  Result<Bytes> sha224(const Bytes &data);
+  Result<Bytes> sha224(const std::string &str);
+  Result<Bytes> sha256(const Bytes &data);
+  Result<Bytes> sha256(const std::string &str);
+  Result<Bytes> sha384(const Bytes &data);
+  Result<Bytes> sha384(const std::string &str);
+  Result<Bytes> sha512(const Bytes &data);
+  Result<Bytes> sha512(const std::string &str);
 
-  SO_API Result<Bytes> fileMD4(const std::string &path);
-  SO_API Result<Bytes> fileMD5(const std::string &path);
-  SO_API Result<Bytes> fileSHA1(const std::string &path);
-  SO_API Result<Bytes> fileSHA224(const std::string &path);
-  SO_API Result<Bytes> fileSHA256(const std::string &path);
-  SO_API Result<Bytes> fileSHA384(const std::string &path);
-  SO_API Result<Bytes> fileSHA512(const std::string &path);
+  Result<Bytes> fileMD4(const std::string &path);
+  Result<Bytes> fileMD5(const std::string &path);
+  Result<Bytes> fileSHA1(const std::string &path);
+  Result<Bytes> fileSHA224(const std::string &path);
+  Result<Bytes> fileSHA256(const std::string &path);
+  Result<Bytes> fileSHA384(const std::string &path);
+  Result<Bytes> fileSHA512(const std::string &path);
 } // namespace hash
 
 namespace nid {
@@ -1482,19 +1489,19 @@ namespace nid {
     AUTH_NULL = NID_auth_null
   };
 
-  SO_API Result<ASN1_OBJECT_uptr> convertToObject(Nid nid);
-  SO_API Result<ASN1_OBJECT_uptr> convertToObject(int rawNid);
+  Result<ASN1_OBJECT_uptr> convertToObject(Nid nid);
+  Result<ASN1_OBJECT_uptr> convertToObject(int rawNid);
 
-  SO_API Result<std::string> getLongName(Nid nid);
-  SO_API Result<std::string> getLongName(int rawNid);
+  Result<std::string> getLongName(Nid nid);
+  Result<std::string> getLongName(int rawNid);
 
-  SO_API Result<std::string> getShortName(Nid nid);
-  SO_API Result<std::string> getShortName(int rawNid);
+  Result<std::string> getShortName(Nid nid);
+  Result<std::string> getShortName(int rawNid);
 
 } // namespace nid
   
 namespace rand {
-  SO_API Result<Bytes> bytes(unsigned short numOfBytes);
+  Result<Bytes> bytes(unsigned short numOfBytes);
 } //namespace rand
   
 namespace rsa { 
@@ -1517,40 +1524,86 @@ namespace rsa {
     _65537_ = RSA_F4
   };
 
-  SO_API RSA_uptr create(); 
-  SO_API Result<RSA_uptr> create(KeyBits keySize, Exponent exponent = Exponent::_65537_);
+  RSA_uptr create(); 
+  Result<RSA_uptr> create(KeyBits keySize, Exponent exponent = Exponent::_65537_);
 
-  SO_API Result<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
-  SO_API Result<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
-  SO_API Result<std::string> convertPrivKeyToPem(RSA &rsa);
-  SO_API Result<std::string> convertPubKeyToPem(RSA &rsa);
+  Result<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
+  Result<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
+  Result<std::string> convertPrivKeyToPem(RSA &rsa);
+  Result<std::string> convertPubKeyToPem(RSA &rsa);
 
-  SO_API Result<RSA_uptr> convertDerToPrivKey(const Bytes &der);
-  SO_API Result<RSA_uptr> convertDerToPubKey(const Bytes &der);
-  SO_API Result<Bytes> convertPrivKeyToDer(RSA &rsa);
-  SO_API Result<Bytes> convertPubKeyToDer(RSA &rsa);
+  Result<RSA_uptr> convertDerToPrivKey(const Bytes &der);
+  Result<RSA_uptr> convertDerToPubKey(const Bytes &der);
+  Result<Bytes> convertPrivKeyToDer(RSA &rsa);
+  Result<Bytes> convertPubKeyToDer(RSA &rsa);
 
-  SO_API Result<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
-  SO_API Result<bool> checkKey(RSA &rsa);
+  Result<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
+  Result<bool> checkKey(RSA &rsa);
  
-  SO_API Result<KeyBits> getKeyBits(RSA &rsa);
-  SO_API Result<RSA_uptr> getPublic(RSA &rsa);
+  Result<KeyBits> getKeyBits(RSA &rsa);
+  Result<RSA_uptr> getPublic(RSA &rsa);
 
-  SO_API Result<Bytes> signSha1(const Bytes &message, RSA &privateKey);
-  SO_API Result<Bytes> signSha224(const Bytes &msg, RSA &privKey);
-  SO_API Result<Bytes> signSha256(const Bytes &msg, RSA &privKey);
-  SO_API Result<Bytes> signSha384(const Bytes &msg, RSA &privKey);
-  SO_API Result<Bytes> signSha512(const Bytes &msg, RSA &privKey);
+  Result<Bytes> signSha1(const Bytes &message, RSA &privateKey);
+  Result<Bytes> signSha224(const Bytes &msg, RSA &privKey);
+  Result<Bytes> signSha256(const Bytes &msg, RSA &privKey);
+  Result<Bytes> signSha384(const Bytes &msg, RSA &privKey);
+  Result<Bytes> signSha512(const Bytes &msg, RSA &privKey);
   
-  SO_API Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  SO_API Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  SO_API Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  SO_API Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  SO_API Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
 } // namespace rsa
 
 namespace x509 {
-   
+  namespace internal{
+    template<typename ID>
+    struct Extension
+    {
+      ID id;
+      bool critical;
+      std::string name;
+      std::string oidNumerical;
+      Bytes data;
+
+      nid::Nid nid() const { return static_cast<nid::Nid>(id); }
+      int nidRaw() const { return static_cast<int>(nid()); }
+
+      bool operator==(const Extension<ID> &other) const
+      {
+        return std::tie(id, critical, name, oidNumerical, data)
+            == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
+      }
+
+      bool operator!=(const Extension<ID> &other) const
+      {
+        return !(*this == other);
+      }
+    };
+
+    struct X509Name
+    {
+      // as of https://tools.ietf.org/html/rfc2459
+      std::string commonName;
+      std::string surname;
+      std::string countryName;
+      std::string localityName;
+      std::string stateOrProvinceName;
+      std::string organizationName;
+      std::string organizationalUnitName;
+      std::string title;
+      std::string name;
+      std::string givenName;
+      std::string initials;
+      std::string generationQualifier;
+      std::string dnQualifier;
+
+      bool operator ==(const X509Name &other) const; 
+      bool operator !=(const X509Name &other) const;
+    };
+  }; // x509::internal 
+
   enum class CertExtensionId : int
   {
     // as of https://www.openssl.org/docs/man1.1.0/crypto/X509_REVOKED_add1_ext_i2d.html
@@ -1608,19 +1661,19 @@ namespace x509 {
     CERTIFICATE_ISSUER          = NID_certificate_issuer
   };
 
-  using CertExtension = internal::X509Extension<CertExtensionId>;
-  using CrlExtension = internal::X509Extension<CrlExtensionId>;
-  using CrlEntryExtension = internal::X509Extension<CrlEntryExtensionId>;
-  using Issuer = internal::X509Name;
-  using Subject = internal::X509Name;
+  using CertExtension = ::so::x509::internal::Extension<CertExtensionId>;
+  using CrlExtension = ::so::x509::internal::Extension<CrlExtensionId>;
+  using CrlEntryExtension = ::so::x509::internal::Extension<CrlEntryExtensionId>;
+  using Issuer = ::so::x509::internal::X509Name;
+  using Subject = ::so::x509::internal::X509Name;
 
   struct Validity
   {
     std::time_t notAfter;
     std::time_t notBefore;
     
-    inline bool operator ==(const Validity &other) const;
-    inline bool operator !=(const Validity &other) const; 
+    bool operator ==(const Validity &other) const;
+    bool operator !=(const Validity &other) const; 
   };
 
   enum class Version : long
@@ -1643,71 +1696,71 @@ namespace x509 {
 
   //---- Cerificates----------
   //----------------------------------------------------------------------------------------------
-  SO_API X509_uptr create();
+  X509_uptr create();
 
-  SO_API Result<X509_uptr> convertPemToX509(const std::string &pemCert);
-  SO_API Result<std::string> convertX509ToPem(X509 &cert);
-  SO_API Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
+  Result<X509_uptr> convertPemToX509(const std::string &pemCert);
+  Result<std::string> convertX509ToPem(X509 &cert);
+  Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
 
-  SO_API Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
-  SO_API Result<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
-  SO_API Result<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical);
-  SO_API Result<std::vector<CertExtension>> getExtensions(const X509 &cert);
-  SO_API Result<size_t> getExtensionsCount(const X509 &cert);
-  SO_API Result<Issuer> getIssuer(const X509 &cert);
-  SO_API Result<std::string> getIssuerString(const X509 &cert); 
-  SO_API Result<EVP_PKEY_uptr> getPubKey(X509 &cert);
-  SO_API nid::Nid getPubKeyAlgorithm(X509 &cert);
-  SO_API Result<Bytes> getSerialNumber(X509 &cert);
-  SO_API Result<Bytes> getSignature(const X509 &cert);
-  SO_API nid::Nid getSignatureAlgorithm(const X509 &cert);
-  SO_API Result<Subject> getSubject(const X509 &cert);
-  SO_API Result<std::string> getSubjectString(const X509 &cert);
-  SO_API Result<Validity> getValidity(const X509 &cert);
-  SO_API std::tuple<Version,long> getVersion(const X509 &cert);
+  Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
+  Result<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
+  Result<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical);
+  Result<std::vector<CertExtension>> getExtensions(const X509 &cert);
+  Result<size_t> getExtensionsCount(const X509 &cert);
+  Result<Issuer> getIssuer(const X509 &cert);
+  Result<std::string> getIssuerString(const X509 &cert); 
+  Result<EVP_PKEY_uptr> getPubKey(X509 &cert);
+  nid::Nid getPubKeyAlgorithm(X509 &cert);
+  Result<Bytes> getSerialNumber(X509 &cert);
+  Result<Bytes> getSignature(const X509 &cert);
+  nid::Nid getSignatureAlgorithm(const X509 &cert);
+  Result<Subject> getSubject(const X509 &cert);
+  Result<std::string> getSubjectString(const X509 &cert);
+  Result<Validity> getValidity(const X509 &cert);
+  std::tuple<Version,long> getVersion(const X509 &cert);
   
-  SO_API bool isCa(X509 &cert);
-  SO_API bool isSelfSigned(X509 &cert);
+  bool isCa(X509 &cert);
+  bool isSelfSigned(X509 &cert);
 
-  SO_API Result<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false);
-  SO_API Result<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical = false);
-  SO_API Result<void> setExtension(X509 &cert, nid::Nid nid, ASN1_OCTET_STRING &octet, bool critical = false);
-  SO_API Result<void> setExtension(X509 &cert, const CertExtension &extension); 
-  SO_API Result<void> setIssuer(X509 &cert, const X509 &rootCert);
-  SO_API Result<void> setIssuer(X509 &cert, const Issuer &issuer);
-  SO_API Result<void> setPubKey(X509 &cert, EVP_PKEY &pkey);
-  SO_API Result<void> setSerial(X509 &cert, const Bytes &bytes);
-  SO_API Result<void> setSubject(X509 &cert, const Subject &subject);
-  SO_API Result<void> setValidity(X509 &cert, const Validity &validity);
-  SO_API Result<void> setVersion(X509 &cert, Version version);
-  SO_API Result<void> setVersion(X509 &cert, long version);
+  Result<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical = false);
+  Result<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical = false);
+  Result<void> setExtension(X509 &cert, nid::Nid nid, ASN1_OCTET_STRING &octet, bool critical = false);
+  Result<void> setExtension(X509 &cert, const CertExtension &extension); 
+  Result<void> setIssuer(X509 &cert, const X509 &rootCert);
+  Result<void> setIssuer(X509 &cert, const Issuer &issuer);
+  Result<void> setPubKey(X509 &cert, EVP_PKEY &pkey);
+  Result<void> setSerial(X509 &cert, const Bytes &bytes);
+  Result<void> setSubject(X509 &cert, const Subject &subject);
+  Result<void> setValidity(X509 &cert, const Validity &validity);
+  Result<void> setVersion(X509 &cert, Version version);
+  Result<void> setVersion(X509 &cert, long version);
   
-  SO_API Result<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
-  SO_API Result<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
-  SO_API Result<size_t> signSha384(X509 &cert, EVP_PKEY &pkey); 
-  SO_API Result<size_t> signSha512(X509 &cert, EVP_PKEY &pkey);  
+  Result<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
+  Result<size_t> signSha256(X509 &cert, EVP_PKEY &pkey);
+  Result<size_t> signSha384(X509 &cert, EVP_PKEY &pkey); 
+  Result<size_t> signSha512(X509 &cert, EVP_PKEY &pkey);  
   
-  SO_API Result<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
+  Result<bool> verifySignature(X509 &cert, EVP_PKEY &pkey);
 
   
   //---- Revocation ----------
   //---------------------------------------------------------------------------------------------- 
-  SO_API X509_CRL_uptr createCrl();
+  X509_CRL_uptr createCrl();
 
-  SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
-  SO_API Result<std::string> convertCrlToPem(X509_CRL &crl);
-  SO_API Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrlFile);
+  Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
+  Result<std::string> convertCrlToPem(X509_CRL &crl);
+  Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrlFile);
 
-  SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
-  SO_API Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl);
-  SO_API Result<size_t> getExtensionsCount(X509_CRL &crl);
-  SO_API Result<Issuer> getIssuer(X509_CRL &crl);
-  SO_API Result<std::string> getIssuerString(X509_CRL &crl);
-  SO_API size_t getRevokedCount(X509_CRL &crl);
-  SO_API Result<std::vector<Revoked>> getRevoked(X509_CRL &crl);
-  SO_API Result<Bytes> getSignature(const X509_CRL &crl);
-  SO_API nid::Nid getSignatureAlgorithm(const X509_CRL &crl);
-  SO_API std::tuple<Version, long> getVersion(X509_CRL &crl);
+  Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
+  Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl);
+  Result<size_t> getExtensionsCount(X509_CRL &crl);
+  Result<Issuer> getIssuer(X509_CRL &crl);
+  Result<std::string> getIssuerString(X509_CRL &crl);
+  size_t getRevokedCount(X509_CRL &crl);
+  Result<std::vector<Revoked>> getRevoked(X509_CRL &crl);
+  Result<Bytes> getSignature(const X509_CRL &crl);
+  nid::Nid getSignatureAlgorithm(const X509_CRL &crl);
+  std::tuple<Version, long> getVersion(X509_CRL &crl);
  
 } // namespace x509
 
@@ -1718,8 +1771,10 @@ namespace x509 {
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-namespace internal {
-  inline bool X509Name::operator ==(const X509Name &other) const
+#ifdef SO_IMPLEMEMENTATION
+
+namespace x509 { namespace internal {
+  bool X509Name::operator ==(const X509Name &other) const
   {
     return commonName == other.commonName
       && surname == other.surname
@@ -1736,70 +1791,24 @@ namespace internal {
       && dnQualifier == other.dnQualifier;
   }
 
-  inline bool X509Name::operator !=(const X509Name &other) const
+  bool X509Name::operator !=(const X509Name &other) const
   {
     return !(*this == other);
   }
+}} // namespace x509 namespace internal
 
-  SO_PRV std::string errCodeToString(unsigned long errCode)
+namespace internal {
+  std::string errCodeToString(unsigned long errCode)
   {
     static constexpr size_t SIZE = 1024;
     char buff[SIZE];
     std::memset(buff, 0x00, SIZE);
     ERR_error_string_n(errCode, buff, SIZE);
     return std::string(buff);
-  }
-} // namespace internal
+  } 
 
-
-template<typename T>
-inline Result<T>::operator bool() const noexcept
-{
-  return ok(); 
-}
-
-template<typename T>
-inline T&& Result<T>::moveValue()
-{
-  return std::move(value);
-}
-
-template<typename T>
-inline bool Result<T>::ok() const noexcept
-{ 
-  return internal::OSSL_NO_ERR_CODE == opensslErrCode; 
-}
-
-template<typename T>
-inline std::string Result<T>::msg() const
-{
-  if(ok())
-    return "ok";
-
-  return internal::errCodeToString(opensslErrCode); 
-}
-  
-inline Result<void>::operator bool() const noexcept
-{
-  return ok();
-}
-
-inline bool Result<void>::ok() const noexcept
-{
-  return internal::OSSL_NO_ERR_CODE == opensslErrCode;
-}
-
-inline std::string Result<void>::msg() const
-{
-  if(ok())
-    return "ok";
-
-  return internal::errCodeToString(opensslErrCode); 
-}
-
-namespace internal {
   template<typename ID>
-  struct X509Extension
+  struct Extension
   {
     ID id;
     bool critical;
@@ -1807,16 +1816,16 @@ namespace internal {
     std::string oidNumerical;
     Bytes data;
   
-    inline nid::Nid nid() const { return static_cast<nid::Nid>(id); }
-    inline int nidRaw() const { return static_cast<int>(nid()); }
+    nid::Nid nid() const { return static_cast<nid::Nid>(id); }
+    int nidRaw() const { return static_cast<int>(nid()); }
 
-    inline bool operator==(const X509Extension<ID> &other) const
+    bool operator==(const Extension<ID> &other) const
     {
       return std::tie(id, critical, name, oidNumerical, data)
           == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
     }
 
-    inline bool operator!=(const X509Extension<ID> &other) const
+    bool operator!=(const Extension<ID> &other) const
     {
       return !(*this == other);
     }
@@ -1829,7 +1838,7 @@ namespace internal {
   };
 
   template<typename T>
-  SO_PRV Result<T> err(T &&val)
+  Result<T> err(T &&val)
   {
     return Result<T>{ std::move(val), ERR_get_error() };
   }
@@ -1837,49 +1846,49 @@ namespace internal {
   template
   <
     typename T,
-    typename std::enable_if<!internal::is_uptr<T>::value, int>::type = 0
+    typename std::enable_if<!::so::internal::is_uptr<T>::value, int>::type = 0
   >
-  SO_PRV Result<T> err()
+  Result<T> err()
   {
-    return internal::err<T>({});
+    return ::so::internal::err<T>({});
   }
 
   template
   <
     typename T,
-    typename std::enable_if<internal::is_uptr<T>::value, int>::type = 0
+    typename std::enable_if<::so::internal::is_uptr<T>::value, int>::type = 0
   >
-  SO_PRV Result<T> err()
+  Result<T> err()
   {
     auto tmp = make_unique<typename uptr_underlying_type<T>::type>(nullptr);
-    return internal::err(std::move(tmp));
+    return ::so::internal::err(std::move(tmp));
   }
 
   template<typename T>
-  SO_PRV Result<T> err(unsigned long errCode)
+  Result<T> err(unsigned long errCode)
   { 
     return Result<T>{ T{}, errCode };
   }
 
   template<typename T>
-  SO_PRV Result<T> ok(T &&val)
+  Result<T> ok(T &&val)
   {
-    return Result<T>{ std::move(val), internal::OSSL_NO_ERR_CODE };
+    return Result<T>{ std::move(val), ::so::internal::OSSL_NO_ERR_CODE };
   }
 
-  SO_PRV Result<void> errVoid()
+  Result<void> errVoid()
   {
     return Result<void>{ ERR_get_error() };
   }
 
-  SO_PRV Result<void> errVoid(unsigned long errCode)
+  Result<void> errVoid(unsigned long errCode)
   {
     return Result<void>{ errCode };
   }
 
-  SO_PRV Result<void> okVoid()
+  Result<void> okVoid()
   {
-    return Result<void>{ internal::OSSL_NO_ERR_CODE };
+    return Result<void>{ ::so::internal::OSSL_NO_ERR_CODE };
   }
 
   /*
@@ -1911,7 +1920,7 @@ namespace internal {
   using NidEnumTest = EnumCheck<nid::Nid,nid::Nid::UNDEF,nid::Nid::ITU_T,nid::Nid::CCITT,nid::Nid::ISO, ...... nid::Nid::AUTH_NULL>;
  */
 
-  SO_PRV Result<std::string> nameEntry2String(X509_NAME &name, int nid)
+  Result<std::string> nameEntry2String(X509_NAME &name, int nid)
   {
     // X509_NAME_get_text_by_NID() is considered legacy and with limitations, we'll
     // use more safe option
@@ -1919,32 +1928,32 @@ namespace internal {
     // pointers so they must not be freed
     const int entriesCount = X509_NAME_entry_count(&name);
     if(entriesCount < 0)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
     if(entriesCount == 0)
-      return internal::ok<std::string>("");
+      return ::so::internal::ok<std::string>("");
 
     const int position = X509_NAME_get_index_by_NID(&name, nid, -1);
     // if position == -2 then nid is invalid
     if(position == -2)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
     // item not found, it's not lib error, user should decide if value that is not there
     // is an error or not
     if(position == -1)
-      return internal::ok<std::string>("");
+      return ::so::internal::ok<std::string>("");
     
     const X509_NAME_ENTRY *entry = X509_NAME_get_entry(&name, position);
     // previously we found correct index, if we got nullptr here it
     // means sth went wrong
     if(!entry)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
     
     // internal pointer
     const ASN1_STRING *asn1 = X509_NAME_ENTRY_get_data(entry);
     const int asn1EstimatedStrLen = ASN1_STRING_length(asn1);
     if(asn1EstimatedStrLen <= 0)
-      return internal::ok<std::string>("");
+      return ::so::internal::ok<std::string>("");
 
     const auto freeOpenssl = [](unsigned char *ptr) { OPENSSL_free(ptr); };
     unsigned char *ptr; // we need to call OPENSSL_free on this
@@ -1955,26 +1964,26 @@ namespace internal {
     ret.reserve(static_cast<size_t>(len));
     std::transform(strBuff.get(), strBuff.get() + len, std::back_inserter(ret), [](unsigned char chr){ return static_cast<char>(chr); });
 
-    return internal::ok(std::move(ret)); 
+    return ::so::internal::ok(std::move(ret)); 
   }
 
-  SO_PRV Result<std::string> nameToString(const X509_NAME &name, unsigned long flags = XN_FLAG_RFC2253)
+  Result<std::string> nameToString(const X509_NAME &name, unsigned long flags = XN_FLAG_RFC2253)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(0 > X509_NAME_print_ex(bio.get(), &name, 0, flags))
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
     char *dataStart;
     const long nameLength = BIO_get_mem_data(bio.get(), &dataStart);
     if(nameLength < 0)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
  
-    return internal::ok(std::string(dataStart, static_cast<size_t>(nameLength)));
+    return ::so::internal::ok(std::string(dataStart, static_cast<size_t>(nameLength)));
   }
 
-  SO_PRV Result<internal::X509Name> commonInfo(X509_NAME &name)
+  Result<::so::x509::internal::X509Name> commonInfo(X509_NAME &name)
   {
-    const auto error = [](unsigned long errCode){ return internal::err<internal::X509Name>(errCode); }; 
+    const auto error = [](unsigned long errCode){ return ::so::internal::err<::so::x509::internal::X509Name>(errCode); }; 
     const auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName)
       return error(commonName.opensslErrCode);
@@ -2027,7 +2036,7 @@ namespace internal {
     if(!dnQualifier)
       return error(dnQualifier.opensslErrCode);
 
-    return internal::ok<internal::X509Name>({ 
+    return ::so::internal::ok<::so::x509::internal::X509Name>({ 
         commonName.value,
         surname.value,
         countryName.value,
@@ -2044,11 +2053,11 @@ namespace internal {
     });
   }
 
-  SO_PRV Result<X509_NAME_uptr> infoToX509Name(const internal::X509Name &info)
+  Result<X509_NAME_uptr> infoToX509Name(const ::so::x509::internal::X509Name &info)
   {
     auto name = make_unique(X509_NAME_new()); 
 
-    const auto err = []{ return internal::err<X509_NAME_uptr>(); };
+    const auto err = []{ return ::so::internal::err<X509_NAME_uptr>(); };
     const auto append = [](X509_NAME *nm, int nid, const std::string &val) {
       return val.empty() || X509_NAME_add_entry_by_NID(nm, nid, MBSTRING_ASC, reinterpret_cast<const unsigned char*>(val.c_str()), -1, -1, 0);
     };
@@ -2095,23 +2104,23 @@ namespace internal {
     if(!append(name.get(), NID_dnQualifier, info.dnQualifier))
       return err();
 
-    return internal::ok(std::move(name));
+    return ::so::internal::ok(std::move(name));
   }
 
-  SO_PRV Result<size_t> signCert(X509 &cert, EVP_PKEY &key, const EVP_MD *md)
+  Result<size_t> signCert(X509 &cert, EVP_PKEY &key, const EVP_MD *md)
   {
     const int sigLen = X509_sign(&cert, &key, md);
     if(0 >= sigLen)
-      return internal::err<size_t>();
+      return ::so::internal::err<size_t>();
 
-    return internal::ok(static_cast<size_t>(sigLen));
+    return ::so::internal::ok(static_cast<size_t>(sigLen));
   }
 
-  SO_PRV Result<Bytes> ecdsaSign(const Bytes &dg, EC_KEY &key)
+  Result<Bytes> ecdsaSign(const Bytes &dg, EC_KEY &key)
   {
     const int sigLen = ECDSA_size(&key);
     if(0 >= sigLen)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     Bytes tmpSig(static_cast<size_t>(sigLen));
     unsigned int finalSigLen = 0;
@@ -2122,17 +2131,17 @@ namespace internal {
           &finalSigLen,
           &key))
     {
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
     }
 
     if(finalSigLen == static_cast<unsigned>(sigLen))
-      return internal::ok(std::move(tmpSig));
+      return ::so::internal::ok(std::move(tmpSig));
 
     Bytes signature(tmpSig.begin(), std::next(tmpSig.begin(), finalSigLen));
-    return internal::ok(std::move(signature));
+    return ::so::internal::ok(std::move(signature));
   }
 
-  SO_PRV Result<bool> ecdsaVerify(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
+  Result<bool> ecdsaVerify(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
   {
     if(1 != ECDSA_verify(0,
           dg.data(),
@@ -2141,64 +2150,64 @@ namespace internal {
           static_cast<int>(signature.size()),
           &publicKey))
     {
-      return internal::err(false);
+      return ::so::internal::err(false);
     }
 
-    return internal::ok(true);
+    return ::so::internal::ok(true);
   }
   
-  SO_PRV Result<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
+  Result<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
   {
     auto mdCtx = make_unique(EVP_MD_CTX_new());
     if(!mdCtx)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
     
     const int initStatus = EVP_DigestSignInit(mdCtx.get(), nullptr, evpMd, nullptr, &privateKey);
     if(1 != initStatus)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
  
     const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
     if(1 != updateStatus)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
     
     size_t sigLen = 0;
     int signStatus = EVP_DigestSignFinal(mdCtx.get(), nullptr, &sigLen);
     if(1 != signStatus)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
  
     Bytes tmp(sigLen);
     signStatus = EVP_DigestSignFinal(mdCtx.get(), tmp.data(), &sigLen);
     if(1 != signStatus)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
         
     Bytes signature(tmp.begin(), std::next(tmp.begin(), static_cast<long>(sigLen))); 
-    return internal::ok(std::move(signature));
+    return ::so::internal::ok(std::move(signature));
   }
 
-  SO_PRV Result<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
+  Result<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
   {
     auto ctx = make_unique(EVP_MD_CTX_new());
     if (!ctx)
-      return internal::err(false);
+      return ::so::internal::err(false);
 
     if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey))
-      return internal::err(false);
+      return ::so::internal::err(false);
     
     if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.data(), msg.size()))
-      return internal::err(false); 
+      return ::so::internal::err(false); 
    
     const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
-    return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err<bool>();
+    return result == 1 ? ::so::internal::ok(true) : result == 0 ? ::so::internal::ok(false) : ::so::internal::err<bool>();
   }
 
-  SO_PRV Result<Bytes> rsaSign(int digestNid, const Bytes &digest, RSA &privKey)
+  Result<Bytes> rsaSign(int digestNid, const Bytes &digest, RSA &privKey)
   {
     if(1 != RSA_check_key_ex(&privKey, nullptr))
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
        
     const int sz = RSA_size(&privKey);
     if(0 > sz)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     Bytes firstSignature(static_cast<size_t>(sz));
     unsigned finalSigLen = 0;
@@ -2209,17 +2218,17 @@ namespace internal {
           &finalSigLen,
           &privKey))
     {
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
     }
 
     if(finalSigLen == static_cast<unsigned>(sz))
-      return internal::ok(std::move(firstSignature));
+      return ::so::internal::ok(std::move(firstSignature));
 
     Bytes finalSig(firstSignature.begin(), std::next(firstSignature.begin(), finalSigLen));
-    return internal::ok(std::move(finalSig));
+    return ::so::internal::ok(std::move(finalSig));
   }
 
-  SO_PRV Result<bool> rsaVerify(int hashNid, const Bytes &signature, const Bytes &digest, RSA &pubKey)
+  Result<bool> rsaVerify(int hashNid, const Bytes &signature, const Bytes &digest, RSA &pubKey)
   {
     if(1 != RSA_verify(hashNid,
           digest.data(),
@@ -2228,22 +2237,22 @@ namespace internal {
           static_cast<unsigned int>(signature.size()),
           &pubKey))
     {
-      return internal::err(false);
+      return ::so::internal::err(false);
     }
     
-    return internal::ok(true);
+    return ::so::internal::ok(true);
   }
 
   template<typename ID>
-  SO_PRV Result<internal::X509Extension<ID>> getExtension(X509_EXTENSION &ex)
+  Result<::so::x509::internal::Extension<ID>> getExtension(X509_EXTENSION &ex)
   {
-    using RetType = internal::X509Extension<ID>;
+    using RetType = ::so::x509::internal::Extension<ID>;
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
     const int nid = OBJ_obj2nid(asn1Obj);
     const int critical = X509_EXTENSION_get_critical(&ex);
     auto oidStr = asn1::convertObjToStr(*asn1Obj, asn1::Form::NUMERICAL);
     if(!oidStr)
-      return internal::err<RetType>(oidStr.opensslErrCode);
+      return ::so::internal::err<RetType>(oidStr.opensslErrCode);
  
     if(nid == NID_undef)
     {
@@ -2254,7 +2263,7 @@ namespace internal {
       data.reserve(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, std::back_inserter(data));
        
-      return internal::ok(RetType {
+      return ::so::internal::ok(RetType {
             static_cast<ID>(nid),
             static_cast<bool>(critical),
             "",
@@ -2272,7 +2281,7 @@ namespace internal {
       data.reserve(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, std::back_inserter(data));
 
-      return internal::ok(RetType{
+      return ::so::internal::ok(RetType{
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
@@ -2288,7 +2297,7 @@ namespace internal {
     data.reserve(static_cast<size_t>(bptr->length));
     std::copy_n(bptr->data, bptr->length, std::back_inserter(data));
 
-    return internal::ok(RetType{
+    return ::so::internal::ok(RetType{
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
@@ -2298,32 +2307,32 @@ namespace internal {
   }
 
   template<typename CTX, typename DATA, typename INIT, typename UPDATE, typename FINAL>
-  SO_PRV Result<Bytes> doHash(const DATA &data, unsigned long digestLen, INIT init, UPDATE update, FINAL final)
+  Result<Bytes> doHash(const DATA &data, unsigned long digestLen, INIT init, UPDATE update, FINAL final)
   {
     Bytes hash(digestLen);
     CTX ctx;
     if(1 != init(&ctx))
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     if(1 != update(&ctx, data.data(), data.size()))
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     if(1 != final(hash.data(), &ctx))
-      return internal::err<Bytes>(); 
+      return ::so::internal::err<Bytes>(); 
 
-    return internal::ok(std::move(hash));
+    return ::so::internal::ok(std::move(hash));
   }
 
-  SO_PRV Result<Bytes> doHashFile(const std::string &path, const EVP_MD *evpMd)
+  Result<Bytes> doHashFile(const std::string &path, const EVP_MD *evpMd)
   {    
     auto bioRaw = make_unique(BIO_new_file(path.c_str(), "rb"));
     if(!bioRaw)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     // mdtmp will be freed with bio
     BIO *mdtmp = BIO_new(BIO_f_md());
     if(!mdtmp)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     // WTF OpenSSL?
     // Every EVP_<digest>() function returns const pointer, but
@@ -2332,7 +2341,7 @@ namespace internal {
     BIO_set_md(mdtmp, const_cast<EVP_MD*>(evpMd));
     auto bio = make_unique(BIO_push(mdtmp, bioRaw.release()));
     if(!bio)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     {
       char buf[10240];
@@ -2346,18 +2355,18 @@ namespace internal {
     uint8_t mdbuf[EVP_MAX_MD_SIZE];
     const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
 
-    return internal::ok(Bytes(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen)));
+    return ::so::internal::ok(Bytes(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen)));
   }
 
   template<typename FUNC, typename ... Types>
-  SO_PRV Result<std::string> convertToPem(FUNC writeToBio, Types&& ...args)
+  Result<std::string> convertToPem(FUNC writeToBio, Types&& ...args)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(!bio)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
     if(1 != writeToBio(bio.get(), std::forward<Types>(args)...))
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
     std::string ret;
     BUF_MEM *buf; // this will be freed with bio
@@ -2365,51 +2374,51 @@ namespace internal {
     ret.reserve(static_cast<size_t>(buf->length));
     ret.append(buf->data, static_cast<size_t>(buf->length));
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
   
   template<typename Key, typename FUNC, typename ... Types>
-  SO_PRV Result<Key> convertPemToKey(const std::string &pem, FUNC readBio, Types&& ...args)
+  Result<Key> convertPemToKey(const std::string &pem, FUNC readBio, Types&& ...args)
   {
     auto bio = make_unique(BIO_new_mem_buf(pem.c_str(), static_cast<int>(pem.size())));
     if(!bio)
-      return internal::err<Key>();
+      return ::so::internal::err<Key>();
 
     auto key = make_unique(readBio(bio.get(), std::forward<Types>(args)...));
     if(!key)
-      return internal::err<Key>();
+      return ::so::internal::err<Key>();
 
-    return internal::ok(std::move(key));
+    return ::so::internal::ok(std::move(key));
   }
 
   template<typename Key, typename FUNC>
-  SO_PRV Result<Key> convertDerToKey(const Bytes &der, FUNC d2iFunction)
+  Result<Key> convertDerToKey(const Bytes &der, FUNC d2iFunction)
   {
     const uint8_t *ptr = der.data();
     auto ret = make_unique(d2iFunction(nullptr, &ptr, static_cast<long>(der.size())));
     if(!ret)
-      return internal::err<Key>();
+      return ::so::internal::err<Key>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
   template<typename Key, typename FUNC>
-  SO_PRV Result<Bytes> convertKeyToDer(Key &key, FUNC i2dFunction)
+  Result<Bytes> convertKeyToDer(Key &key, FUNC i2dFunction)
   {
     const auto freeOpenssl = [](uint8_t *ptr) { OPENSSL_free(ptr);};
     uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
     const int len = i2dFunction(&key, &ptr);
     if (0 > len)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     std::unique_ptr<uint8_t[], decltype(freeOpenssl)> buf(ptr, freeOpenssl);
     Bytes ret;
     ret.reserve(static_cast<size_t>(len));
     std::copy_n(buf.get(), len, std::back_inserter(ret));
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_PRV x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
+  x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
   {
     // TODO:
     // I should do proper error handling heere and get rid off
@@ -2433,7 +2442,7 @@ namespace internal {
         retExtensions.reserve(static_cast<size_t>(count));
         for(int i = 0; i < count; ++i)
         {
-          auto getExtension = internal::getExtension<x509::CrlEntryExtensionId>(*X509_REVOKED_get_ext(revoked, i));
+          auto getExtension = ::so::internal::getExtension<x509::CrlEntryExtensionId>(*X509_REVOKED_get_ext(revoked, i));
           if(getExtension)
             retExtensions.push_back(getExtension.value);
         }
@@ -2457,7 +2466,7 @@ namespace internal {
 
 } //namespace internal
 
-SO_API void init()
+void init()
 {
   // Since openssl v.1.1.0 we no longer need to set
   // locking callback for multithreaded support
@@ -2469,13 +2478,13 @@ SO_API void init()
   ERR_load_BIO_strings();
 }
 
-SO_API void cleanUp()
+void cleanUp()
 {
   ERR_free_strings();
 }
 
 namespace asn1 {
-  SO_API Result<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form)
+  Result<std::string> convertObjToStr(const ASN1_OBJECT &obj, Form form)
   {
     // according to documentation, size of 80 should be more than enough
     static constexpr size_t size = 1024;
@@ -2483,24 +2492,24 @@ namespace asn1 {
     std::memset(extname, 0x00, size);
     const int charsWritten = OBJ_obj2txt(extname, size, &obj, static_cast<int>(form));
     if(0 > charsWritten)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
     if(0 == charsWritten)
-      return internal::ok(std::string{});
+      return ::so::internal::ok(std::string{});
 
-    return internal::ok(std::string(extname));
+    return ::so::internal::ok(std::string(extname));
   }
 
-  SO_API Result<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time)
+  Result<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time)
   {
     auto ret = make_unique(ASN1_TIME_set(nullptr, time));
     if(!ret)
-      return internal::err<ASN1_TIME_uptr>();
+      return ::so::internal::err<ASN1_TIME_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time)
+  Result<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time)
   {
     // TODO:
     // If we're extremly unlucky, we can be off by one second.
@@ -2511,117 +2520,117 @@ namespace asn1 {
 
     int pday, psec;
     if(1 != ASN1_TIME_diff(&pday, &psec, nullptr, &asn1Time))
-      return internal::err<std::time_t>(); 
+      return ::so::internal::err<std::time_t>(); 
 
-    return internal::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
+    return ::so::internal::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
   }
  
-  SO_API Result<std::string> convertToISO8601(const ASN1_TIME &asnTime)
+  Result<std::string> convertToISO8601(const ASN1_TIME &asnTime)
   {
     constexpr size_t size = 256; 
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(0 >= ASN1_TIME_print(bio.get(), &asnTime))
-      return internal::err<std::string>(); 
+      return ::so::internal::err<std::string>(); 
 
     char buff[size];
     BIO_gets(bio.get(), buff, size);
 
-    return internal::ok(std::string(buff));
+    return ::so::internal::ok(std::string(buff));
   }
 
-  SO_API Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
+  Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
   {
     auto maybeBn = bignum::convertToBignum(bt);
     if(!maybeBn)
-      return internal::err<ASN1_INTEGER_uptr>(); 
+      return ::so::internal::err<ASN1_INTEGER_uptr>(); 
 
     auto bn = maybeBn.moveValue();
     auto integer = make_unique(BN_to_ASN1_INTEGER(bn.get(), nullptr));
     if(!integer)
-      return internal::err<ASN1_INTEGER_uptr>();
+      return ::so::internal::err<ASN1_INTEGER_uptr>();
 
-    return internal::ok(std::move(integer)); 
+    return ::so::internal::ok(std::move(integer)); 
   }
  
-  SO_API Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical)
+  Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical)
   {
     auto ret = make_unique(OBJ_txt2obj(nameOrNumerical.c_str(), 0));
     if(!ret)
-      return internal::err<ASN1_OBJECT_uptr>();
+      return ::so::internal::err<ASN1_OBJECT_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
   {
     auto ret = make_unique(ASN1_OCTET_STRING_new());
     if(!ret)
-      return internal::err<ASN1_OCTET_STRING_uptr>();
+      return ::so::internal::err<ASN1_OCTET_STRING_uptr>();
 
     if(1 != ASN1_OCTET_STRING_set(ret.get(), bt.data(), static_cast<int>(bt.size())))
-      return internal::err<ASN1_OCTET_STRING_uptr>();
+      return ::so::internal::err<ASN1_OCTET_STRING_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
   
-  SO_API Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
   {
     return encodeOctet(bytes::fromString(str));
   } 
 } // namespace asn1
 
 namespace bignum {
-  SO_API BIGNUM_uptr create()
+  BIGNUM_uptr create()
   {
     return make_unique(BN_new());
   }
 
-  SO_API Result<Bytes> convertToBytes(const BIGNUM &bn)
+  Result<Bytes> convertToBytes(const BIGNUM &bn)
   {
     const auto sz = getByteLen(bn);
     if(!sz)
-      return internal::err<Bytes>(sz.opensslErrCode);
+      return ::so::internal::err<Bytes>(sz.opensslErrCode);
 
     Bytes ret(sz.value);
     BN_bn2bin(&bn, ret.data());
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<BIGNUM_uptr> convertToBignum(const Bytes &bt)
+  Result<BIGNUM_uptr> convertToBignum(const Bytes &bt)
   {
     auto ret = make_unique(BN_bin2bn(bt.data(), static_cast<int>(bt.size()), nullptr));
     if(!ret)
-      return internal::err<BIGNUM_uptr>();
+      return ::so::internal::err<BIGNUM_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<size_t> getByteLen(const BIGNUM &bn)
+  Result<size_t> getByteLen(const BIGNUM &bn)
   {
     const int bnlen = BN_num_bytes(&bn);
     if(0 > bnlen)
-      return internal::err<size_t>();
+      return ::so::internal::err<size_t>();
 
-    return internal::ok(static_cast<size_t>(bnlen));
+    return ::so::internal::ok(static_cast<size_t>(bnlen));
   }
 }// namespace bignum
 
 namespace bytes {
-  SO_API std::string toString(const Bytes &bt)
+  std::string toString(const Bytes &bt)
   {
     std::ostringstream ss;
     std::copy(bt.begin(), bt.end(), std::ostream_iterator<char>(ss, ""));
     return ss.str();
   }
 
-  SO_API std::string toString(const Bytes &bt, const Bytes::const_iterator &start)
+  std::string toString(const Bytes &bt, const Bytes::const_iterator &start)
   {
     std::ostringstream ss;
     std::copy(start, bt.end(), std::ostream_iterator<char>(ss, ""));
     return ss.str();
   }
 
-  SO_API Bytes fromString(const std::string &str)
+  Bytes fromString(const std::string &str)
   {
     so::Bytes ret;
     ret.reserve(str.size());
@@ -2635,838 +2644,838 @@ namespace bytes {
 } // namespace bytes
 
 namespace ecdsa {
-  SO_API Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
+  Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
-    return internal::convertPemToKey<EC_KEY_uptr>(pemPub, PEM_read_bio_EC_PUBKEY, nullptr, nullptr, nullptr); 
+    return ::so::internal::convertPemToKey<EC_KEY_uptr>(pemPub, PEM_read_bio_EC_PUBKEY, nullptr, nullptr, nullptr); 
   }
 
-  SO_API Result<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
+  Result<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
-    return internal::convertPemToKey<EC_KEY_uptr>(pemPriv, PEM_read_bio_ECPrivateKey, nullptr, nullptr, nullptr); 
+    return ::so::internal::convertPemToKey<EC_KEY_uptr>(pemPriv, PEM_read_bio_ECPrivateKey, nullptr, nullptr, nullptr); 
   }
  
-  SO_API Result<std::string> convertPrivKeyToPem(EC_KEY &ec)
+  Result<std::string> convertPrivKeyToPem(EC_KEY &ec)
   { 
     const auto check = ecdsa::checkKey(ec);
     if(!check)
-      return internal::err<std::string>(check.opensslErrCode);
+      return ::so::internal::err<std::string>(check.opensslErrCode);
   
-    return internal::convertToPem(PEM_write_bio_ECPrivateKey, &ec, nullptr, nullptr, 0, nullptr, nullptr); 
+    return ::so::internal::convertToPem(PEM_write_bio_ECPrivateKey, &ec, nullptr, nullptr, 0, nullptr, nullptr); 
   }
  
-  SO_API Result<std::string> convertPubKeyToPem(EC_KEY &pubKey)
+  Result<std::string> convertPubKeyToPem(EC_KEY &pubKey)
   {
-    return internal::convertToPem(PEM_write_bio_EC_PUBKEY, &pubKey);
+    return ::so::internal::convertToPem(PEM_write_bio_EC_PUBKEY, &pubKey);
   }
 
-  SO_API Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der)
   {
-    return internal::convertDerToKey<EC_KEY_uptr>(der, d2i_ECPrivateKey);
+    return ::so::internal::convertDerToKey<EC_KEY_uptr>(der, d2i_ECPrivateKey);
   }
 
-  SO_API Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der)
+  Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der)
   {
-    return internal::convertDerToKey<EC_KEY_uptr>(der, d2i_EC_PUBKEY);
+    return ::so::internal::convertDerToKey<EC_KEY_uptr>(der, d2i_EC_PUBKEY);
   }
 
-  SO_API Result<Bytes> convertPrivKeyToDer(EC_KEY &ec)
+  Result<Bytes> convertPrivKeyToDer(EC_KEY &ec)
   {
     const auto check = ecdsa::checkKey(ec);
     if(!check)
-      return internal::err<Bytes>(check.opensslErrCode);
+      return ::so::internal::err<Bytes>(check.opensslErrCode);
 
-    return internal::convertKeyToDer(ec, i2d_ECPrivateKey);
+    return ::so::internal::convertKeyToDer(ec, i2d_ECPrivateKey);
   }
 
-  SO_API Result<Bytes> convertPubKeyToDer(EC_KEY &ec)
+  Result<Bytes> convertPubKeyToDer(EC_KEY &ec)
   {
-    return internal::convertKeyToDer(ec, i2d_EC_PUBKEY);
+    return ::so::internal::convertKeyToDer(ec, i2d_EC_PUBKEY);
   }
 
-  SO_API Result<bool> checkKey(const EC_KEY &ecKey)
+  Result<bool> checkKey(const EC_KEY &ecKey)
   {
     if(1 != EC_KEY_check_key(&ecKey))
-      return internal::err(false);
+      return ::so::internal::err(false);
 
-    return internal::ok(true);
+    return ::so::internal::ok(true);
   }
   
-  SO_API Result<EC_KEY_uptr> copyKey(const EC_KEY &ecKey)
+  Result<EC_KEY_uptr> copyKey(const EC_KEY &ecKey)
   {
     auto copy = make_unique(EC_KEY_dup(&ecKey));
     if(!copy)
-      return internal::err<EC_KEY_uptr>();
+      return ::so::internal::err<EC_KEY_uptr>();
 
-    return internal::ok(std::move(copy));
+    return ::so::internal::ok(std::move(copy));
   }
 
-  SO_API Result<Curve> getCurve(const EC_KEY &key)
+  Result<Curve> getCurve(const EC_KEY &key)
   {
     const EC_GROUP* group = EC_KEY_get0_group(&key);
     if(!group)
-      return internal::err<Curve>();
+      return ::so::internal::err<Curve>();
 
     const int nid = EC_GROUP_get_curve_name(group);
     if(0 == nid)
-      return internal::err<Curve>();
+      return ::so::internal::err<Curve>();
 
-    return internal::ok(static_cast<Curve>(nid)); 
+    return ::so::internal::ok(static_cast<Curve>(nid)); 
   }
 
-  SO_API Result<Bytes> convertToDer(const Signature &signature)
+  Result<Bytes> convertToDer(const Signature &signature)
   {
     auto maybeR = bignum::convertToBignum(signature.r);
     if(!maybeR)
-      return internal::err<Bytes>(maybeR.opensslErrCode);
+      return ::so::internal::err<Bytes>(maybeR.opensslErrCode);
 
     auto maybeS = bignum::convertToBignum(signature.s);
     if(!maybeS)
-      return internal::err<Bytes>(maybeS.opensslErrCode);
+      return ::so::internal::err<Bytes>(maybeS.opensslErrCode);
  
     auto sig = make_unique(ECDSA_SIG_new()); 
     if(!sig)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     auto r = maybeR.moveValue();
     auto s = maybeS.moveValue();
     if(1 != ECDSA_SIG_set0(sig.get(), r.release(), s.release()))
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     const int derLen = i2d_ECDSA_SIG(sig.get(), nullptr); 
     if(0 == derLen)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
  
     Bytes ret(static_cast<size_t>(derLen));
     auto *derIt = ret.data();
     if(!i2d_ECDSA_SIG(sig.get(), &derIt))
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<Signature> convertToSignature(const Bytes &derSigBytes)
+  Result<Signature> convertToSignature(const Bytes &derSigBytes)
   {
     auto *derIt = derSigBytes.data();
     auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigBytes.size())));
     if(!sig)
-      return internal::err<Signature>();
+      return ::so::internal::err<Signature>();
 
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
 
     auto maybeR = bignum::convertToBytes(*r);
     if(!maybeR)
-      return internal::err<Signature>();
+      return ::so::internal::err<Signature>();
 
     auto maybeS = bignum::convertToBytes(*s);
     if(!maybeS)
-      return internal::err<Signature>();
+      return ::so::internal::err<Signature>();
  
-    return internal::ok(Signature{
+    return ::so::internal::ok(Signature{
       maybeR.moveValue(),
       maybeS.moveValue(),
     });
   }
   
-  SO_API Result<std::string> convertCurveToString(Curve curve)
+  Result<std::string> convertCurveToString(Curve curve)
   {
     return nid::getLongName(static_cast<int>(curve));
   }
 
-  SO_API Result<EC_KEY_uptr> getPublic(const EC_KEY &key)
+  Result<EC_KEY_uptr> getPublic(const EC_KEY &key)
   {
     auto ret = make_unique(EC_KEY_new());
     if(!ret)
-      return internal::err<EC_KEY_uptr>();
+      return ::so::internal::err<EC_KEY_uptr>();
 
     const EC_GROUP *group = EC_KEY_get0_group(&key);
     if(1 != EC_KEY_set_group(ret.get(), group))
-      return internal::err<EC_KEY_uptr>();
+      return ::so::internal::err<EC_KEY_uptr>();
 
     const EC_POINT* pubPoint = EC_KEY_get0_public_key(&key);
     if(1 != EC_KEY_set_public_key(ret.get(), pubPoint))
-      return internal::err<EC_KEY_uptr>();
+      return ::so::internal::err<EC_KEY_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<size_t> getKeySize(const EC_KEY &key)
+  Result<size_t> getKeySize(const EC_KEY &key)
   {
     const EC_GROUP *group = EC_KEY_get0_group(&key);
     if(!group)
-      return internal::err<size_t>();
+      return ::so::internal::err<size_t>();
 
     const int size = EC_GROUP_get_degree(group);
-    return internal::ok(static_cast<size_t>(size));
+    return ::so::internal::ok(static_cast<size_t>(size));
   }
 
-  SO_API Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &ecKey)
+  Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &ecKey)
   {
     // I can keep const in arguments by doing this copy
     auto copy = make_unique(EC_KEY_dup(&ecKey));
     if(!copy)
-      return internal::err<EVP_PKEY_uptr>();
+      return ::so::internal::err<EVP_PKEY_uptr>();
 
     EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
     if (!evpKey)
-      return internal::err<EVP_PKEY_uptr>();
+      return ::so::internal::err<EVP_PKEY_uptr>();
 
     if (1 != EVP_PKEY_set1_EC_KEY(evpKey.get(), copy.get()))
-        return internal::err<EVP_PKEY_uptr>();
+        return ::so::internal::err<EVP_PKEY_uptr>();
     
-    return internal::ok(std::move(evpKey));
+    return ::so::internal::ok(std::move(evpKey));
   }
 
-  SO_API EC_KEY_uptr create()
+  EC_KEY_uptr create()
   {
     return make_unique(EC_KEY_new());
   }
 
-  SO_API Result<EC_KEY_uptr> create(Curve curve)
+  Result<EC_KEY_uptr> create(Curve curve)
   {
     const int nidCurve = static_cast<int>(curve);
     auto key = make_unique(EC_KEY_new_by_curve_name(nidCurve));
     if(!key)
-      return internal::err<EC_KEY_uptr>();
+      return ::so::internal::err<EC_KEY_uptr>();
 
     if(!EC_KEY_generate_key(key.get()))
-      return internal::err<EC_KEY_uptr>();
+      return ::so::internal::err<EC_KEY_uptr>();
 
-    return internal::ok(std::move(key));
+    return ::so::internal::ok(std::move(key));
   }
 
-  SO_API Result<Bytes> signSha1(const Bytes &message, EC_KEY &key)
+  Result<Bytes> signSha1(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha1(message);
     if(!digest)
       return digest;
 
-    return internal::ecdsaSign(digest.value, key);
+    return ::so::internal::ecdsaSign(digest.value, key);
   }
 
-  SO_API Result<Bytes> signSha224(const Bytes &message, EC_KEY &key)
+  Result<Bytes> signSha224(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha224(message);
     if(!digest)
       return digest; 
 
-    return internal::ecdsaSign(digest.value, key);
+    return ::so::internal::ecdsaSign(digest.value, key);
   }
 
-  SO_API Result<Bytes> signSha256(const Bytes &message, EC_KEY &key)
+  Result<Bytes> signSha256(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha256(message);
     if(!digest)
       return digest; 
 
-    return internal::ecdsaSign(digest.value, key);
+    return ::so::internal::ecdsaSign(digest.value, key);
   }
 
-  SO_API Result<Bytes> signSha384(const Bytes &message, EC_KEY &key)
+  Result<Bytes> signSha384(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha384(message);
     if(!digest)
       return digest;
 
-    return internal::ecdsaSign(digest.value, key);
+    return ::so::internal::ecdsaSign(digest.value, key);
   }
   
-  SO_API Result<Bytes> signSha512(const Bytes &message, EC_KEY &key)
+  Result<Bytes> signSha512(const Bytes &message, EC_KEY &key)
   {
     const auto digest = hash::sha512(message);
     if(!digest)
       return digest;
 
-    return internal::ecdsaSign(digest.value, key);
+    return ::so::internal::ecdsaSign(digest.value, key);
   }
 
-  SO_API Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha1(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, digest.value, publicKey);
+    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
-  SO_API Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha224(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, digest.value, publicKey);
+    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
-  SO_API Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha256(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, digest.value, publicKey);
+    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
-  SO_API Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha384(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, digest.value, publicKey);
+    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
-  SO_API Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha512(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::ecdsaVerify(signature, digest.value, publicKey);
+    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 } //namespace ecdsa
 
 namespace evp {
-  SO_API EVP_PKEY_uptr create()
+  EVP_PKEY_uptr create()
   {
     return make_unique(EVP_PKEY_new());
   }
 
-  SO_API Result<void> assign(EVP_PKEY &evp, RSA &rsa)
+  Result<void> assign(EVP_PKEY &evp, RSA &rsa)
   {
     if (1 != EVP_PKEY_assign_RSA(&evp, &rsa))
-        return internal::errVoid();
+        return ::so::internal::errVoid();
     
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
   
-  SO_API Result<void> assign(EVP_PKEY &evp, EC_KEY &ec)
+  Result<void> assign(EVP_PKEY &evp, EC_KEY &ec)
   {
     if (1 != EVP_PKEY_assign_EC_KEY(&evp, &ec))
-        return internal::errVoid();
+        return ::so::internal::errVoid();
     
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
 
-  SO_API Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
+  Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
-    return internal::convertPemToKey<EVP_PKEY_uptr>(pemPub, PEM_read_bio_PUBKEY, nullptr, nullptr, nullptr); 
+    return ::so::internal::convertPemToKey<EVP_PKEY_uptr>(pemPub, PEM_read_bio_PUBKEY, nullptr, nullptr, nullptr); 
   }
 
-  SO_API Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
+  Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
-    return internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
+    return ::so::internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
   }
 
-  SO_API Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der)
   {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(der, d2i_AutoPrivateKey);
+    return ::so::internal::convertDerToKey<EVP_PKEY_uptr>(der, d2i_AutoPrivateKey);
   }
 
-  SO_API Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der)
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der)
   {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(der, d2i_PUBKEY);
+    return ::so::internal::convertDerToKey<EVP_PKEY_uptr>(der, d2i_PUBKEY);
   }
 
-  SO_API Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey)
+  Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey)
   {
-    return internal::convertKeyToDer(privKey, i2d_PrivateKey);
+    return ::so::internal::convertKeyToDer(privKey, i2d_PrivateKey);
   }
 
-  SO_API Result<Bytes> convertPubKeyToDer(EVP_PKEY &pkey)
+  Result<Bytes> convertPubKeyToDer(EVP_PKEY &pkey)
   {
-    return internal::convertKeyToDer(pkey, i2d_PUBKEY);
+    return ::so::internal::convertKeyToDer(pkey, i2d_PUBKEY);
   }
 
-  SO_API std::string convertPubkeyTypeToString(KeyType pubKeyType)
+  std::string convertPubkeyTypeToString(KeyType pubKeyType)
   {
     return nid::getLongName(static_cast<int>(pubKeyType)).value;
   }
 
-  SO_API Result<EC_KEY_uptr> convertToEcdsa(EVP_PKEY &key)
+  Result<EC_KEY_uptr> convertToEcdsa(EVP_PKEY &key)
   {
     auto *ec = EVP_PKEY_get1_EC_KEY(&key);
     if(!ec)
-      return internal::err<EC_KEY_uptr>();
+      return ::so::internal::err<EC_KEY_uptr>();
 
-    return internal::ok(make_unique(ec));
+    return ::so::internal::ok(make_unique(ec));
   }
 
-  SO_API Result<RSA_uptr> convertToRsa(EVP_PKEY &key)
+  Result<RSA_uptr> convertToRsa(EVP_PKEY &key)
   {
     auto *rsa = EVP_PKEY_get1_RSA(&key);
     if(!rsa)
-      return internal::err<RSA_uptr>();
+      return ::so::internal::err<RSA_uptr>();
 
-    return internal::ok(make_unique(rsa));
+    return ::so::internal::ok(make_unique(rsa));
   }
 
-  SO_API KeyType getKeyType(const EVP_PKEY &pubkey)
+  KeyType getKeyType(const EVP_PKEY &pubkey)
   {
     return static_cast<KeyType>(EVP_PKEY_base_id(&pubkey));
   }
   
-  SO_API Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
+  Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
   { 
-    return internal::evpSign(message, EVP_sha1(), privateKey);
+    return ::so::internal::evpSign(message, EVP_sha1(), privateKey);
   }
 
-  SO_API Result<Bytes> signSha224(const Bytes &message, EVP_PKEY &privateKey)
+  Result<Bytes> signSha224(const Bytes &message, EVP_PKEY &privateKey)
   { 
-    return internal::evpSign(message, EVP_sha224(), privateKey);
+    return ::so::internal::evpSign(message, EVP_sha224(), privateKey);
   }
 
-  SO_API Result<Bytes> signSha256(const Bytes &message, EVP_PKEY &privateKey)
+  Result<Bytes> signSha256(const Bytes &message, EVP_PKEY &privateKey)
   { 
-    return internal::evpSign(message, EVP_sha256(), privateKey);
+    return ::so::internal::evpSign(message, EVP_sha256(), privateKey);
   }
 
-  SO_API Result<Bytes> signSha384(const Bytes &message, EVP_PKEY &privateKey)
+  Result<Bytes> signSha384(const Bytes &message, EVP_PKEY &privateKey)
   { 
-    return internal::evpSign(message, EVP_sha384(), privateKey);
+    return ::so::internal::evpSign(message, EVP_sha384(), privateKey);
   }
 
-  SO_API Result<Bytes> signSha512(const Bytes &message, EVP_PKEY &privateKey)
+  Result<Bytes> signSha512(const Bytes &message, EVP_PKEY &privateKey)
   { 
-    return internal::evpSign(message, EVP_sha512(), privateKey);
+    return ::so::internal::evpSign(message, EVP_sha512(), privateKey);
   }
 
-  SO_API Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
   {
-    return internal::evpVerify(signature, message, EVP_sha1(), pubKey); 
+    return ::so::internal::evpVerify(signature, message, EVP_sha1(), pubKey); 
   }
 
-  SO_API Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
   {
-    return internal::evpVerify(signature, message, EVP_sha224(), pubKey); 
+    return ::so::internal::evpVerify(signature, message, EVP_sha224(), pubKey); 
   }
 
-  SO_API Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
   {
-    return internal::evpVerify(signature, message, EVP_sha256(), pubKey); 
+    return ::so::internal::evpVerify(signature, message, EVP_sha256(), pubKey); 
   }
 
-  SO_API Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
   {
-    return internal::evpVerify(signature, message, EVP_sha384(), pubKey); 
+    return ::so::internal::evpVerify(signature, message, EVP_sha384(), pubKey); 
   }
 
-  SO_API Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
   {
-    return internal::evpVerify(signature, message, EVP_sha512(), pubKey); 
+    return ::so::internal::evpVerify(signature, message, EVP_sha512(), pubKey); 
   }
 } //namespace evp
 
 namespace hash {
-  SO_API Result<Bytes> md4(const Bytes &data)
+  Result<Bytes> md4(const Bytes &data)
   {  
-    return internal::doHash<MD4_CTX>(data, MD4_DIGEST_LENGTH, MD4_Init, MD4_Update, MD4_Final);
+    return ::so::internal::doHash<MD4_CTX>(data, MD4_DIGEST_LENGTH, MD4_Init, MD4_Update, MD4_Final);
   }
 
-  SO_API Result<Bytes> md4(const std::string &data)
+  Result<Bytes> md4(const std::string &data)
   {    
-    return internal::doHash<MD4_CTX>(data, MD4_DIGEST_LENGTH, MD4_Init, MD4_Update, MD4_Final);
+    return ::so::internal::doHash<MD4_CTX>(data, MD4_DIGEST_LENGTH, MD4_Init, MD4_Update, MD4_Final);
   }
 
-  SO_API Result<Bytes> md5(const Bytes &data)
+  Result<Bytes> md5(const Bytes &data)
   {
-    return internal::doHash<MD5_CTX>(data, MD5_DIGEST_LENGTH, MD5_Init, MD5_Update, MD5_Final);
+    return ::so::internal::doHash<MD5_CTX>(data, MD5_DIGEST_LENGTH, MD5_Init, MD5_Update, MD5_Final);
   }
 
-  SO_API Result<Bytes> md5(const std::string &data)
+  Result<Bytes> md5(const std::string &data)
   {
-    return internal::doHash<MD5_CTX>(data, MD5_DIGEST_LENGTH, MD5_Init, MD5_Update, MD5_Final);
+    return ::so::internal::doHash<MD5_CTX>(data, MD5_DIGEST_LENGTH, MD5_Init, MD5_Update, MD5_Final);
   }
 
-  SO_API Result<Bytes> sha1(const Bytes &data)
+  Result<Bytes> sha1(const Bytes &data)
   {    
-    return internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
+    return ::so::internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
   }
 
-  SO_API Result<Bytes> sha1(const std::string &data)
+  Result<Bytes> sha1(const std::string &data)
   {    
-    return internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
+    return ::so::internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
   }
   
-  SO_API Result<Bytes> sha224(const Bytes &data)
+  Result<Bytes> sha224(const Bytes &data)
   {
-    return internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
+    return ::so::internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
   }
 
-  SO_API Result<Bytes> sha224(const std::string &data)
+  Result<Bytes> sha224(const std::string &data)
   {
-    return internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
+    return ::so::internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
   }
 
-  SO_API Result<Bytes> sha256(const Bytes &data)
+  Result<Bytes> sha256(const Bytes &data)
   {
-    return internal::doHash<SHA256_CTX>(data, SHA256_DIGEST_LENGTH, SHA256_Init, SHA256_Update, SHA256_Final);
+    return ::so::internal::doHash<SHA256_CTX>(data, SHA256_DIGEST_LENGTH, SHA256_Init, SHA256_Update, SHA256_Final);
   }
 
-  SO_API Result<Bytes> sha256(const std::string &data)
+  Result<Bytes> sha256(const std::string &data)
   {
-    return internal::doHash<SHA256_CTX>(data, SHA256_DIGEST_LENGTH, SHA256_Init, SHA256_Update, SHA256_Final);
+    return ::so::internal::doHash<SHA256_CTX>(data, SHA256_DIGEST_LENGTH, SHA256_Init, SHA256_Update, SHA256_Final);
   }
 
-  SO_API Result<Bytes> sha384(const Bytes &data)
+  Result<Bytes> sha384(const Bytes &data)
   {
-    return internal::doHash<SHA512_CTX>(data, SHA384_DIGEST_LENGTH, SHA384_Init, SHA384_Update, SHA384_Final);
+    return ::so::internal::doHash<SHA512_CTX>(data, SHA384_DIGEST_LENGTH, SHA384_Init, SHA384_Update, SHA384_Final);
   }
 
-  SO_API Result<Bytes> sha384(const std::string &data)
+  Result<Bytes> sha384(const std::string &data)
   {
-    return internal::doHash<SHA512_CTX>(data, SHA384_DIGEST_LENGTH, SHA384_Init, SHA384_Update, SHA384_Final);
+    return ::so::internal::doHash<SHA512_CTX>(data, SHA384_DIGEST_LENGTH, SHA384_Init, SHA384_Update, SHA384_Final);
   }
 
-  SO_API Result<Bytes> sha512(const Bytes &data)
+  Result<Bytes> sha512(const Bytes &data)
   {
-    return internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
+    return ::so::internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
   }
 
-  SO_API Result<Bytes> sha512(const std::string &data)
+  Result<Bytes> sha512(const std::string &data)
   {
-    return internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
+    return ::so::internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
   }
   
-  SO_API Result<Bytes> fileMD4(const std::string &path)
+  Result<Bytes> fileMD4(const std::string &path)
   {
-    return internal::doHashFile(path, EVP_md4());
+    return ::so::internal::doHashFile(path, EVP_md4());
   }
   
-  SO_API Result<Bytes> fileMD5(const std::string &path)
+  Result<Bytes> fileMD5(const std::string &path)
   {
-    return internal::doHashFile(path, EVP_md5());
+    return ::so::internal::doHashFile(path, EVP_md5());
   }
   
-  SO_API Result<Bytes> fileSHA1(const std::string &path)
+  Result<Bytes> fileSHA1(const std::string &path)
   {
-    return internal::doHashFile(path, EVP_sha1());
+    return ::so::internal::doHashFile(path, EVP_sha1());
   }
 
-  SO_API Result<Bytes> fileSHA224(const std::string &path)
+  Result<Bytes> fileSHA224(const std::string &path)
   {
-    return internal::doHashFile(path, EVP_sha224());
+    return ::so::internal::doHashFile(path, EVP_sha224());
   }
 
-  SO_API Result<Bytes> fileSHA256(const std::string &path)
+  Result<Bytes> fileSHA256(const std::string &path)
   {
-    return internal::doHashFile(path, EVP_sha256());
+    return ::so::internal::doHashFile(path, EVP_sha256());
   }
 
-  SO_API Result<Bytes> fileSHA384(const std::string &path)
+  Result<Bytes> fileSHA384(const std::string &path)
   {
-    return internal::doHashFile(path, EVP_sha384());
+    return ::so::internal::doHashFile(path, EVP_sha384());
   }
 
-  SO_API Result<Bytes> fileSHA512(const std::string &path)
+  Result<Bytes> fileSHA512(const std::string &path)
   {
-    return internal::doHashFile(path, EVP_sha512());
+    return ::so::internal::doHashFile(path, EVP_sha512());
   }
 }// namespace hash
 
 namespace nid {
-   SO_API Result<ASN1_OBJECT_uptr> convertToObject(Nid nid)
+   Result<ASN1_OBJECT_uptr> convertToObject(Nid nid)
   {
     auto ret = make_unique(OBJ_nid2obj(static_cast<int>(nid)));
     if(!ret)
-      return internal::err<ASN1_OBJECT_uptr>();
+      return ::so::internal::err<ASN1_OBJECT_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<ASN1_OBJECT_uptr> convertToObject(int rawNid)
+  Result<ASN1_OBJECT_uptr> convertToObject(int rawNid)
   {
     auto ret = make_unique(OBJ_nid2obj(rawNid));
     if(!ret)
-      return internal::err<ASN1_OBJECT_uptr>();
+      return ::so::internal::err<ASN1_OBJECT_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<std::string> getLongName(Nid nid)
+  Result<std::string> getLongName(Nid nid)
   {
     const char *str = OBJ_nid2ln(static_cast<int>(nid));
     if(!str)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
-    return internal::ok<std::string>(str);
+    return ::so::internal::ok<std::string>(str);
   }
 
-  SO_API Result<std::string> getLongName(int rawNid)
+  Result<std::string> getLongName(int rawNid)
   {
     const char *str = OBJ_nid2ln(rawNid);
     if(!str)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
-    return internal::ok<std::string>(str);
+    return ::so::internal::ok<std::string>(str);
   }
 
-  SO_API Result<std::string> getShortName(Nid nid)
+  Result<std::string> getShortName(Nid nid)
   {
     const char *str = OBJ_nid2sn(static_cast<int>(nid));
     if(!str)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
-    return internal::ok<std::string>(str);
+    return ::so::internal::ok<std::string>(str);
   }
 
-  SO_API Result<std::string> getShortName(int rawNid)
+  Result<std::string> getShortName(int rawNid)
   {
     const char *str = OBJ_nid2sn(rawNid);
     if(!str)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
-    return internal::ok<std::string>(str);
+    return ::so::internal::ok<std::string>(str);
   } 
 
 } // namespace nid
 
 namespace rand {
-  SO_API Result<Bytes> bytes(unsigned short numOfBytes)
+  Result<Bytes> bytes(unsigned short numOfBytes)
   {
     Bytes ret(static_cast<size_t>(numOfBytes));
     if(1 != RAND_bytes(ret.data(), static_cast<int>(numOfBytes)))
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 } // namespace rand
 
 namespace rsa {
-  SO_API Result<RSA_uptr> convertPemToPubKey(const std::string &pemPub)
+  Result<RSA_uptr> convertPemToPubKey(const std::string &pemPub)
   {
-    return internal::convertPemToKey<RSA_uptr>(pemPub, PEM_read_bio_RSA_PUBKEY, nullptr, nullptr, nullptr); 
+    return ::so::internal::convertPemToKey<RSA_uptr>(pemPub, PEM_read_bio_RSA_PUBKEY, nullptr, nullptr, nullptr); 
   }
 
-  SO_API Result<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv)
+  Result<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv)
   {
-    return internal::convertPemToKey<RSA_uptr>(pemPriv, PEM_read_bio_RSAPrivateKey, nullptr, nullptr, nullptr); 
+    return ::so::internal::convertPemToKey<RSA_uptr>(pemPriv, PEM_read_bio_RSAPrivateKey, nullptr, nullptr, nullptr); 
   }
  
-  SO_API Result<std::string> convertPrivKeyToPem(RSA &rsa)
+  Result<std::string> convertPrivKeyToPem(RSA &rsa)
   { 
     const auto check = rsa::checkKey(rsa);
     if(!check)
-      return internal::err<std::string>(check.opensslErrCode);
+      return ::so::internal::err<std::string>(check.opensslErrCode);
   
-    return internal::convertToPem(PEM_write_bio_RSAPrivateKey, &rsa, nullptr, nullptr, 0, nullptr, nullptr); 
+    return ::so::internal::convertToPem(PEM_write_bio_RSAPrivateKey, &rsa, nullptr, nullptr, 0, nullptr, nullptr); 
   }
  
-  SO_API Result<std::string> convertPubKeyToPem(RSA &pubKey)
+  Result<std::string> convertPubKeyToPem(RSA &pubKey)
   {
-    return internal::convertToPem(PEM_write_bio_RSA_PUBKEY, &pubKey);
+    return ::so::internal::convertToPem(PEM_write_bio_RSA_PUBKEY, &pubKey);
   }
  
-  SO_API Result<RSA_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<RSA_uptr> convertDerToPrivKey(const Bytes &der)
   {
-    return internal::convertDerToKey<RSA_uptr>(der, d2i_RSAPrivateKey);
+    return ::so::internal::convertDerToKey<RSA_uptr>(der, d2i_RSAPrivateKey);
   }
 
-  SO_API Result<RSA_uptr> convertDerToPubKey(const Bytes &der)
+  Result<RSA_uptr> convertDerToPubKey(const Bytes &der)
   {
-    return internal::convertDerToKey<RSA_uptr>(der, d2i_RSA_PUBKEY);
+    return ::so::internal::convertDerToKey<RSA_uptr>(der, d2i_RSA_PUBKEY);
   }
 
-  SO_API Result<Bytes> convertPrivKeyToDer(RSA &rsa)
+  Result<Bytes> convertPrivKeyToDer(RSA &rsa)
   {
     const auto check = rsa::checkKey(rsa);
     if(!check)
-      return internal::err<Bytes>(check.opensslErrCode);
+      return ::so::internal::err<Bytes>(check.opensslErrCode);
 
-    return internal::convertKeyToDer(rsa, i2d_RSAPrivateKey);
+    return ::so::internal::convertKeyToDer(rsa, i2d_RSAPrivateKey);
   }
 
-  SO_API Result<Bytes> convertPubKeyToDer(RSA &rsa)
+  Result<Bytes> convertPubKeyToDer(RSA &rsa)
   {
-    return internal::convertKeyToDer(rsa, i2d_RSA_PUBKEY);
+    return ::so::internal::convertKeyToDer(rsa, i2d_RSA_PUBKEY);
   }
 
-  SO_API Result<EVP_PKEY_uptr> convertToEvp(RSA &rsa)
+  Result<EVP_PKEY_uptr> convertToEvp(RSA &rsa)
   {
     EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
     if (!evpKey)
-      return internal::err<EVP_PKEY_uptr>();
+      return ::so::internal::err<EVP_PKEY_uptr>();
 
     if (1 != EVP_PKEY_set1_RSA(evpKey.get(), &rsa))
-        return internal::err<EVP_PKEY_uptr>();
+        return ::so::internal::err<EVP_PKEY_uptr>();
     
-    return internal::ok(std::move(evpKey));
+    return ::so::internal::ok(std::move(evpKey));
   }
 
-  SO_API Result<bool> checkKey(RSA &rsa)
+  Result<bool> checkKey(RSA &rsa)
   {
     if(1 != RSA_check_key_ex(&rsa, nullptr))
-      return internal::err(false);
+      return ::so::internal::err(false);
     
-    return internal::ok(true);
+    return ::so::internal::ok(true);
   }
 
-  SO_API RSA_uptr create()
+  RSA_uptr create()
   {
     return make_unique(RSA_new());
   }
 
-  SO_API Result<RSA_uptr> create(KeyBits keySize, Exponent exponent)
+  Result<RSA_uptr> create(KeyBits keySize, Exponent exponent)
   {
     auto bnE = make_unique(BN_new());
     if(1 != BN_set_word(bnE.get(), static_cast<unsigned long>(exponent)))
-      return internal::err<RSA_uptr>();
+      return ::so::internal::err<RSA_uptr>();
 
     auto rsa = make_unique(RSA_new());
     if(1 != RSA_generate_key_ex(rsa.get(), static_cast<int>(keySize), bnE.get(), nullptr))
-      return internal::err<RSA_uptr>();
+      return ::so::internal::err<RSA_uptr>();
 
-    return internal::ok(std::move(rsa));
+    return ::so::internal::ok(std::move(rsa));
   }
 
-  SO_API Result<KeyBits> getKeyBits(RSA &rsa)
+  Result<KeyBits> getKeyBits(RSA &rsa)
   {
     // We need rsa->n to be not null to call RSA_size or we will have segfault.
     // Since rsa->n is public modulus we can check its validity by trying to
     // get public key.
     const auto pub = rsa::getPublic(rsa);
     if(!pub)
-      return internal::err<KeyBits>(pub.opensslErrCode);
+      return ::so::internal::err<KeyBits>(pub.opensslErrCode);
 
-    return internal::ok(static_cast<KeyBits>(RSA_bits(&rsa)));
+    return ::so::internal::ok(static_cast<KeyBits>(RSA_bits(&rsa)));
   }
 
-  SO_API Result<RSA_uptr> getPublic(RSA &rsa)
+  Result<RSA_uptr> getPublic(RSA &rsa)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem())); 
     if(0 >= i2d_RSAPublicKey_bio(bio.get(), &rsa))
-      return internal::err<RSA_uptr>();
+      return ::so::internal::err<RSA_uptr>();
  
     auto retRsa = make_unique(d2i_RSAPublicKey_bio(bio.get(), nullptr));
     if(!retRsa)
-      return internal::err<RSA_uptr>();
+      return ::so::internal::err<RSA_uptr>();
 
-    return internal::ok(std::move(retRsa));
+    return ::so::internal::ok(std::move(retRsa));
   }
  
-  SO_API Result<Bytes> signSha1(const Bytes &msg, RSA &privKey)
+  Result<Bytes> signSha1(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha1(msg);
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha1, digest.value, privKey); 
+    return ::so::internal::rsaSign(NID_sha1, digest.value, privKey); 
   }
 
-  SO_API Result<Bytes> signSha224(const Bytes &msg, RSA &privKey)
+  Result<Bytes> signSha224(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha224(msg);
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha224, digest.value, privKey); 
+    return ::so::internal::rsaSign(NID_sha224, digest.value, privKey); 
   }
 
-  SO_API Result<Bytes> signSha256(const Bytes &msg, RSA &privKey)
+  Result<Bytes> signSha256(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha256(msg);
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha256, digest.value, privKey); 
+    return ::so::internal::rsaSign(NID_sha256, digest.value, privKey); 
   }
 
-  SO_API Result<Bytes> signSha384(const Bytes &msg, RSA &privKey)
+  Result<Bytes> signSha384(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha384(msg);
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha384, digest.value, privKey); 
+    return ::so::internal::rsaSign(NID_sha384, digest.value, privKey); 
   }
   
-  SO_API Result<Bytes> signSha512(const Bytes &msg, RSA &privKey)
+  Result<Bytes> signSha512(const Bytes &msg, RSA &privKey)
   {
     const auto digest = hash::sha512(msg);
     if(!digest)
       return digest;
 
-    return internal::rsaSign(NID_sha512, digest.value, privKey); 
+    return ::so::internal::rsaSign(NID_sha512, digest.value, privKey); 
   }
   
-  SO_API Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha1(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha1, signature, digest.value, pubKey); 
+    return ::so::internal::rsaVerify(NID_sha1, signature, digest.value, pubKey); 
   }
   
-  SO_API Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha224(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha224, signature, digest.value, pubKey); 
+    return ::so::internal::rsaVerify(NID_sha224, signature, digest.value, pubKey); 
   }
 
-  SO_API Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha256(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha256, signature, digest.value, pubKey); 
+    return ::so::internal::rsaVerify(NID_sha256, signature, digest.value, pubKey); 
   }
 
-  SO_API Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha384(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha384, signature, digest.value, pubKey); 
+    return ::so::internal::rsaVerify(NID_sha384, signature, digest.value, pubKey); 
   }
 
-  SO_API Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
   {
     const auto digest = hash::sha512(message);
     if(!digest)
-      return internal::err<bool>(digest.opensslErrCode);
+      return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return internal::rsaVerify(NID_sha512, signature, digest.value, pubKey); 
+    return ::so::internal::rsaVerify(NID_sha512, signature, digest.value, pubKey); 
   }
 } // namespace rsa
 
 namespace x509 { 
-  inline bool Validity::operator==(const Validity &other) const
+  bool Validity::operator==(const Validity &other) const
   {
     return std::tie(notBefore, notAfter) == std::tie(other.notBefore, other.notAfter);
   }
   
-  inline bool Validity::operator!=(const Validity &other) const
+  bool Validity::operator!=(const Validity &other) const
   {
     return !(*this == other);
   }
 
-  SO_API Result<Issuer> getIssuer(const X509 &cert)
+  Result<Issuer> getIssuer(const X509 &cert)
   {
     // this is internal ptr and must not be freed
     X509_NAME *getIssuer = X509_get_issuer_name(&cert);
     if(!getIssuer)
-      return internal::err<Issuer>();
+      return ::so::internal::err<Issuer>();
 
-    return internal::commonInfo(*getIssuer); 
+    return ::so::internal::commonInfo(*getIssuer); 
   }
   
-  SO_API Result<std::string> getIssuerString(const X509 &cert)
+  Result<std::string> getIssuerString(const X509 &cert)
   {
     // this is internal ptr and must not be freed
     const X509_NAME *getIssuer = X509_get_issuer_name(&cert);
     if(!getIssuer)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
-    return internal::nameToString(*getIssuer);
+    return ::so::internal::nameToString(*getIssuer);
   }
 
-  SO_API bool isCa(X509 &cert)
+  bool isCa(X509 &cert)
   {
     // TODO:
     // I shold wrap somehow positive cases:
@@ -3477,7 +3486,7 @@ namespace x509 {
     return true;
   }
 
-  SO_API bool isSelfSigned(X509 &cert)
+  bool isSelfSigned(X509 &cert)
   {
     // TODO:
     // I should wrap somehow and return X509_V_ERR* macros
@@ -3487,31 +3496,31 @@ namespace x509 {
     return false;
   }
 
-  SO_API X509_uptr create()
+  X509_uptr create()
   {
     return make_unique(X509_new());
   }
 
-  SO_API Result<X509_uptr> convertPemToX509(const std::string &pemCert)
+  Result<X509_uptr> convertPemToX509(const std::string &pemCert)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 
     if(0 >= BIO_write(bio.get(), pemCert.c_str(), static_cast<int>(pemCert.length())))
-      return internal::err<X509_uptr>(); 
+      return ::so::internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
     if(!ret)
-      return internal::err<X509_uptr>();
+      return ::so::internal::err<X509_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<std::string> convertX509ToPem(X509 &cert)
+  Result<std::string> convertX509ToPem(X509 &cert)
   {
-    return internal::convertToPem(PEM_write_bio_X509, &cert); 
+    return ::so::internal::convertToPem(PEM_write_bio_X509, &cert); 
   }
 
-  SO_API Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath)
+  Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
 
@@ -3523,25 +3532,25 @@ namespace x509 {
     fn.push_back('\0');
 
     if(0 >= BIO_read_filename(bio.get(), fn.data()))
-      return internal::err<X509_uptr>(); 
+      return ::so::internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
     if(!ret)
-      return internal::err<X509_uptr>();
+      return ::so::internal::err<X509_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<EVP_PKEY_uptr> getPubKey(X509 &cert)
+  Result<EVP_PKEY_uptr> getPubKey(X509 &cert)
   { 
     auto pkey = make_unique(X509_get_pubkey(&cert));
     if(!pkey)
-      return internal::err<EVP_PKEY_uptr>();
+      return ::so::internal::err<EVP_PKEY_uptr>();
 
-    return internal::ok(std::move(pkey));
+    return ::so::internal::ok(std::move(pkey));
   }
 
-  SO_API nid::Nid getPubKeyAlgorithm(X509 &cert)
+  nid::Nid getPubKeyAlgorithm(X509 &cert)
   {
     auto *pkey = X509_get0_pubkey(&cert);
     if(!pkey)
@@ -3550,184 +3559,184 @@ namespace x509 {
     return static_cast<nid::Nid>(EVP_PKEY_base_id(pkey)); 
   }
 
-  SO_API Result<Bytes> getSerialNumber(X509 &cert)
+  Result<Bytes> getSerialNumber(X509 &cert)
   {
     // both internal pointers, must not be freed
     const ASN1_INTEGER *serialNumber = X509_get_serialNumber(&cert);
     if(!serialNumber)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     const BIGNUM *bn = ASN1_INTEGER_to_BN(serialNumber, nullptr);
     if(!bn)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     return bignum::convertToBytes(*bn);
   }
 
-  SO_API Result<size_t> signSha1(X509 &cert, EVP_PKEY &pkey)
+  Result<size_t> signSha1(X509 &cert, EVP_PKEY &pkey)
   {
-    return internal::signCert(cert, pkey, EVP_sha256());  
+    return ::so::internal::signCert(cert, pkey, EVP_sha256());  
   }
 
-  SO_API Result<size_t> signSha256(X509 &cert, EVP_PKEY &key)
+  Result<size_t> signSha256(X509 &cert, EVP_PKEY &key)
   {
-    return internal::signCert(cert, key, EVP_sha256());  
+    return ::so::internal::signCert(cert, key, EVP_sha256());  
   }
 
-  SO_API Result<size_t> signSha384(X509 &cert, EVP_PKEY &pkey)
+  Result<size_t> signSha384(X509 &cert, EVP_PKEY &pkey)
   {
-    return internal::signCert(cert, pkey, EVP_sha384());  
+    return ::so::internal::signCert(cert, pkey, EVP_sha384());  
   }
 
-  SO_API Result<size_t> signSha512(X509 &cert, EVP_PKEY &pkey)
+  Result<size_t> signSha512(X509 &cert, EVP_PKEY &pkey)
   {
-    return internal::signCert(cert, pkey, EVP_sha512());  
+    return ::so::internal::signCert(cert, pkey, EVP_sha512());  
   }
 
-  SO_API Result<Bytes> getSignature(const X509 &cert)
+  Result<Bytes> getSignature(const X509 &cert)
   {
     // both internal pointers and must not be freed
     const ASN1_BIT_STRING *psig = nullptr;
     const X509_ALGOR *palg = nullptr;
     X509_get0_signature(&psig, &palg, &cert);
     if(!palg || !psig)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     Bytes rawDerSequence(static_cast<size_t>(psig->length));
     std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
 
-    return internal::ok(std::move(rawDerSequence));
+    return ::so::internal::ok(std::move(rawDerSequence));
   }
   
-  SO_API nid::Nid getSignatureAlgorithm(const X509 &cert)
+  nid::Nid getSignatureAlgorithm(const X509 &cert)
   {
     return static_cast<nid::Nid>(X509_get_signature_nid(&cert)); 
   }
 
-  SO_API Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert)
+  Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert)
   {
     // both internal pointers and must not be freed
     const ASN1_BIT_STRING *psig = nullptr;
     const X509_ALGOR *palg = nullptr;
     X509_get0_signature(&psig, &palg, &cert);
     if(!palg || !psig)
-      return internal::err<ecdsa::Signature>();
+      return ::so::internal::err<ecdsa::Signature>();
 
     const unsigned char *it = psig->data;
     const auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &it, static_cast<long>(psig->length)));
     if(!sig)
-      return internal::err<ecdsa::Signature>();
+      return ::so::internal::err<ecdsa::Signature>();
 
     // internal pointers
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
-    return internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
+    return ::so::internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
   }
 
-  SO_API Result<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId)
+  Result<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId)
   {
     const int loc = X509_get_ext_by_NID(&cert, static_cast<int>(getExtensionId), -1);
     if(-1 == loc)
-      return internal::err<CertExtension>();
+      return ::so::internal::err<CertExtension>();
 
-    return internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
+    return ::so::internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
   }
 
-  SO_API Result<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical)
+  Result<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical)
   {
     auto maybeObj = asn1::encodeObject(oidNumerical);
     if(!maybeObj)
-      return internal::err<CertExtension>(maybeObj.opensslErrCode);
+      return ::so::internal::err<CertExtension>(maybeObj.opensslErrCode);
 
     auto obj = maybeObj.moveValue();
     const int loc = X509_get_ext_by_OBJ(&cert, obj.get(), -1);
     if(-1 == loc)
-      return internal::err<CertExtension>();
+      return ::so::internal::err<CertExtension>();
 
-    return internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
+    return ::so::internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
   }
 
-  SO_API Result<std::vector<CertExtension>> getExtensions(const X509 &cert)
+  Result<std::vector<CertExtension>> getExtensions(const X509 &cert)
   {
     using RetType = std::vector<CertExtension>;
     const auto extsCount = getExtensionsCount(cert);
     if(!extsCount.value)
-      return internal::err<RetType>(extsCount.opensslErrCode);
+      return ::so::internal::err<RetType>(extsCount.opensslErrCode);
 
     if(0 == extsCount.value)
-      return internal::ok(RetType{});
+      return ::so::internal::ok(RetType{});
 
     RetType ret;
     ret.reserve(extsCount.value); 
     for(int index = 0; index < static_cast<int>(extsCount.value); ++index)
     {
-      auto getExtension = internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
+      auto getExtension = ::so::internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
       if(!getExtension)
-        return internal::err<RetType>(getExtension.opensslErrCode);
+        return ::so::internal::err<RetType>(getExtension.opensslErrCode);
 
       ret.push_back(getExtension.moveValue());
     }
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<size_t> getExtensionsCount(const X509 &cert)
+  Result<size_t> getExtensionsCount(const X509 &cert)
   {
     const int extsCount = X509_get_ext_count(&cert);
     if(extsCount < 0)
-      return internal::err<size_t>(); 
+      return ::so::internal::err<size_t>(); 
 
-    return internal::ok(static_cast<size_t>(extsCount));
+    return ::so::internal::ok(static_cast<size_t>(extsCount));
   }
 
-  SO_API Result<Subject> getSubject(const X509 &cert)
+  Result<Subject> getSubject(const X509 &cert)
   {
     // this is internal ptr and must not be freed
     X509_NAME *subject = X509_get_subject_name(&cert);
     if(!subject)
-      return internal::err<Subject>();
+      return ::so::internal::err<Subject>();
 
-    return internal::commonInfo(*subject); 
+    return ::so::internal::commonInfo(*subject); 
   }
 
-  SO_API Result<std::string> getSubjectString(const X509 &cert)
+  Result<std::string> getSubjectString(const X509 &cert)
   {
     // this is internal ptr and must not be freed
     const X509_NAME *subject = X509_get_subject_name(&cert);
     if(!subject)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
-    return internal::nameToString(*subject);
+    return ::so::internal::nameToString(*subject);
   }
 
-  SO_API Result<Validity> getValidity(const X509 &cert)
+  Result<Validity> getValidity(const X509 &cert)
   {
     const auto notAfter = X509_get0_notAfter(&cert);
     if(!notAfter)
-      return internal::err<Validity>();
+      return ::so::internal::err<Validity>();
 
     const auto notBefore = X509_get0_notBefore(&cert);
     if(!notBefore)
-      return internal::err<Validity>();
+      return ::so::internal::err<Validity>();
 
     auto notBeforeTime = asn1::convertToStdTime(*notBefore);
     if(!notBeforeTime)
-      return internal::err<Validity>(notBeforeTime.opensslErrCode);
+      return ::so::internal::err<Validity>(notBeforeTime.opensslErrCode);
 
     auto notAfterTime = asn1::convertToStdTime(*notAfter);
     if(!notAfterTime)
-      return internal::err<Validity>(notAfterTime.opensslErrCode);
+      return ::so::internal::err<Validity>(notAfterTime.opensslErrCode);
 
-    return internal::ok(Validity{notAfterTime.value, notBeforeTime.value});
+    return ::so::internal::ok(Validity{notAfterTime.value, notBeforeTime.value});
   }
 
-  SO_API Result<bool> verifySignature(X509 &cert, EVP_PKEY &pkey)
+  Result<bool> verifySignature(X509 &cert, EVP_PKEY &pkey)
   {
     const int result = X509_verify(&cert, &pkey);
-    return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err(false);
+    return result == 1 ? ::so::internal::ok(true) : result == 0 ? ::so::internal::ok(false) : ::so::internal::err(false);
   }
 
-  SO_API std::tuple<Version,long> getVersion(const X509 &cert)
+  std::tuple<Version,long> getVersion(const X509 &cert)
   {
     const long version = X509_get_version(&cert);
     if(3 <= version || -1 >= version)
@@ -3736,68 +3745,68 @@ namespace x509 {
     return std::make_tuple(static_cast<Version>(version), version);
   }
 
-  SO_API Result<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical)
+  Result<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical)
   {
     auto maybeAsn1Oid = asn1::encodeObject(oidNumerical);
     if(!maybeAsn1Oid)
-      return internal::errVoid(maybeAsn1Oid.opensslErrCode);
+      return ::so::internal::errVoid(maybeAsn1Oid.opensslErrCode);
 
     auto extension = make_unique(X509_EXTENSION_new());
     if(!extension)
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     auto asn1Oid = maybeAsn1Oid.moveValue();
     if(1 != X509_EXTENSION_set_object(extension.get(), asn1Oid.get()))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_EXTENSION_set_data(extension.get(), &octet))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_add_ext(&cert, extension.get(), -1))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
-    return internal::okVoid();
+    return ::so::internal::okVoid();
 
   }
 
-  SO_API Result<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical)
+  Result<void> setExtension(X509 &cert, CertExtensionId id, ASN1_OCTET_STRING &octet, bool critical)
   {
     return setExtension(cert, static_cast<nid::Nid>(id), octet, critical); 
   }
 
-  SO_API Result<void> setExtension(X509 &cert, nid::Nid nid, ASN1_OCTET_STRING &octet, bool critical)
+  Result<void> setExtension(X509 &cert, nid::Nid nid, ASN1_OCTET_STRING &octet, bool critical)
   {
     auto oid = make_unique(OBJ_nid2obj(static_cast<int>(nid)));
     if(!oid)
-      return internal::errVoid();
+      return ::so::internal::errVoid();
  
     auto extension = make_unique(X509_EXTENSION_new());
     if(!extension)
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_EXTENSION_set_object(extension.get(), oid.get()))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_EXTENSION_set_data(extension.get(), &octet))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_add_ext(&cert, extension.get(), -1))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
 
-  SO_API Result<void> setExtension(X509 &cert, const CertExtension &extension)
+  Result<void> setExtension(X509 &cert, const CertExtension &extension)
   {
     auto maybeData = asn1::encodeOctet(extension.data);
     if(!maybeData)
-      return internal::errVoid(maybeData.opensslErrCode);
+      return ::so::internal::errVoid(maybeData.opensslErrCode);
 
     auto data = maybeData.moveValue();
     if(x509::CertExtensionId::UNDEF == extension.id)
@@ -3806,120 +3815,120 @@ namespace x509 {
     return setExtension(cert, extension.id, *data, extension.critical);
   }
 
-  SO_API Result<void> setIssuer(X509 &cert, const X509 &rootCert)
+  Result<void> setIssuer(X509 &cert, const X509 &rootCert)
   {
     X509_NAME *getIssuer = X509_get_subject_name(&rootCert);
     if(!getIssuer)
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_set_issuer_name(&cert, getIssuer))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
 
-  SO_API Result<void> setIssuer(X509 &cert, const Issuer &info)
+  Result<void> setIssuer(X509 &cert, const Issuer &info)
   {
-    auto maybeIssuer = internal::infoToX509Name(info);
+    auto maybeIssuer = ::so::internal::infoToX509Name(info);
     if(!maybeIssuer)
-      return internal::errVoid(maybeIssuer.opensslErrCode);
+      return ::so::internal::errVoid(maybeIssuer.opensslErrCode);
 
     auto getIssuer = maybeIssuer.moveValue();
     if(1 != X509_set_issuer_name(&cert, getIssuer.get()))
-      return internal::errVoid(); 
+      return ::so::internal::errVoid(); 
 
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
 
-  SO_API Result<void> setPubKey(X509 &cert, EVP_PKEY &pkey)
+  Result<void> setPubKey(X509 &cert, EVP_PKEY &pkey)
   {
     if(1 != X509_set_pubkey(&cert, &pkey))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
  
-  SO_API Result<void> setSerial(X509 &cert, const Bytes &bytes)
+  Result<void> setSerial(X509 &cert, const Bytes &bytes)
   {
     auto maybeInt = asn1::encodeInteger(bytes);
     if(!maybeInt)
-      return internal::errVoid(maybeInt.opensslErrCode);
+      return ::so::internal::errVoid(maybeInt.opensslErrCode);
 
     auto integer = maybeInt.moveValue();
     if(1 != X509_set_serialNumber(&cert, integer.get()))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
 
-  SO_API Result<void> setSubject(X509 &cert, const Subject &info)
+  Result<void> setSubject(X509 &cert, const Subject &info)
   {
-    auto maybeSubject = internal::infoToX509Name(info); 
+    auto maybeSubject = ::so::internal::infoToX509Name(info); 
     if(!maybeSubject)
-      return internal::errVoid(maybeSubject.opensslErrCode);
+      return ::so::internal::errVoid(maybeSubject.opensslErrCode);
 
     auto subject = maybeSubject.moveValue();
     if(1 != X509_set_subject_name(&cert, subject.get()))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
 
-  SO_API Result<void> setValidity(X509 &cert, const Validity &validity)
+  Result<void> setValidity(X509 &cert, const Validity &validity)
   {
     ASN1_TIME_uptr notAfterTime = make_unique(ASN1_TIME_set(nullptr, validity.notAfter));
     if(!notAfterTime)
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     ASN1_TIME_uptr notBeforeTime = make_unique(ASN1_TIME_set(nullptr, validity.notBefore));
     if(!notBeforeTime)
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_set1_notBefore(&cert, notBeforeTime.get()))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
     if(1 != X509_set1_notAfter(&cert, notAfterTime.get()))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
 
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
 
-  SO_API Result<void> setVersion(X509 &cert, Version version)
+  Result<void> setVersion(X509 &cert, Version version)
   {
     if(1 != X509_set_version(&cert, static_cast<long>(version)))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
     
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
 
-  SO_API Result<void> setVersion(X509 &cert, long version)
+  Result<void> setVersion(X509 &cert, long version)
   {
     if(1 != X509_set_version(&cert, version))
-      return internal::errVoid();
+      return ::so::internal::errVoid();
     
-    return internal::okVoid();
+    return ::so::internal::okVoid();
   }
 
-  SO_API X509_CRL_uptr createCrl()
+  X509_CRL_uptr createCrl()
   {
     return make_unique(X509_CRL_new());
   }
 
-  SO_API Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl)
+  Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 
     if(0 >= BIO_write(bio.get(), pemCrl.c_str(), static_cast<int>(pemCrl.length())))
-      return internal::err<X509_CRL_uptr>(); 
+      return ::so::internal::err<X509_CRL_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));
     if(!ret)
-      return internal::err<X509_CRL_uptr>();
+      return ::so::internal::err<X509_CRL_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
  
-  SO_API Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrl)
+  Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrl)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
 
@@ -3931,94 +3940,94 @@ namespace x509 {
     fn.push_back('\0');
 
     if(0 >= BIO_read_filename(bio.get(), fn.data()))
-      return internal::err<X509_CRL_uptr>(); 
+      return ::so::internal::err<X509_CRL_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));
     if(!ret)
-      return internal::err<X509_CRL_uptr>();
+      return ::so::internal::err<X509_CRL_uptr>();
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<std::string> convertCrlToPem(X509_CRL &crl)
+  Result<std::string> convertCrlToPem(X509_CRL &crl)
   {
-    return internal::convertToPem(PEM_write_bio_X509_CRL, &crl); 
+    return ::so::internal::convertToPem(PEM_write_bio_X509_CRL, &crl); 
   }
 
-  SO_API Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl)
+  Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl)
   {
     // both internal pointers and must not be freed
     const ASN1_BIT_STRING *psig = nullptr;
     const X509_ALGOR *palg = nullptr;
     X509_CRL_get0_signature(&crl, &psig, &palg);
     if(!palg || !psig)
-      return internal::err<ecdsa::Signature>();
+      return ::so::internal::err<ecdsa::Signature>();
 
     const unsigned char *it = psig->data;
     const auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &it, static_cast<long>(psig->length)));
     if(!sig)
-      return internal::err<ecdsa::Signature>();
+      return ::so::internal::err<ecdsa::Signature>();
 
     // internal pointers
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
-    return internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
+    return ::so::internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
   }
   
-  SO_API Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl)
+  Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl)
   {
     using RetType = std::vector<CrlExtension>;
     const auto extsCount = getExtensionsCount(crl);
     if(!extsCount.value)
-      return internal::err<RetType>(extsCount.opensslErrCode);
+      return ::so::internal::err<RetType>(extsCount.opensslErrCode);
 
     if(0 == extsCount.value)
-      return internal::ok(RetType{});
+      return ::so::internal::ok(RetType{});
 
     RetType ret;
     ret.reserve(extsCount.value); 
     for(int index = 0; index < static_cast<int>(extsCount.value); ++index)
     {
-      auto getExtension = internal::getExtension<CrlExtensionId>(*X509_CRL_get_ext(&crl, index));
+      auto getExtension = ::so::internal::getExtension<CrlExtensionId>(*X509_CRL_get_ext(&crl, index));
       if(!getExtension)
-        return internal::err<RetType>(getExtension.opensslErrCode);
+        return ::so::internal::err<RetType>(getExtension.opensslErrCode);
 
       ret.push_back(getExtension.moveValue());
     }
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
 
-  SO_API Result<size_t> getExtensionsCount(X509_CRL &crl)
+  Result<size_t> getExtensionsCount(X509_CRL &crl)
   {
     const int extsCount = X509_CRL_get_ext_count(&crl);
     if(extsCount < 0)
-      return internal::err<size_t>(); 
+      return ::so::internal::err<size_t>(); 
 
-    return internal::ok(static_cast<size_t>(extsCount));
+    return ::so::internal::ok(static_cast<size_t>(extsCount));
   }
 
-  SO_API Result<Issuer> getIssuer(X509_CRL &crl)
+  Result<Issuer> getIssuer(X509_CRL &crl)
   {
     // this is internal ptr and must not be freed
     X509_NAME *getIssuer = X509_CRL_get_issuer(&crl);
     if(!getIssuer)
-      return internal::err<Issuer>();
+      return ::so::internal::err<Issuer>();
 
-    return internal::commonInfo(*getIssuer);
+    return ::so::internal::commonInfo(*getIssuer);
   }
 
-  SO_API Result<std::string> getIssuerString(X509_CRL &crl)
+  Result<std::string> getIssuerString(X509_CRL &crl)
   {
     // this is internal ptr and must not be freed
     X509_NAME *getIssuer = X509_CRL_get_issuer(&crl);
     if(!getIssuer)
-      return internal::err<std::string>();
+      return ::so::internal::err<std::string>();
 
-    return internal::nameToString(*getIssuer);
+    return ::so::internal::nameToString(*getIssuer);
   }
 
-  SO_API size_t getRevokedCount(X509_CRL &crl)
+  size_t getRevokedCount(X509_CRL &crl)
   {
     const int ct = sk_X509_REVOKED_num(X509_CRL_get_REVOKED(&crl));
     if(0 > ct) // crl stack is null which does not mean error
@@ -4027,45 +4036,45 @@ namespace x509 {
     return static_cast<size_t>(ct);
   }
   
-  SO_API Result<std::vector<x509::Revoked>> getRevoked(X509_CRL &crl)
+  Result<std::vector<x509::Revoked>> getRevoked(X509_CRL &crl)
   {
     using RetType = std::vector<x509::Revoked>;
     const size_t sz = x509::getRevokedCount(crl);
     if(0 == sz)
-      return internal::ok(RetType{});
+      return ::so::internal::ok(RetType{});
 
     STACK_OF(X509_REVOKED) *revokedStack = X509_CRL_get_REVOKED(&crl);
     if(!revokedStack)
-        return internal::err<RetType>();
+        return ::so::internal::err<RetType>();
 
     RetType ret(sz);
     int index = 0;
-    std::generate_n(ret.begin(), sz, [&revokedStack, &index]{return internal::getRevoked(revokedStack, index++);});
+    std::generate_n(ret.begin(), sz, [&revokedStack, &index]{return ::so::internal::getRevoked(revokedStack, index++);});
 
-    return internal::ok(std::move(ret));
+    return ::so::internal::ok(std::move(ret));
   }
   
-  SO_API Result<Bytes> getSignature(const X509_CRL &crl)
+  Result<Bytes> getSignature(const X509_CRL &crl)
   {
     // both internal pointers and must not be freed
     const ASN1_BIT_STRING *psig = nullptr;
     const X509_ALGOR *palg = nullptr;
     X509_CRL_get0_signature(&crl, &psig, &palg);
     if(!palg || !psig)
-      return internal::err<Bytes>();
+      return ::so::internal::err<Bytes>();
 
     Bytes rawDerSequence(static_cast<size_t>(psig->length));
     std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
 
-    return internal::ok(std::move(rawDerSequence));
+    return ::so::internal::ok(std::move(rawDerSequence));
   }
   
-  SO_API nid::Nid getSignatureAlgorithm(const X509_CRL &crl)
+  nid::Nid getSignatureAlgorithm(const X509_CRL &crl)
   {
     return static_cast<nid::Nid>(X509_CRL_get_signature_nid(&crl)); 
   }
 
-  SO_API std::tuple<Version, long> getVersion(X509_CRL &crl)
+  std::tuple<Version, long> getVersion(X509_CRL &crl)
   {
     const long version = X509_CRL_get_version(&crl);
     if(3 <= version || -1 >= version)
@@ -4074,6 +4083,8 @@ namespace x509 {
     return std::make_tuple(static_cast<Version>(version), version);
   }
 } // namespace x509
+
+#endif // SO_IMPLEMENTATION
 
 } // namepsace so
 
