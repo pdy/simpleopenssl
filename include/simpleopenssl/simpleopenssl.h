@@ -313,18 +313,8 @@ namespace ecdsa {
     Bytes r;
     Bytes s;
     
-    bool operator ==(const Signature &other) const
-    {
-      return r.size() == other.r.size() &&
-        s.size() == other.s.size() &&
-        std::equal(r.begin(), r.end(), other.r.begin()) && 
-        std::equal(s.begin(), s.end(), other.s.begin());
-    }
-  
-    bool operator !=(const Signature &other) const
-    {
-      return !(*this == other);
-    }
+    bool operator ==(const Signature &other) const; 
+    bool operator !=(const Signature &other) const; 
   };
 
 
@@ -2644,6 +2634,19 @@ namespace bytes {
 } // namespace bytes
 
 namespace ecdsa {
+  bool Signature::operator ==(const Signature &other) const
+  {
+    return r.size() == other.r.size() &&
+      s.size() == other.s.size() &&
+      std::equal(r.begin(), r.end(), other.r.begin()) && 
+      std::equal(s.begin(), s.end(), other.s.begin());
+  }
+
+  bool Signature::operator !=(const Signature &other) const
+  {
+    return !(*this == other);
+  }
+
   Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
   {
     return ::so::internal::convertPemToKey<EC_KEY_uptr>(pemPub, PEM_read_bio_EC_PUBKEY, nullptr, nullptr, nullptr); 
