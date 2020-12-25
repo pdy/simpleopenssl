@@ -1785,6 +1785,7 @@ namespace x509 { namespace internal {
   {
     return !(*this == other);
   }
+
 }} // namespace x509 namespace internal
 
 namespace internal {
@@ -1796,30 +1797,6 @@ namespace internal {
     ERR_error_string_n(errCode, buff, SIZE);
     return std::string(buff);
   } 
-
-  template<typename ID>
-  struct Extension
-  {
-    ID id;
-    bool critical;
-    std::string name;
-    std::string oidNumerical;
-    Bytes data;
-  
-    nid::Nid nid() const { return static_cast<nid::Nid>(id); }
-    int nidRaw() const { return static_cast<int>(nid()); }
-
-    bool operator==(const Extension<ID> &other) const
-    {
-      return std::tie(id, critical, name, oidNumerical, data)
-          == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
-    }
-
-    bool operator!=(const Extension<ID> &other) const
-    {
-      return !(*this == other);
-    }
-  };
 
   template<typename T>
   struct uptr_underlying_type
