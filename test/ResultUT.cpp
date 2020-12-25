@@ -21,8 +21,9 @@
 *
 */
 
+
 #include <gtest/gtest.h>
-#define SO_IMPLEMEMENTATION
+#define SO_IMPLEMENTATION
 #include <simpleopenssl/simpleopenssl.h>
 #include "utils.h"
 

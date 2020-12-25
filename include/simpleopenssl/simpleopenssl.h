@@ -1754,6 +1754,10 @@ namespace x509 {
  
 } // namespace x509
 
+} // namespace so
+
+#endif
+
 
 /////////////////////////////////////////////////////////////////////////////////
 //
@@ -1761,7 +1765,10 @@ namespace x509 {
 //
 /////////////////////////////////////////////////////////////////////////////////
 
-#ifdef SO_IMPLEMEMENTATION
+#ifdef SO_IMPLEMENTATION
+#undef SO_IMPLEMENTATION
+
+namespace so {
 
 namespace x509 { namespace internal {
   bool X509Name::operator ==(const X509Name &other) const
@@ -4064,8 +4071,7 @@ namespace x509 {
   }
 } // namespace x509
 
+
+} // namespace so
+
 #endif // SO_IMPLEMENTATION
-
-} // namepsace so
-
-#endif
