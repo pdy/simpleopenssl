@@ -1547,51 +1547,51 @@ namespace rsa {
 } // namespace rsa
 
 namespace internal{
-    template<typename ID>
-    struct X509Extension
+  template<typename ID>
+  struct X509Extension
+  {
+    ID id;
+    bool critical;
+    std::string name;
+    std::string oidNumerical;
+    Bytes data;
+
+    nid::Nid nid() const { return static_cast<nid::Nid>(id); }
+    int nidRaw() const { return static_cast<int>(nid()); }
+
+    bool operator==(const X509Extension<ID> &other) const
     {
-      ID id;
-      bool critical;
-      std::string name;
-      std::string oidNumerical;
-      Bytes data;
+      return std::tie(id, critical, name, oidNumerical, data)
+          == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
+    }
 
-      nid::Nid nid() const { return static_cast<nid::Nid>(id); }
-      int nidRaw() const { return static_cast<int>(nid()); }
-
-      bool operator==(const X509Extension<ID> &other) const
-      {
-        return std::tie(id, critical, name, oidNumerical, data)
-            == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
-      }
-
-      bool operator!=(const X509Extension<ID> &other) const
-      {
-        return !(*this == other);
-      }
-    };
-
-    struct X509Name
+    bool operator!=(const X509Extension<ID> &other) const
     {
-      // as of https://tools.ietf.org/html/rfc2459
-      std::string commonName;
-      std::string surname;
-      std::string countryName;
-      std::string localityName;
-      std::string stateOrProvinceName;
-      std::string organizationName;
-      std::string organizationalUnitName;
-      std::string title;
-      std::string name;
-      std::string givenName;
-      std::string initials;
-      std::string generationQualifier;
-      std::string dnQualifier;
+      return !(*this == other);
+    }
+  };
 
-      bool operator ==(const X509Name &other) const; 
-      bool operator !=(const X509Name &other) const;
-    };
-}; // x509::internal
+  struct X509Name
+  {
+    // as of https://tools.ietf.org/html/rfc2459
+    std::string commonName;
+    std::string surname;
+    std::string countryName;
+    std::string localityName;
+    std::string stateOrProvinceName;
+    std::string organizationName;
+    std::string organizationalUnitName;
+    std::string title;
+    std::string name;
+    std::string givenName;
+    std::string initials;
+    std::string generationQualifier;
+    std::string dnQualifier;
+
+    bool operator ==(const X509Name &other) const; 
+    bool operator !=(const X509Name &other) const;
+  };
+}; // namespace internal
 
 namespace x509 {
   
@@ -1772,6 +1772,7 @@ namespace x509 {
 namespace so {
 
 namespace internal {
+
   bool X509Name::operator ==(const X509Name &other) const
   {
     return commonName == other.commonName
@@ -1794,9 +1795,6 @@ namespace internal {
     return !(*this == other);
   }
 
-} // namespace internal
-
-namespace internal {
   std::string errCodeToString(unsigned long errCode)
   {
     static constexpr size_t SIZE = 1024;
