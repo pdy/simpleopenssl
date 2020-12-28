@@ -95,7 +95,7 @@ using Type ## _uptr = internal::CustomDeleterUniquePtr<Type>; \
 namespace internal {                                          \
 template<> struct is_uptr<internal::CustomDeleterUniquePtr<Type>> : std::true_type {};}
 
-template<typename T, typename D = ::so::internal::CustomDeleter<T>>
+template<typename T, typename D = internal::CustomDeleter<T>>
 auto make_unique(T *ptr) -> std::unique_ptr<T, D>
 {
   return std::unique_ptr<T, D>(ptr);
@@ -1549,7 +1549,7 @@ namespace rsa {
 namespace x509 {
   namespace internal{
     template<typename ID>
-    struct Extension
+    struct X509Extension
     {
       ID id;
       bool critical;
@@ -1560,13 +1560,13 @@ namespace x509 {
       nid::Nid nid() const { return static_cast<nid::Nid>(id); }
       int nidRaw() const { return static_cast<int>(nid()); }
 
-      bool operator==(const Extension<ID> &other) const
+      bool operator==(const X509Extension<ID> &other) const
       {
         return std::tie(id, critical, name, oidNumerical, data)
             == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
       }
 
-      bool operator!=(const Extension<ID> &other) const
+      bool operator!=(const X509Extension<ID> &other) const
       {
         return !(*this == other);
       }
@@ -1651,9 +1651,9 @@ namespace x509 {
     CERTIFICATE_ISSUER          = NID_certificate_issuer
   };
 
-  using CertExtension = ::so::x509::internal::Extension<CertExtensionId>;
-  using CrlExtension = ::so::x509::internal::Extension<CrlExtensionId>;
-  using CrlEntryExtension = ::so::x509::internal::Extension<CrlEntryExtensionId>;
+  using CertExtension = ::so::x509::internal::X509Extension<CertExtensionId>;
+  using CrlExtension = ::so::x509::internal::X509Extension<CrlExtensionId>;
+  using CrlEntryExtension = ::so::x509::internal::X509Extension<CrlEntryExtensionId>;
   using Issuer = ::so::x509::internal::X509Name;
   using Subject = ::so::x509::internal::X509Name;
 
@@ -2218,9 +2218,9 @@ namespace internal {
   }
 
   template<typename ID>
-  Result<::so::x509::internal::Extension<ID>> getExtension(X509_EXTENSION &ex)
+  Result<::so::x509::internal::X509Extension<ID>> getExtension(X509_EXTENSION &ex)
   {
-    using RetType = ::so::x509::internal::Extension<ID>;
+    using RetType = ::so::x509::internal::X509Extension<ID>;
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
     const int nid = OBJ_obj2nid(asn1Obj);
     const int critical = X509_EXTENSION_get_critical(&ex);
