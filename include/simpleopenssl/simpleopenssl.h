@@ -3346,7 +3346,7 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return ::so::internal::rsaSign(NID_sha1, digest.value, privKey); 
+    return internal::rsaSign(NID_sha1, digest.value, privKey); 
   }
 
   Result<Bytes> signSha224(const Bytes &msg, RSA &privKey)
@@ -3355,7 +3355,7 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return ::so::internal::rsaSign(NID_sha224, digest.value, privKey); 
+    return internal::rsaSign(NID_sha224, digest.value, privKey); 
   }
 
   Result<Bytes> signSha256(const Bytes &msg, RSA &privKey)
@@ -3364,7 +3364,7 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return ::so::internal::rsaSign(NID_sha256, digest.value, privKey); 
+    return internal::rsaSign(NID_sha256, digest.value, privKey); 
   }
 
   Result<Bytes> signSha384(const Bytes &msg, RSA &privKey)
@@ -3373,7 +3373,7 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return ::so::internal::rsaSign(NID_sha384, digest.value, privKey); 
+    return internal::rsaSign(NID_sha384, digest.value, privKey); 
   }
   
   Result<Bytes> signSha512(const Bytes &msg, RSA &privKey)
@@ -3382,7 +3382,7 @@ namespace rsa {
     if(!digest)
       return digest;
 
-    return ::so::internal::rsaSign(NID_sha512, digest.value, privKey); 
+    return internal::rsaSign(NID_sha512, digest.value, privKey); 
   }
   
   Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
@@ -3391,7 +3391,7 @@ namespace rsa {
     if(!digest)
       return internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::rsaVerify(NID_sha1, signature, digest.value, pubKey); 
+    return internal::rsaVerify(NID_sha1, signature, digest.value, pubKey); 
   }
   
   Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
@@ -3400,7 +3400,7 @@ namespace rsa {
     if(!digest)
       return internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::rsaVerify(NID_sha224, signature, digest.value, pubKey); 
+    return internal::rsaVerify(NID_sha224, signature, digest.value, pubKey); 
   }
 
   Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
@@ -3409,7 +3409,7 @@ namespace rsa {
     if(!digest)
       return internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::rsaVerify(NID_sha256, signature, digest.value, pubKey); 
+    return internal::rsaVerify(NID_sha256, signature, digest.value, pubKey); 
   }
 
   Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
@@ -3418,7 +3418,7 @@ namespace rsa {
     if(!digest)
       return internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::rsaVerify(NID_sha384, signature, digest.value, pubKey); 
+    return internal::rsaVerify(NID_sha384, signature, digest.value, pubKey); 
   }
 
   Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
@@ -3427,7 +3427,7 @@ namespace rsa {
     if(!digest)
       return internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::rsaVerify(NID_sha512, signature, digest.value, pubKey); 
+    return internal::rsaVerify(NID_sha512, signature, digest.value, pubKey); 
   }
 } // namespace rsa
 
