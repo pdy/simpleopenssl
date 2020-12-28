@@ -2882,7 +2882,7 @@ namespace ecdsa {
     if(!digest)
       return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
   Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
@@ -2891,7 +2891,7 @@ namespace ecdsa {
     if(!digest)
       return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
   Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
@@ -2900,7 +2900,7 @@ namespace ecdsa {
     if(!digest)
       return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
   Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
@@ -2909,7 +2909,7 @@ namespace ecdsa {
     if(!digest)
       return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
   Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
@@ -2918,7 +2918,7 @@ namespace ecdsa {
     if(!digest)
       return ::so::internal::err<bool>(digest.opensslErrCode);
 
-    return ::so::internal::ecdsaVerify(signature, digest.value, publicKey);
+    return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 } //namespace ecdsa
 
