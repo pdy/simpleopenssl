@@ -1546,8 +1546,7 @@ namespace rsa {
   Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
 } // namespace rsa
 
-namespace x509 {
-  namespace internal{
+namespace internal{
     template<typename ID>
     struct X509Extension
     {
@@ -1592,8 +1591,10 @@ namespace x509 {
       bool operator ==(const X509Name &other) const; 
       bool operator !=(const X509Name &other) const;
     };
-  }; // x509::internal 
+}; // x509::internal
 
+namespace x509 {
+  
   enum class CertExtensionId : int
   {
     // as of https://www.openssl.org/docs/man1.1.0/crypto/X509_REVOKED_add1_ext_i2d.html
@@ -1651,11 +1652,11 @@ namespace x509 {
     CERTIFICATE_ISSUER          = NID_certificate_issuer
   };
 
-  using CertExtension = ::so::x509::internal::X509Extension<CertExtensionId>;
-  using CrlExtension = ::so::x509::internal::X509Extension<CrlExtensionId>;
-  using CrlEntryExtension = ::so::x509::internal::X509Extension<CrlEntryExtensionId>;
-  using Issuer = ::so::x509::internal::X509Name;
-  using Subject = ::so::x509::internal::X509Name;
+  using CertExtension = internal::X509Extension<CertExtensionId>;
+  using CrlExtension = internal::X509Extension<CrlExtensionId>;
+  using CrlEntryExtension = internal::X509Extension<CrlEntryExtensionId>;
+  using Issuer = internal::X509Name;
+  using Subject = internal::X509Name;
 
   struct Validity
   {
@@ -1770,7 +1771,7 @@ namespace x509 {
 
 namespace so {
 
-namespace x509 { namespace internal {
+namespace internal {
   bool X509Name::operator ==(const X509Name &other) const
   {
     return commonName == other.commonName
@@ -1793,7 +1794,7 @@ namespace x509 { namespace internal {
     return !(*this == other);
   }
 
-}} // namespace x509 namespace internal
+} // namespace internal
 
 namespace internal {
   std::string errCodeToString(unsigned long errCode)
@@ -1955,9 +1956,9 @@ namespace internal {
     return ::so::internal::ok(std::string(dataStart, static_cast<size_t>(nameLength)));
   }
 
-  Result<::so::x509::internal::X509Name> commonInfo(X509_NAME &name)
+  Result<::so::internal::X509Name> commonInfo(X509_NAME &name)
   {
-    const auto error = [](unsigned long errCode){ return ::so::internal::err<::so::x509::internal::X509Name>(errCode); }; 
+    const auto error = [](unsigned long errCode){ return ::so::internal::err<::so::internal::X509Name>(errCode); }; 
     const auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName)
       return error(commonName.opensslErrCode);
@@ -2010,7 +2011,7 @@ namespace internal {
     if(!dnQualifier)
       return error(dnQualifier.opensslErrCode);
 
-    return ::so::internal::ok<::so::x509::internal::X509Name>({ 
+    return ::so::internal::ok<::so::internal::X509Name>({ 
         commonName.value,
         surname.value,
         countryName.value,
@@ -2027,7 +2028,7 @@ namespace internal {
     });
   }
 
-  Result<X509_NAME_uptr> infoToX509Name(const ::so::x509::internal::X509Name &info)
+  Result<X509_NAME_uptr> infoToX509Name(const ::so::internal::X509Name &info)
   {
     auto name = make_unique(X509_NAME_new()); 
 
@@ -2218,9 +2219,9 @@ namespace internal {
   }
 
   template<typename ID>
-  Result<::so::x509::internal::X509Extension<ID>> getExtension(X509_EXTENSION &ex)
+  Result<::so::internal::X509Extension<ID>> getExtension(X509_EXTENSION &ex)
   {
-    using RetType = ::so::x509::internal::X509Extension<ID>;
+    using RetType = ::so::internal::X509Extension<ID>;
     const ASN1_OBJECT *asn1Obj = X509_EXTENSION_get_object(&ex);
     const int nid = OBJ_obj2nid(asn1Obj);
     const int critical = X509_EXTENSION_get_critical(&ex);
