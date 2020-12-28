@@ -21,6 +21,7 @@
 *
 */
 
+#include <ctime>
 #define SO_IMPLEMENTATION
 #include <simpleopenssl/simpleopenssl.h>
 #include "simplelog/simplelog.h"
@@ -35,6 +36,7 @@ std::string bin2Text(const so::Bytes &buff);
 void logHex(const std::string &hexStr, size_t newLine);
 void handleCert(const std::string &fileName);
 void handleCrl(const std::string &fileName);
+std::string prettyString(std::time_t time);
 
 int main(int argc, char *argv[])
 {
@@ -276,6 +278,17 @@ void handleCert(const std::string &fileName)
   log << "\tOrganizationName: " << issuer.organizationName;
   log << "\tStateOrProvinceName: " << issuer.stateOrProvinceName;
 
+  const auto validity = x509::getValidity(*cert);
+  if(!validity)
+  {
+    log << validity.msg();
+    return;
+  }
+
+  log << "Validity:";
+  log << "\tNot before: " << prettyString(validity.value.notBefore);
+  log << "\tNot after: " << prettyString(validity.value.notAfter);
+
   auto maybePubKey = x509::getPubKey(*cert);
   if(!maybePubKey)
   {
@@ -373,5 +386,15 @@ void logHex(const std::string &hexStr, size_t newLine)
     std::cout << hexStr[i-1] << (i%2==0 ? " ":"") << (i%newLine == 0 && i!=hexStr.size() ? "\n\t" : "");
 
   std::cout << "\n";
+}
+
+std::string prettyString(std::time_t time)
+{
+  std::tm *ptm = std::gmtime(&time);
+
+  char buffer[32];
+  std::strftime(buffer, 32, "%a, %d.%m.%Y %H:%M:%S", ptm);
+
+  return buffer;
 }
 
