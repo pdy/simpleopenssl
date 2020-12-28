@@ -17,7 +17,7 @@ if(const auto hash = hash::fileSHA256(filePath))
 }
 else
 {
-      LOG_ERR << hash.msg();
+    LOG_ERR << hash.msg();
 }
 
 ```
@@ -28,15 +28,15 @@ using namespace so;
 auto key = rsa::create(rsa::KeyBits::_3072_)
 if(!key)
 {
-     LOG_ERR << key.msg();
-     return;
+    LOG_ERR << key.msg();
+    return;
 }
 
 const auto pemKey = rsa::convertPrivKeyToPem(*key.value);
 if(!pemKey)
 {
-     LOG_ERR <<  pemKey.msg();
-     return;
+    LOG_ERR <<  pemKey.msg();
+    return;
 }
 
 LOG_INF << "New key pem: " << pemKey.value;
@@ -48,13 +48,13 @@ std::string timetPrettyString(std::time_t time);
 
 so::X509_uptr cert = so::make_unique(SSL_get_peer_certificate(ssl));
 if(!cert)
-  return;
+    return;
   
 const auto validity = x509::getValidity(*cert);
 if(!validity)
 {
-     LOG_ERR << "Getting validity failed: " << validity.msg();
-     return;
+    LOG_ERR << "Getting validity failed: " << validity.msg();
+    return;
 }
 
 LOG_INF << "Cert not before: " << timetPrettyString(validity.value.notBefore);
@@ -85,7 +85,7 @@ std::string timetPrettyString(std::time_t time)
 3. Use plain ```#include "simpleopenssl.h"``` in every other place.
  
 # Dependencies
-* OpenSSL version 1.1.0 or higher.
+* OpenSSL version 1.1.0 or higher
 * C++11 or higher
 * STL
 
