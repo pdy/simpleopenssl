@@ -91,9 +91,9 @@ public:                                             \
   }                                                 \
 };                                                  \
 }                                                   \
-using Type ## _uptr = ::so::internal::CustomDeleterUniquePtr<Type>; \
+using Type ## _uptr = internal::CustomDeleterUniquePtr<Type>; \
 namespace internal {                                          \
-template<> struct is_uptr<::so::internal::CustomDeleterUniquePtr<Type>> : std::true_type {};}
+template<> struct is_uptr<internal::CustomDeleterUniquePtr<Type>> : std::true_type {};}
 
 template<typename T, typename D = ::so::internal::CustomDeleter<T>>
 auto make_unique(T *ptr) -> std::unique_ptr<T, D>
