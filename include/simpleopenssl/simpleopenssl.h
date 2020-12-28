@@ -2837,7 +2837,7 @@ namespace ecdsa {
     if(!digest)
       return digest;
 
-    return ::so::internal::ecdsaSign(digest.value, key);
+    return internal::ecdsaSign(digest.value, key);
   }
 
   Result<Bytes> signSha224(const Bytes &message, EC_KEY &key)
@@ -2845,8 +2845,8 @@ namespace ecdsa {
     const auto digest = hash::sha224(message);
     if(!digest)
       return digest; 
-
-    return ::so::internal::ecdsaSign(digest.value, key);
+    
+    return internal::ecdsaSign(digest.value, key);
   }
 
   Result<Bytes> signSha256(const Bytes &message, EC_KEY &key)
@@ -2855,7 +2855,7 @@ namespace ecdsa {
     if(!digest)
       return digest; 
 
-    return ::so::internal::ecdsaSign(digest.value, key);
+    return internal::ecdsaSign(digest.value, key);
   }
 
   Result<Bytes> signSha384(const Bytes &message, EC_KEY &key)
@@ -2864,7 +2864,7 @@ namespace ecdsa {
     if(!digest)
       return digest;
 
-    return ::so::internal::ecdsaSign(digest.value, key);
+    return internal::ecdsaSign(digest.value, key);
   }
   
   Result<Bytes> signSha512(const Bytes &message, EC_KEY &key)
@@ -2873,7 +2873,7 @@ namespace ecdsa {
     if(!digest)
       return digest;
 
-    return ::so::internal::ecdsaSign(digest.value, key);
+    return internal::ecdsaSign(digest.value, key);
   }
 
   Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
