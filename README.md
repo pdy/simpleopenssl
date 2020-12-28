@@ -5,7 +5,7 @@
 * All heap allocated OpenSSL **types encapsulated with unique pointers** with stateless deleters.
 
 # Examples
-Check [examples](https://raw.githubusercontent.com/severalgh/simpleopenssl/master/examples) folder for sample applications.
+Check [examples](https://github.com/pdy/simpleopenssl/tree/master/examples) folder for sample applications.
 
 * Hash file using sha256
 ```cpp
