@@ -199,7 +199,7 @@ struct Result : public ::so::internal::AddArrowOperator<T, Result<T>, typename :
     if(ok())
       return "ok";
 
-    return ::so::internal::errCodeToString(opensslErrCode);
+    return internal::errCodeToString(opensslErrCode);
   }
 
 };
@@ -224,7 +224,7 @@ struct Result<void>
     if(ok())
       return "ok";
 
-    return ::so::internal::errCodeToString(opensslErrCode);
+    return internal::errCodeToString(opensslErrCode);
   }
 };
 
@@ -1823,7 +1823,7 @@ namespace internal {
   >
   Result<T> err()
   {
-    return ::so::internal::err<T>({});
+    return internal::err<T>({});
   }
 
   template
@@ -1834,7 +1834,7 @@ namespace internal {
   Result<T> err()
   {
     auto tmp = make_unique<typename uptr_underlying_type<T>::type>(nullptr);
-    return ::so::internal::err(std::move(tmp));
+    return internal::err(std::move(tmp));
   }
 
   template<typename T>
@@ -1901,32 +1901,32 @@ namespace internal {
     // pointers so they must not be freed
     const int entriesCount = X509_NAME_entry_count(&name);
     if(entriesCount < 0)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
     if(entriesCount == 0)
-      return ::so::internal::ok<std::string>("");
+      return internal::ok<std::string>("");
 
     const int position = X509_NAME_get_index_by_NID(&name, nid, -1);
     // if position == -2 then nid is invalid
     if(position == -2)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
     // item not found, it's not lib error, user should decide if value that is not there
     // is an error or not
     if(position == -1)
-      return ::so::internal::ok<std::string>("");
+      return internal::ok<std::string>("");
     
     const X509_NAME_ENTRY *entry = X509_NAME_get_entry(&name, position);
     // previously we found correct index, if we got nullptr here it
     // means sth went wrong
     if(!entry)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
     
     // internal pointer
     const ASN1_STRING *asn1 = X509_NAME_ENTRY_get_data(entry);
     const int asn1EstimatedStrLen = ASN1_STRING_length(asn1);
     if(asn1EstimatedStrLen <= 0)
-      return ::so::internal::ok<std::string>("");
+      return internal::ok<std::string>("");
 
     const auto freeOpenssl = [](unsigned char *ptr) { OPENSSL_free(ptr); };
     unsigned char *ptr; // we need to call OPENSSL_free on this
@@ -1937,26 +1937,26 @@ namespace internal {
     ret.reserve(static_cast<size_t>(len));
     std::transform(strBuff.get(), strBuff.get() + len, std::back_inserter(ret), [](unsigned char chr){ return static_cast<char>(chr); });
 
-    return ::so::internal::ok(std::move(ret)); 
+    return internal::ok(std::move(ret)); 
   }
 
   Result<std::string> nameToString(const X509_NAME &name, unsigned long flags = XN_FLAG_RFC2253)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(0 > X509_NAME_print_ex(bio.get(), &name, 0, flags))
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
     char *dataStart;
     const long nameLength = BIO_get_mem_data(bio.get(), &dataStart);
     if(nameLength < 0)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
  
-    return ::so::internal::ok(std::string(dataStart, static_cast<size_t>(nameLength)));
+    return internal::ok(std::string(dataStart, static_cast<size_t>(nameLength)));
   }
 
   Result<::so::internal::X509Name> commonInfo(X509_NAME &name)
   {
-    const auto error = [](unsigned long errCode){ return ::so::internal::err<::so::internal::X509Name>(errCode); }; 
+    const auto error = [](unsigned long errCode){ return internal::err<::so::internal::X509Name>(errCode); }; 
     const auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName)
       return error(commonName.opensslErrCode);
@@ -2009,7 +2009,7 @@ namespace internal {
     if(!dnQualifier)
       return error(dnQualifier.opensslErrCode);
 
-    return ::so::internal::ok<::so::internal::X509Name>({ 
+    return internal::ok<::so::internal::X509Name>({ 
         commonName.value,
         surname.value,
         countryName.value,
@@ -2030,7 +2030,7 @@ namespace internal {
   {
     auto name = make_unique(X509_NAME_new()); 
 
-    const auto err = []{ return ::so::internal::err<X509_NAME_uptr>(); };
+    const auto err = []{ return internal::err<X509_NAME_uptr>(); };
     const auto append = [](X509_NAME *nm, int nid, const std::string &val) {
       return val.empty() || X509_NAME_add_entry_by_NID(nm, nid, MBSTRING_ASC, reinterpret_cast<const unsigned char*>(val.c_str()), -1, -1, 0);
     };
@@ -2077,23 +2077,23 @@ namespace internal {
     if(!append(name.get(), NID_dnQualifier, info.dnQualifier))
       return err();
 
-    return ::so::internal::ok(std::move(name));
+    return internal::ok(std::move(name));
   }
 
   Result<size_t> signCert(X509 &cert, EVP_PKEY &key, const EVP_MD *md)
   {
     const int sigLen = X509_sign(&cert, &key, md);
     if(0 >= sigLen)
-      return ::so::internal::err<size_t>();
+      return internal::err<size_t>();
 
-    return ::so::internal::ok(static_cast<size_t>(sigLen));
+    return internal::ok(static_cast<size_t>(sigLen));
   }
 
   Result<Bytes> ecdsaSign(const Bytes &dg, EC_KEY &key)
   {
     const int sigLen = ECDSA_size(&key);
     if(0 >= sigLen)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     Bytes tmpSig(static_cast<size_t>(sigLen));
     unsigned int finalSigLen = 0;
@@ -2104,14 +2104,14 @@ namespace internal {
           &finalSigLen,
           &key))
     {
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
     }
 
     if(finalSigLen == static_cast<unsigned>(sigLen))
-      return ::so::internal::ok(std::move(tmpSig));
+      return internal::ok(std::move(tmpSig));
 
     Bytes signature(tmpSig.begin(), std::next(tmpSig.begin(), finalSigLen));
-    return ::so::internal::ok(std::move(signature));
+    return internal::ok(std::move(signature));
   }
 
   Result<bool> ecdsaVerify(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
@@ -2123,64 +2123,64 @@ namespace internal {
           static_cast<int>(signature.size()),
           &publicKey))
     {
-      return ::so::internal::err(false);
+      return internal::err(false);
     }
 
-    return ::so::internal::ok(true);
+    return internal::ok(true);
   }
   
   Result<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
   {
     auto mdCtx = make_unique(EVP_MD_CTX_new());
     if(!mdCtx)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
     
     const int initStatus = EVP_DigestSignInit(mdCtx.get(), nullptr, evpMd, nullptr, &privateKey);
     if(1 != initStatus)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
  
     const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
     if(1 != updateStatus)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
     
     size_t sigLen = 0;
     int signStatus = EVP_DigestSignFinal(mdCtx.get(), nullptr, &sigLen);
     if(1 != signStatus)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
  
     Bytes tmp(sigLen);
     signStatus = EVP_DigestSignFinal(mdCtx.get(), tmp.data(), &sigLen);
     if(1 != signStatus)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
         
     Bytes signature(tmp.begin(), std::next(tmp.begin(), static_cast<long>(sigLen))); 
-    return ::so::internal::ok(std::move(signature));
+    return internal::ok(std::move(signature));
   }
 
   Result<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
   {
     auto ctx = make_unique(EVP_MD_CTX_new());
     if (!ctx)
-      return ::so::internal::err(false);
+      return internal::err(false);
 
     if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey))
-      return ::so::internal::err(false);
+      return internal::err(false);
     
     if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.data(), msg.size()))
-      return ::so::internal::err(false); 
+      return internal::err(false); 
    
     const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
-    return result == 1 ? ::so::internal::ok(true) : result == 0 ? ::so::internal::ok(false) : internal::err<bool>();
+    return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err<bool>();
   }
 
   Result<Bytes> rsaSign(int digestNid, const Bytes &digest, RSA &privKey)
   {
     if(1 != RSA_check_key_ex(&privKey, nullptr))
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
        
     const int sz = RSA_size(&privKey);
     if(0 > sz)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     Bytes firstSignature(static_cast<size_t>(sz));
     unsigned finalSigLen = 0;
@@ -2191,14 +2191,14 @@ namespace internal {
           &finalSigLen,
           &privKey))
     {
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
     }
 
     if(finalSigLen == static_cast<unsigned>(sz))
-      return ::so::internal::ok(std::move(firstSignature));
+      return internal::ok(std::move(firstSignature));
 
     Bytes finalSig(firstSignature.begin(), std::next(firstSignature.begin(), finalSigLen));
-    return ::so::internal::ok(std::move(finalSig));
+    return internal::ok(std::move(finalSig));
   }
 
   Result<bool> rsaVerify(int hashNid, const Bytes &signature, const Bytes &digest, RSA &pubKey)
@@ -2210,10 +2210,10 @@ namespace internal {
           static_cast<unsigned int>(signature.size()),
           &pubKey))
     {
-      return ::so::internal::err(false);
+      return internal::err(false);
     }
     
-    return ::so::internal::ok(true);
+    return internal::ok(true);
   }
 
   template<typename ID>
@@ -2225,7 +2225,7 @@ namespace internal {
     const int critical = X509_EXTENSION_get_critical(&ex);
     auto oidStr = asn1::convertObjToStr(*asn1Obj, asn1::Form::NUMERICAL);
     if(!oidStr)
-      return ::so::internal::err<RetType>(oidStr.opensslErrCode);
+      return internal::err<RetType>(oidStr.opensslErrCode);
  
     if(nid == NID_undef)
     {
@@ -2236,7 +2236,7 @@ namespace internal {
       data.reserve(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, std::back_inserter(data));
        
-      return ::so::internal::ok(RetType {
+      return internal::ok(RetType {
             static_cast<ID>(nid),
             static_cast<bool>(critical),
             "",
@@ -2254,7 +2254,7 @@ namespace internal {
       data.reserve(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, std::back_inserter(data));
 
-      return ::so::internal::ok(RetType{
+      return internal::ok(RetType{
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
@@ -2270,7 +2270,7 @@ namespace internal {
     data.reserve(static_cast<size_t>(bptr->length));
     std::copy_n(bptr->data, bptr->length, std::back_inserter(data));
 
-    return ::so::internal::ok(RetType{
+    return internal::ok(RetType{
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
@@ -2285,27 +2285,27 @@ namespace internal {
     Bytes hash(digestLen);
     CTX ctx;
     if(1 != init(&ctx))
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     if(1 != update(&ctx, data.data(), data.size()))
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     if(1 != final(hash.data(), &ctx))
-      return ::so::internal::err<Bytes>(); 
+      return internal::err<Bytes>(); 
 
-    return ::so::internal::ok(std::move(hash));
+    return internal::ok(std::move(hash));
   }
 
   Result<Bytes> doHashFile(const std::string &path, const EVP_MD *evpMd)
   {    
     auto bioRaw = make_unique(BIO_new_file(path.c_str(), "rb"));
     if(!bioRaw)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     // mdtmp will be freed with bio
     BIO *mdtmp = BIO_new(BIO_f_md());
     if(!mdtmp)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     // WTF OpenSSL?
     // Every EVP_<digest>() function returns const pointer, but
@@ -2314,7 +2314,7 @@ namespace internal {
     BIO_set_md(mdtmp, const_cast<EVP_MD*>(evpMd));
     auto bio = make_unique(BIO_push(mdtmp, bioRaw.release()));
     if(!bio)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     {
       char buf[10240];
@@ -2328,7 +2328,7 @@ namespace internal {
     uint8_t mdbuf[EVP_MAX_MD_SIZE];
     const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
 
-    return ::so::internal::ok(Bytes(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen)));
+    return internal::ok(Bytes(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen)));
   }
 
   template<typename FUNC, typename ... Types>
@@ -2336,10 +2336,10 @@ namespace internal {
   {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(!bio)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
     if(1 != writeToBio(bio.get(), std::forward<Types>(args)...))
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
     std::string ret;
     BUF_MEM *buf; // this will be freed with bio
@@ -2347,7 +2347,7 @@ namespace internal {
     ret.reserve(static_cast<size_t>(buf->length));
     ret.append(buf->data, static_cast<size_t>(buf->length));
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
   
   template<typename Key, typename FUNC, typename ... Types>
@@ -2355,13 +2355,13 @@ namespace internal {
   {
     auto bio = make_unique(BIO_new_mem_buf(pem.c_str(), static_cast<int>(pem.size())));
     if(!bio)
-      return ::so::internal::err<Key>();
+      return internal::err<Key>();
 
     auto key = make_unique(readBio(bio.get(), std::forward<Types>(args)...));
     if(!key)
-      return ::so::internal::err<Key>();
+      return internal::err<Key>();
 
-    return ::so::internal::ok(std::move(key));
+    return internal::ok(std::move(key));
   }
 
   template<typename Key, typename FUNC>
@@ -2370,9 +2370,9 @@ namespace internal {
     const uint8_t *ptr = der.data();
     auto ret = make_unique(d2iFunction(nullptr, &ptr, static_cast<long>(der.size())));
     if(!ret)
-      return ::so::internal::err<Key>();
+      return internal::err<Key>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   template<typename Key, typename FUNC>
@@ -2382,13 +2382,13 @@ namespace internal {
     uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
     const int len = i2dFunction(&key, &ptr);
     if (0 > len)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     std::unique_ptr<uint8_t[], decltype(freeOpenssl)> buf(ptr, freeOpenssl);
     Bytes ret;
     ret.reserve(static_cast<size_t>(len));
     std::copy_n(buf.get(), len, std::back_inserter(ret));
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
@@ -2465,21 +2465,21 @@ namespace asn1 {
     std::memset(extname, 0x00, size);
     const int charsWritten = OBJ_obj2txt(extname, size, &obj, static_cast<int>(form));
     if(0 > charsWritten)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
     if(0 == charsWritten)
-      return ::so::internal::ok(std::string{});
+      return internal::ok(std::string{});
 
-    return ::so::internal::ok(std::string(extname));
+    return internal::ok(std::string(extname));
   }
 
   Result<ASN1_TIME_uptr> convertToAsn1Time(std::time_t time)
   {
     auto ret = make_unique(ASN1_TIME_set(nullptr, time));
     if(!ret)
-      return ::so::internal::err<ASN1_TIME_uptr>();
+      return internal::err<ASN1_TIME_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time)
@@ -2493,9 +2493,9 @@ namespace asn1 {
 
     int pday, psec;
     if(1 != ASN1_TIME_diff(&pday, &psec, nullptr, &asn1Time))
-      return ::so::internal::err<std::time_t>(); 
+      return internal::err<std::time_t>(); 
 
-    return ::so::internal::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
+    return internal::ok(sysClock::to_time_t(sysClock::now()) + pday * SECONDS_IN_A_DAY + psec);
   }
  
   Result<std::string> convertToISO8601(const ASN1_TIME &asnTime)
@@ -2503,47 +2503,47 @@ namespace asn1 {
     constexpr size_t size = 256; 
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(0 >= ASN1_TIME_print(bio.get(), &asnTime))
-      return ::so::internal::err<std::string>(); 
+      return internal::err<std::string>(); 
 
     char buff[size];
     BIO_gets(bio.get(), buff, size);
 
-    return ::so::internal::ok(std::string(buff));
+    return internal::ok(std::string(buff));
   }
 
   Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
   {
     auto maybeBn = bignum::convertToBignum(bt);
     if(!maybeBn)
-      return ::so::internal::err<ASN1_INTEGER_uptr>(); 
+      return internal::err<ASN1_INTEGER_uptr>(); 
 
     auto bn = maybeBn.moveValue();
     auto integer = make_unique(BN_to_ASN1_INTEGER(bn.get(), nullptr));
     if(!integer)
-      return ::so::internal::err<ASN1_INTEGER_uptr>();
+      return internal::err<ASN1_INTEGER_uptr>();
 
-    return ::so::internal::ok(std::move(integer)); 
+    return internal::ok(std::move(integer)); 
   }
  
   Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical)
   {
     auto ret = make_unique(OBJ_txt2obj(nameOrNumerical.c_str(), 0));
     if(!ret)
-      return ::so::internal::err<ASN1_OBJECT_uptr>();
+      return internal::err<ASN1_OBJECT_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
   {
     auto ret = make_unique(ASN1_OCTET_STRING_new());
     if(!ret)
-      return ::so::internal::err<ASN1_OCTET_STRING_uptr>();
+      return internal::err<ASN1_OCTET_STRING_uptr>();
 
     if(1 != ASN1_OCTET_STRING_set(ret.get(), bt.data(), static_cast<int>(bt.size())))
-      return ::so::internal::err<ASN1_OCTET_STRING_uptr>();
+      return internal::err<ASN1_OCTET_STRING_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
   
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
@@ -2562,29 +2562,29 @@ namespace bignum {
   {
     const auto sz = getByteLen(bn);
     if(!sz)
-      return ::so::internal::err<Bytes>(sz.opensslErrCode);
+      return internal::err<Bytes>(sz.opensslErrCode);
 
     Bytes ret(sz.value);
     BN_bn2bin(&bn, ret.data());
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<BIGNUM_uptr> convertToBignum(const Bytes &bt)
   {
     auto ret = make_unique(BN_bin2bn(bt.data(), static_cast<int>(bt.size()), nullptr));
     if(!ret)
-      return ::so::internal::err<BIGNUM_uptr>();
+      return internal::err<BIGNUM_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<size_t> getByteLen(const BIGNUM &bn)
   {
     const int bnlen = BN_num_bytes(&bn);
     if(0 > bnlen)
-      return ::so::internal::err<size_t>();
+      return internal::err<size_t>();
 
-    return ::so::internal::ok(static_cast<size_t>(bnlen));
+    return internal::ok(static_cast<size_t>(bnlen));
   }
 }// namespace bignum
 
@@ -2644,7 +2644,7 @@ namespace ecdsa {
   { 
     const auto check = ecdsa::checkKey(ec);
     if(!check)
-      return ::so::internal::err<std::string>(check.opensslErrCode);
+      return internal::err<std::string>(check.opensslErrCode);
   
     return ::so::internal::convertToPem(PEM_write_bio_ECPrivateKey, &ec, nullptr, nullptr, 0, nullptr, nullptr); 
   }
@@ -2668,7 +2668,7 @@ namespace ecdsa {
   {
     const auto check = ecdsa::checkKey(ec);
     if(!check)
-      return ::so::internal::err<Bytes>(check.opensslErrCode);
+      return internal::err<Bytes>(check.opensslErrCode);
 
     return ::so::internal::convertKeyToDer(ec, i2d_ECPrivateKey);
   }
@@ -2681,62 +2681,62 @@ namespace ecdsa {
   Result<bool> checkKey(const EC_KEY &ecKey)
   {
     if(1 != EC_KEY_check_key(&ecKey))
-      return ::so::internal::err(false);
+      return internal::err(false);
 
-    return ::so::internal::ok(true);
+    return internal::ok(true);
   }
   
   Result<EC_KEY_uptr> copyKey(const EC_KEY &ecKey)
   {
     auto copy = make_unique(EC_KEY_dup(&ecKey));
     if(!copy)
-      return ::so::internal::err<EC_KEY_uptr>();
+      return internal::err<EC_KEY_uptr>();
 
-    return ::so::internal::ok(std::move(copy));
+    return internal::ok(std::move(copy));
   }
 
   Result<Curve> getCurve(const EC_KEY &key)
   {
     const EC_GROUP* group = EC_KEY_get0_group(&key);
     if(!group)
-      return ::so::internal::err<Curve>();
+      return internal::err<Curve>();
 
     const int nid = EC_GROUP_get_curve_name(group);
     if(0 == nid)
-      return ::so::internal::err<Curve>();
+      return internal::err<Curve>();
 
-    return ::so::internal::ok(static_cast<Curve>(nid)); 
+    return internal::ok(static_cast<Curve>(nid)); 
   }
 
   Result<Bytes> convertToDer(const Signature &signature)
   {
     auto maybeR = bignum::convertToBignum(signature.r);
     if(!maybeR)
-      return ::so::internal::err<Bytes>(maybeR.opensslErrCode);
+      return internal::err<Bytes>(maybeR.opensslErrCode);
 
     auto maybeS = bignum::convertToBignum(signature.s);
     if(!maybeS)
-      return ::so::internal::err<Bytes>(maybeS.opensslErrCode);
+      return internal::err<Bytes>(maybeS.opensslErrCode);
  
     auto sig = make_unique(ECDSA_SIG_new()); 
     if(!sig)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     auto r = maybeR.moveValue();
     auto s = maybeS.moveValue();
     if(1 != ECDSA_SIG_set0(sig.get(), r.release(), s.release()))
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     const int derLen = i2d_ECDSA_SIG(sig.get(), nullptr); 
     if(0 == derLen)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
  
     Bytes ret(static_cast<size_t>(derLen));
     auto *derIt = ret.data();
     if(!i2d_ECDSA_SIG(sig.get(), &derIt))
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<Signature> convertToSignature(const Bytes &derSigBytes)
@@ -2744,20 +2744,20 @@ namespace ecdsa {
     auto *derIt = derSigBytes.data();
     auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigBytes.size())));
     if(!sig)
-      return ::so::internal::err<Signature>();
+      return internal::err<Signature>();
 
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
 
     auto maybeR = bignum::convertToBytes(*r);
     if(!maybeR)
-      return ::so::internal::err<Signature>();
+      return internal::err<Signature>();
 
     auto maybeS = bignum::convertToBytes(*s);
     if(!maybeS)
-      return ::so::internal::err<Signature>();
+      return internal::err<Signature>();
  
-    return ::so::internal::ok(Signature{
+    return internal::ok(Signature{
       maybeR.moveValue(),
       maybeS.moveValue(),
     });
@@ -2772,27 +2772,27 @@ namespace ecdsa {
   {
     auto ret = make_unique(EC_KEY_new());
     if(!ret)
-      return ::so::internal::err<EC_KEY_uptr>();
+      return internal::err<EC_KEY_uptr>();
 
     const EC_GROUP *group = EC_KEY_get0_group(&key);
     if(1 != EC_KEY_set_group(ret.get(), group))
-      return ::so::internal::err<EC_KEY_uptr>();
+      return internal::err<EC_KEY_uptr>();
 
     const EC_POINT* pubPoint = EC_KEY_get0_public_key(&key);
     if(1 != EC_KEY_set_public_key(ret.get(), pubPoint))
-      return ::so::internal::err<EC_KEY_uptr>();
+      return internal::err<EC_KEY_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<size_t> getKeySize(const EC_KEY &key)
   {
     const EC_GROUP *group = EC_KEY_get0_group(&key);
     if(!group)
-      return ::so::internal::err<size_t>();
+      return internal::err<size_t>();
 
     const int size = EC_GROUP_get_degree(group);
-    return ::so::internal::ok(static_cast<size_t>(size));
+    return internal::ok(static_cast<size_t>(size));
   }
 
   Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &ecKey)
@@ -2800,16 +2800,16 @@ namespace ecdsa {
     // I can keep const in arguments by doing this copy
     auto copy = make_unique(EC_KEY_dup(&ecKey));
     if(!copy)
-      return ::so::internal::err<EVP_PKEY_uptr>();
+      return internal::err<EVP_PKEY_uptr>();
 
     EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
     if (!evpKey)
-      return ::so::internal::err<EVP_PKEY_uptr>();
+      return internal::err<EVP_PKEY_uptr>();
 
     if (1 != EVP_PKEY_set1_EC_KEY(evpKey.get(), copy.get()))
-        return ::so::internal::err<EVP_PKEY_uptr>();
+        return internal::err<EVP_PKEY_uptr>();
     
-    return ::so::internal::ok(std::move(evpKey));
+    return internal::ok(std::move(evpKey));
   }
 
   EC_KEY_uptr create()
@@ -2822,12 +2822,12 @@ namespace ecdsa {
     const int nidCurve = static_cast<int>(curve);
     auto key = make_unique(EC_KEY_new_by_curve_name(nidCurve));
     if(!key)
-      return ::so::internal::err<EC_KEY_uptr>();
+      return internal::err<EC_KEY_uptr>();
 
     if(!EC_KEY_generate_key(key.get()))
-      return ::so::internal::err<EC_KEY_uptr>();
+      return internal::err<EC_KEY_uptr>();
 
-    return ::so::internal::ok(std::move(key));
+    return internal::ok(std::move(key));
   }
 
   Result<Bytes> signSha1(const Bytes &message, EC_KEY &key)
@@ -2930,17 +2930,17 @@ namespace evp {
   Result<void> assign(EVP_PKEY &evp, RSA &rsa)
   {
     if (1 != EVP_PKEY_assign_RSA(&evp, &rsa))
-        return ::so::internal::errVoid();
+        return internal::errVoid();
     
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
   
   Result<void> assign(EVP_PKEY &evp, EC_KEY &ec)
   {
     if (1 != EVP_PKEY_assign_EC_KEY(&evp, &ec))
-        return ::so::internal::errVoid();
+        return internal::errVoid();
     
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
 
   Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
@@ -2982,18 +2982,18 @@ namespace evp {
   {
     auto *ec = EVP_PKEY_get1_EC_KEY(&key);
     if(!ec)
-      return ::so::internal::err<EC_KEY_uptr>();
+      return internal::err<EC_KEY_uptr>();
 
-    return ::so::internal::ok(make_unique(ec));
+    return internal::ok(make_unique(ec));
   }
 
   Result<RSA_uptr> convertToRsa(EVP_PKEY &key)
   {
     auto *rsa = EVP_PKEY_get1_RSA(&key);
     if(!rsa)
-      return ::so::internal::err<RSA_uptr>();
+      return internal::err<RSA_uptr>();
 
-    return ::so::internal::ok(make_unique(rsa));
+    return internal::ok(make_unique(rsa));
   }
 
   KeyType getKeyType(const EVP_PKEY &pubkey)
@@ -3164,54 +3164,54 @@ namespace nid {
   {
     auto ret = make_unique(OBJ_nid2obj(static_cast<int>(nid)));
     if(!ret)
-      return ::so::internal::err<ASN1_OBJECT_uptr>();
+      return internal::err<ASN1_OBJECT_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<ASN1_OBJECT_uptr> convertToObject(int rawNid)
   {
     auto ret = make_unique(OBJ_nid2obj(rawNid));
     if(!ret)
-      return ::so::internal::err<ASN1_OBJECT_uptr>();
+      return internal::err<ASN1_OBJECT_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<std::string> getLongName(Nid nid)
   {
     const char *str = OBJ_nid2ln(static_cast<int>(nid));
     if(!str)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
-    return ::so::internal::ok<std::string>(str);
+    return internal::ok<std::string>(str);
   }
 
   Result<std::string> getLongName(int rawNid)
   {
     const char *str = OBJ_nid2ln(rawNid);
     if(!str)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
-    return ::so::internal::ok<std::string>(str);
+    return internal::ok<std::string>(str);
   }
 
   Result<std::string> getShortName(Nid nid)
   {
     const char *str = OBJ_nid2sn(static_cast<int>(nid));
     if(!str)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
-    return ::so::internal::ok<std::string>(str);
+    return internal::ok<std::string>(str);
   }
 
   Result<std::string> getShortName(int rawNid)
   {
     const char *str = OBJ_nid2sn(rawNid);
     if(!str)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
-    return ::so::internal::ok<std::string>(str);
+    return internal::ok<std::string>(str);
   } 
 
 } // namespace nid
@@ -3221,9 +3221,9 @@ namespace rand {
   {
     Bytes ret(static_cast<size_t>(numOfBytes));
     if(1 != RAND_bytes(ret.data(), static_cast<int>(numOfBytes)))
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 } // namespace rand
 
@@ -3242,7 +3242,7 @@ namespace rsa {
   { 
     const auto check = rsa::checkKey(rsa);
     if(!check)
-      return ::so::internal::err<std::string>(check.opensslErrCode);
+      return internal::err<std::string>(check.opensslErrCode);
   
     return ::so::internal::convertToPem(PEM_write_bio_RSAPrivateKey, &rsa, nullptr, nullptr, 0, nullptr, nullptr); 
   }
@@ -3266,7 +3266,7 @@ namespace rsa {
   {
     const auto check = rsa::checkKey(rsa);
     if(!check)
-      return ::so::internal::err<Bytes>(check.opensslErrCode);
+      return internal::err<Bytes>(check.opensslErrCode);
 
     return ::so::internal::convertKeyToDer(rsa, i2d_RSAPrivateKey);
   }
@@ -3280,20 +3280,20 @@ namespace rsa {
   {
     EVP_PKEY_uptr evpKey = make_unique(EVP_PKEY_new());
     if (!evpKey)
-      return ::so::internal::err<EVP_PKEY_uptr>();
+      return internal::err<EVP_PKEY_uptr>();
 
     if (1 != EVP_PKEY_set1_RSA(evpKey.get(), &rsa))
-        return ::so::internal::err<EVP_PKEY_uptr>();
+        return internal::err<EVP_PKEY_uptr>();
     
-    return ::so::internal::ok(std::move(evpKey));
+    return internal::ok(std::move(evpKey));
   }
 
   Result<bool> checkKey(RSA &rsa)
   {
     if(1 != RSA_check_key_ex(&rsa, nullptr))
-      return ::so::internal::err(false);
+      return internal::err(false);
     
-    return ::so::internal::ok(true);
+    return internal::ok(true);
   }
 
   RSA_uptr create()
@@ -3305,13 +3305,13 @@ namespace rsa {
   {
     auto bnE = make_unique(BN_new());
     if(1 != BN_set_word(bnE.get(), static_cast<unsigned long>(exponent)))
-      return ::so::internal::err<RSA_uptr>();
+      return internal::err<RSA_uptr>();
 
     auto rsa = make_unique(RSA_new());
     if(1 != RSA_generate_key_ex(rsa.get(), static_cast<int>(keySize), bnE.get(), nullptr))
-      return ::so::internal::err<RSA_uptr>();
+      return internal::err<RSA_uptr>();
 
-    return ::so::internal::ok(std::move(rsa));
+    return internal::ok(std::move(rsa));
   }
 
   Result<KeyBits> getKeyBits(RSA &rsa)
@@ -3321,22 +3321,22 @@ namespace rsa {
     // get public key.
     const auto pub = rsa::getPublic(rsa);
     if(!pub)
-      return ::so::internal::err<KeyBits>(pub.opensslErrCode);
+      return internal::err<KeyBits>(pub.opensslErrCode);
 
-    return ::so::internal::ok(static_cast<KeyBits>(RSA_bits(&rsa)));
+    return internal::ok(static_cast<KeyBits>(RSA_bits(&rsa)));
   }
 
   Result<RSA_uptr> getPublic(RSA &rsa)
   {
     auto bio = make_unique(BIO_new(BIO_s_mem())); 
     if(0 >= i2d_RSAPublicKey_bio(bio.get(), &rsa))
-      return ::so::internal::err<RSA_uptr>();
+      return internal::err<RSA_uptr>();
  
     auto retRsa = make_unique(d2i_RSAPublicKey_bio(bio.get(), nullptr));
     if(!retRsa)
-      return ::so::internal::err<RSA_uptr>();
+      return internal::err<RSA_uptr>();
 
-    return ::so::internal::ok(std::move(retRsa));
+    return internal::ok(std::move(retRsa));
   }
  
   Result<Bytes> signSha1(const Bytes &msg, RSA &privKey)
@@ -3446,7 +3446,7 @@ namespace x509 {
     // this is internal ptr and must not be freed
     X509_NAME *getIssuer = X509_get_issuer_name(&cert);
     if(!getIssuer)
-      return ::so::internal::err<Issuer>();
+      return internal::err<Issuer>();
 
     return ::so::internal::commonInfo(*getIssuer); 
   }
@@ -3456,7 +3456,7 @@ namespace x509 {
     // this is internal ptr and must not be freed
     const X509_NAME *getIssuer = X509_get_issuer_name(&cert);
     if(!getIssuer)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
     return ::so::internal::nameToString(*getIssuer);
   }
@@ -3492,13 +3492,13 @@ namespace x509 {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 
     if(0 >= BIO_write(bio.get(), pemCert.c_str(), static_cast<int>(pemCert.length())))
-      return ::so::internal::err<X509_uptr>(); 
+      return internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
     if(!ret)
-      return ::so::internal::err<X509_uptr>();
+      return internal::err<X509_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<std::string> convertX509ToPem(X509 &cert)
@@ -3518,22 +3518,22 @@ namespace x509 {
     fn.push_back('\0');
 
     if(0 >= BIO_read_filename(bio.get(), fn.data()))
-      return ::so::internal::err<X509_uptr>(); 
+      return internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
     if(!ret)
-      return ::so::internal::err<X509_uptr>();
+      return internal::err<X509_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<EVP_PKEY_uptr> getPubKey(X509 &cert)
   { 
     auto pkey = make_unique(X509_get_pubkey(&cert));
     if(!pkey)
-      return ::so::internal::err<EVP_PKEY_uptr>();
+      return internal::err<EVP_PKEY_uptr>();
 
-    return ::so::internal::ok(std::move(pkey));
+    return internal::ok(std::move(pkey));
   }
 
   nid::Nid getPubKeyAlgorithm(X509 &cert)
@@ -3550,11 +3550,11 @@ namespace x509 {
     // both internal pointers, must not be freed
     const ASN1_INTEGER *serialNumber = X509_get_serialNumber(&cert);
     if(!serialNumber)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     const BIGNUM *bn = ASN1_INTEGER_to_BN(serialNumber, nullptr);
     if(!bn)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     return bignum::convertToBytes(*bn);
   }
@@ -3586,12 +3586,12 @@ namespace x509 {
     const X509_ALGOR *palg = nullptr;
     X509_get0_signature(&psig, &palg, &cert);
     if(!palg || !psig)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     Bytes rawDerSequence(static_cast<size_t>(psig->length));
     std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
 
-    return ::so::internal::ok(std::move(rawDerSequence));
+    return internal::ok(std::move(rawDerSequence));
   }
   
   nid::Nid getSignatureAlgorithm(const X509 &cert)
@@ -3606,24 +3606,24 @@ namespace x509 {
     const X509_ALGOR *palg = nullptr;
     X509_get0_signature(&psig, &palg, &cert);
     if(!palg || !psig)
-      return ::so::internal::err<ecdsa::Signature>();
+      return internal::err<ecdsa::Signature>();
 
     const unsigned char *it = psig->data;
     const auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &it, static_cast<long>(psig->length)));
     if(!sig)
-      return ::so::internal::err<ecdsa::Signature>();
+      return internal::err<ecdsa::Signature>();
 
     // internal pointers
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
-    return ::so::internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
+    return internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
   }
 
   Result<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId)
   {
     const int loc = X509_get_ext_by_NID(&cert, static_cast<int>(getExtensionId), -1);
     if(-1 == loc)
-      return ::so::internal::err<CertExtension>();
+      return internal::err<CertExtension>();
 
     return ::so::internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
   }
@@ -3632,12 +3632,12 @@ namespace x509 {
   {
     auto maybeObj = asn1::encodeObject(oidNumerical);
     if(!maybeObj)
-      return ::so::internal::err<CertExtension>(maybeObj.opensslErrCode);
+      return internal::err<CertExtension>(maybeObj.opensslErrCode);
 
     auto obj = maybeObj.moveValue();
     const int loc = X509_get_ext_by_OBJ(&cert, obj.get(), -1);
     if(-1 == loc)
-      return ::so::internal::err<CertExtension>();
+      return internal::err<CertExtension>();
 
     return ::so::internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, loc));
   }
@@ -3647,10 +3647,10 @@ namespace x509 {
     using RetType = std::vector<CertExtension>;
     const auto extsCount = getExtensionsCount(cert);
     if(!extsCount.value)
-      return ::so::internal::err<RetType>(extsCount.opensslErrCode);
+      return internal::err<RetType>(extsCount.opensslErrCode);
 
     if(0 == extsCount.value)
-      return ::so::internal::ok(RetType{});
+      return internal::ok(RetType{});
 
     RetType ret;
     ret.reserve(extsCount.value); 
@@ -3658,21 +3658,21 @@ namespace x509 {
     {
       auto getExtension = ::so::internal::getExtension<CertExtensionId>(*X509_get_ext(&cert, index));
       if(!getExtension)
-        return ::so::internal::err<RetType>(getExtension.opensslErrCode);
+        return internal::err<RetType>(getExtension.opensslErrCode);
 
       ret.push_back(getExtension.moveValue());
     }
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<size_t> getExtensionsCount(const X509 &cert)
   {
     const int extsCount = X509_get_ext_count(&cert);
     if(extsCount < 0)
-      return ::so::internal::err<size_t>(); 
+      return internal::err<size_t>(); 
 
-    return ::so::internal::ok(static_cast<size_t>(extsCount));
+    return internal::ok(static_cast<size_t>(extsCount));
   }
 
   Result<Subject> getSubject(const X509 &cert)
@@ -3680,7 +3680,7 @@ namespace x509 {
     // this is internal ptr and must not be freed
     X509_NAME *subject = X509_get_subject_name(&cert);
     if(!subject)
-      return ::so::internal::err<Subject>();
+      return internal::err<Subject>();
 
     return ::so::internal::commonInfo(*subject); 
   }
@@ -3690,7 +3690,7 @@ namespace x509 {
     // this is internal ptr and must not be freed
     const X509_NAME *subject = X509_get_subject_name(&cert);
     if(!subject)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
     return ::so::internal::nameToString(*subject);
   }
@@ -3699,27 +3699,27 @@ namespace x509 {
   {
     const auto notAfter = X509_get0_notAfter(&cert);
     if(!notAfter)
-      return ::so::internal::err<Validity>();
+      return internal::err<Validity>();
 
     const auto notBefore = X509_get0_notBefore(&cert);
     if(!notBefore)
-      return ::so::internal::err<Validity>();
+      return internal::err<Validity>();
 
     auto notBeforeTime = asn1::convertToStdTime(*notBefore);
     if(!notBeforeTime)
-      return ::so::internal::err<Validity>(notBeforeTime.opensslErrCode);
+      return internal::err<Validity>(notBeforeTime.opensslErrCode);
 
     auto notAfterTime = asn1::convertToStdTime(*notAfter);
     if(!notAfterTime)
-      return ::so::internal::err<Validity>(notAfterTime.opensslErrCode);
+      return internal::err<Validity>(notAfterTime.opensslErrCode);
 
-    return ::so::internal::ok(Validity{notAfterTime.value, notBeforeTime.value});
+    return internal::ok(Validity{notAfterTime.value, notBeforeTime.value});
   }
 
   Result<bool> verifySignature(X509 &cert, EVP_PKEY &pkey)
   {
     const int result = X509_verify(&cert, &pkey);
-    return result == 1 ? ::so::internal::ok(true) : result == 0 ? ::so::internal::ok(false) : ::so::internal::err(false);
+    return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err(false);
   }
 
   std::tuple<Version,long> getVersion(const X509 &cert)
@@ -3735,26 +3735,26 @@ namespace x509 {
   {
     auto maybeAsn1Oid = asn1::encodeObject(oidNumerical);
     if(!maybeAsn1Oid)
-      return ::so::internal::errVoid(maybeAsn1Oid.opensslErrCode);
+      return internal::errVoid(maybeAsn1Oid.opensslErrCode);
 
     auto extension = make_unique(X509_EXTENSION_new());
     if(!extension)
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     auto asn1Oid = maybeAsn1Oid.moveValue();
     if(1 != X509_EXTENSION_set_object(extension.get(), asn1Oid.get()))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_data(extension.get(), &octet))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_add_ext(&cert, extension.get(), -1))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
-    return ::so::internal::okVoid();
+    return internal::okVoid();
 
   }
 
@@ -3767,32 +3767,32 @@ namespace x509 {
   {
     auto oid = make_unique(OBJ_nid2obj(static_cast<int>(nid)));
     if(!oid)
-      return ::so::internal::errVoid();
+      return internal::errVoid();
  
     auto extension = make_unique(X509_EXTENSION_new());
     if(!extension)
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_object(extension.get(), oid.get()))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_data(extension.get(), &octet))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_add_ext(&cert, extension.get(), -1))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
 
   Result<void> setExtension(X509 &cert, const CertExtension &extension)
   {
     auto maybeData = asn1::encodeOctet(extension.data);
     if(!maybeData)
-      return ::so::internal::errVoid(maybeData.opensslErrCode);
+      return internal::errVoid(maybeData.opensslErrCode);
 
     auto data = maybeData.moveValue();
     if(x509::CertExtensionId::UNDEF == extension.id)
@@ -3805,94 +3805,94 @@ namespace x509 {
   {
     X509_NAME *getIssuer = X509_get_subject_name(&rootCert);
     if(!getIssuer)
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_set_issuer_name(&cert, getIssuer))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
 
   Result<void> setIssuer(X509 &cert, const Issuer &info)
   {
     auto maybeIssuer = ::so::internal::infoToX509Name(info);
     if(!maybeIssuer)
-      return ::so::internal::errVoid(maybeIssuer.opensslErrCode);
+      return internal::errVoid(maybeIssuer.opensslErrCode);
 
     auto getIssuer = maybeIssuer.moveValue();
     if(1 != X509_set_issuer_name(&cert, getIssuer.get()))
-      return ::so::internal::errVoid(); 
+      return internal::errVoid(); 
 
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
 
   Result<void> setPubKey(X509 &cert, EVP_PKEY &pkey)
   {
     if(1 != X509_set_pubkey(&cert, &pkey))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
  
   Result<void> setSerial(X509 &cert, const Bytes &bytes)
   {
     auto maybeInt = asn1::encodeInteger(bytes);
     if(!maybeInt)
-      return ::so::internal::errVoid(maybeInt.opensslErrCode);
+      return internal::errVoid(maybeInt.opensslErrCode);
 
     auto integer = maybeInt.moveValue();
     if(1 != X509_set_serialNumber(&cert, integer.get()))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
 
   Result<void> setSubject(X509 &cert, const Subject &info)
   {
     auto maybeSubject = ::so::internal::infoToX509Name(info); 
     if(!maybeSubject)
-      return ::so::internal::errVoid(maybeSubject.opensslErrCode);
+      return internal::errVoid(maybeSubject.opensslErrCode);
 
     auto subject = maybeSubject.moveValue();
     if(1 != X509_set_subject_name(&cert, subject.get()))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
 
   Result<void> setValidity(X509 &cert, const Validity &validity)
   {
     ASN1_TIME_uptr notAfterTime = make_unique(ASN1_TIME_set(nullptr, validity.notAfter));
     if(!notAfterTime)
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     ASN1_TIME_uptr notBeforeTime = make_unique(ASN1_TIME_set(nullptr, validity.notBefore));
     if(!notBeforeTime)
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_set1_notBefore(&cert, notBeforeTime.get()))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
     if(1 != X509_set1_notAfter(&cert, notAfterTime.get()))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
 
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
 
   Result<void> setVersion(X509 &cert, Version version)
   {
     if(1 != X509_set_version(&cert, static_cast<long>(version)))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
     
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
 
   Result<void> setVersion(X509 &cert, long version)
   {
     if(1 != X509_set_version(&cert, version))
-      return ::so::internal::errVoid();
+      return internal::errVoid();
     
-    return ::so::internal::okVoid();
+    return internal::okVoid();
   }
 
   X509_CRL_uptr createCrl()
@@ -3905,13 +3905,13 @@ namespace x509 {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 
     if(0 >= BIO_write(bio.get(), pemCrl.c_str(), static_cast<int>(pemCrl.length())))
-      return ::so::internal::err<X509_CRL_uptr>(); 
+      return internal::err<X509_CRL_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));
     if(!ret)
-      return ::so::internal::err<X509_CRL_uptr>();
+      return internal::err<X509_CRL_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
  
   Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrl)
@@ -3926,13 +3926,13 @@ namespace x509 {
     fn.push_back('\0');
 
     if(0 >= BIO_read_filename(bio.get(), fn.data()))
-      return ::so::internal::err<X509_CRL_uptr>(); 
+      return internal::err<X509_CRL_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));
     if(!ret)
-      return ::so::internal::err<X509_CRL_uptr>();
+      return internal::err<X509_CRL_uptr>();
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<std::string> convertCrlToPem(X509_CRL &crl)
@@ -3947,17 +3947,17 @@ namespace x509 {
     const X509_ALGOR *palg = nullptr;
     X509_CRL_get0_signature(&crl, &psig, &palg);
     if(!palg || !psig)
-      return ::so::internal::err<ecdsa::Signature>();
+      return internal::err<ecdsa::Signature>();
 
     const unsigned char *it = psig->data;
     const auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &it, static_cast<long>(psig->length)));
     if(!sig)
-      return ::so::internal::err<ecdsa::Signature>();
+      return internal::err<ecdsa::Signature>();
 
     // internal pointers
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
-    return ::so::internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
+    return internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
   }
   
   Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl)
@@ -3965,10 +3965,10 @@ namespace x509 {
     using RetType = std::vector<CrlExtension>;
     const auto extsCount = getExtensionsCount(crl);
     if(!extsCount.value)
-      return ::so::internal::err<RetType>(extsCount.opensslErrCode);
+      return internal::err<RetType>(extsCount.opensslErrCode);
 
     if(0 == extsCount.value)
-      return ::so::internal::ok(RetType{});
+      return internal::ok(RetType{});
 
     RetType ret;
     ret.reserve(extsCount.value); 
@@ -3976,21 +3976,21 @@ namespace x509 {
     {
       auto getExtension = ::so::internal::getExtension<CrlExtensionId>(*X509_CRL_get_ext(&crl, index));
       if(!getExtension)
-        return ::so::internal::err<RetType>(getExtension.opensslErrCode);
+        return internal::err<RetType>(getExtension.opensslErrCode);
 
       ret.push_back(getExtension.moveValue());
     }
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
 
   Result<size_t> getExtensionsCount(X509_CRL &crl)
   {
     const int extsCount = X509_CRL_get_ext_count(&crl);
     if(extsCount < 0)
-      return ::so::internal::err<size_t>(); 
+      return internal::err<size_t>(); 
 
-    return ::so::internal::ok(static_cast<size_t>(extsCount));
+    return internal::ok(static_cast<size_t>(extsCount));
   }
 
   Result<Issuer> getIssuer(X509_CRL &crl)
@@ -3998,7 +3998,7 @@ namespace x509 {
     // this is internal ptr and must not be freed
     X509_NAME *getIssuer = X509_CRL_get_issuer(&crl);
     if(!getIssuer)
-      return ::so::internal::err<Issuer>();
+      return internal::err<Issuer>();
 
     return ::so::internal::commonInfo(*getIssuer);
   }
@@ -4008,7 +4008,7 @@ namespace x509 {
     // this is internal ptr and must not be freed
     X509_NAME *getIssuer = X509_CRL_get_issuer(&crl);
     if(!getIssuer)
-      return ::so::internal::err<std::string>();
+      return internal::err<std::string>();
 
     return ::so::internal::nameToString(*getIssuer);
   }
@@ -4027,17 +4027,17 @@ namespace x509 {
     using RetType = std::vector<x509::Revoked>;
     const size_t sz = x509::getRevokedCount(crl);
     if(0 == sz)
-      return ::so::internal::ok(RetType{});
+      return internal::ok(RetType{});
 
     STACK_OF(X509_REVOKED) *revokedStack = X509_CRL_get_REVOKED(&crl);
     if(!revokedStack)
-        return ::so::internal::err<RetType>();
+        return internal::err<RetType>();
 
     RetType ret(sz);
     int index = 0;
     std::generate_n(ret.begin(), sz, [&revokedStack, &index]{return ::so::internal::getRevoked(revokedStack, index++);});
 
-    return ::so::internal::ok(std::move(ret));
+    return internal::ok(std::move(ret));
   }
   
   Result<Bytes> getSignature(const X509_CRL &crl)
@@ -4047,12 +4047,12 @@ namespace x509 {
     const X509_ALGOR *palg = nullptr;
     X509_CRL_get0_signature(&crl, &psig, &palg);
     if(!palg || !psig)
-      return ::so::internal::err<Bytes>();
+      return internal::err<Bytes>();
 
     Bytes rawDerSequence(static_cast<size_t>(psig->length));
     std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
 
-    return ::so::internal::ok(std::move(rawDerSequence));
+    return internal::ok(std::move(rawDerSequence));
   }
   
   nid::Nid getSignatureAlgorithm(const X509_CRL &crl)
