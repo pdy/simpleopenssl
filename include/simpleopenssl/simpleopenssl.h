@@ -2171,7 +2171,7 @@ namespace internal {
       return ::so::internal::err(false); 
    
     const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
-    return result == 1 ? ::so::internal::ok(true) : result == 0 ? ::so::internal::ok(false) : ::so::internal::err<bool>();
+    return result == 1 ? ::so::internal::ok(true) : result == 0 ? ::so::internal::ok(false) : internal::err<bool>();
   }
 
   Result<Bytes> rsaSign(int digestNid, const Bytes &digest, RSA &privKey)
@@ -2880,7 +2880,7 @@ namespace ecdsa {
   {
     const auto digest = hash::sha1(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
@@ -2889,7 +2889,7 @@ namespace ecdsa {
   {
     const auto digest = hash::sha224(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
@@ -2898,7 +2898,7 @@ namespace ecdsa {
   {
     const auto digest = hash::sha256(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
@@ -2907,7 +2907,7 @@ namespace ecdsa {
   {
     const auto digest = hash::sha384(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
@@ -2916,7 +2916,7 @@ namespace ecdsa {
   {
     const auto digest = hash::sha512(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
@@ -3389,7 +3389,7 @@ namespace rsa {
   {
     const auto digest = hash::sha1(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return ::so::internal::rsaVerify(NID_sha1, signature, digest.value, pubKey); 
   }
@@ -3398,7 +3398,7 @@ namespace rsa {
   {
     const auto digest = hash::sha224(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return ::so::internal::rsaVerify(NID_sha224, signature, digest.value, pubKey); 
   }
@@ -3407,7 +3407,7 @@ namespace rsa {
   {
     const auto digest = hash::sha256(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return ::so::internal::rsaVerify(NID_sha256, signature, digest.value, pubKey); 
   }
@@ -3416,7 +3416,7 @@ namespace rsa {
   {
     const auto digest = hash::sha384(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return ::so::internal::rsaVerify(NID_sha384, signature, digest.value, pubKey); 
   }
@@ -3425,7 +3425,7 @@ namespace rsa {
   {
     const auto digest = hash::sha512(message);
     if(!digest)
-      return ::so::internal::err<bool>(digest.opensslErrCode);
+      return internal::err<bool>(digest.opensslErrCode);
 
     return ::so::internal::rsaVerify(NID_sha512, signature, digest.value, pubKey); 
   }
