@@ -121,19 +121,19 @@ void handleCrl(const std::string &fileName)
       break;
   }
    
-  auto maybeIssuer = x509::getIssuer(*crl);
-  if(!maybeIssuer)
+  auto issuer = x509::getIssuer(*crl);
+  if(!issuer)
   {
-    log << maybeIssuer.msg();
+    log << issuer.msg();
     return;
   }
-  const auto issuer = maybeIssuer.moveValue();
+  
   log << "Issuer:";
-  log << "\tCommonName: " << issuer.commonName;
-  log << "\tCountryName: " << issuer.countryName;
-  log << "\tLocalityName: " << issuer.localityName;
-  log << "\tOrganizationName: " << issuer.organizationName;
-  log << "\tStateOrProvinceName: " << issuer.stateOrProvinceName;
+  log << "\tCommonName: " << issuer->commonName;
+  log << "\tCountryName: " << issuer->countryName;
+  log << "\tLocalityName: " << issuer->localityName;
+  log << "\tOrganizationName: " << issuer->organizationName;
+  log << "\tStateOrProvinceName: " << issuer->stateOrProvinceName;
 
   const auto extensions = x509::getExtensions(*crl);
   if(!extensions)
@@ -162,25 +162,25 @@ void handleCrl(const std::string &fileName)
     }
   }
 
-  const auto maybeRevoked = x509::getRevoked(*crl);
-  if(!maybeRevoked)
+  const auto revoked = x509::getRevoked(*crl);
+  if(!revoked)
   {
-    log << maybeRevoked.msg();
+    log << revoked.msg();
     return;
   }
   
-  const auto &revokedList = maybeRevoked.value;
+  const auto &revokedList = revoked.value;
   log << "Revoked Certificates ( " << revokedList.size() << " )" << (revokedList.empty() ? "" : ":");
   if(!revokedList.empty())
   {
-    for(const auto &revoked : revokedList)
+    for(const auto &revokedEl : revokedList)
     {
-      log << "\tSerial: " << bin2Hex(revoked.serialNumAsn1); 
-      log << "\t  Revocation date: " << revoked.dateISO860;
-      if(!revoked.extensions.empty())
+      log << "\tSerial: " << bin2Hex(revokedEl.serialNumAsn1); 
+      log << "\t  Revocation date: " << revokedEl.dateISO860;
+      if(!revokedEl.extensions.empty())
         log << "\t  CRL entry extensions:";
 
-      for(const auto &revExt : revoked.extensions)
+      for(const auto &revExt : revokedEl.extensions)
       {
         if(revExt.id != x509::CrlEntryExtensionId::UNDEF)
         {
@@ -214,14 +214,14 @@ void handleCrl(const std::string &fileName)
 
 void handleCert(const std::string &fileName)
 {
-  auto maybeX509 = x509::convertPemFileToX509(fileName);
-  if(!maybeX509)
+  auto x509 = x509::convertPemFileToX509(fileName);
+  if(!x509)
   {
-    log << maybeX509.msg();
+    log << x509.msg();
     return;
   }
 
-  auto cert = maybeX509.moveValue();
+  auto cert = x509.moveValue();
 
   const auto[version, versionRaw] = x509::getVersion(*cert);
   switch(version)
@@ -248,35 +248,34 @@ void handleCert(const std::string &fileName)
   }
   log << "Serial: " << bin2Hex(serial.value);
 
-  auto maybeSubject = x509::getSubject(*cert);
-  if(!maybeSubject)
+  auto subject = x509::getSubject(*cert);
+  if(!subject)
   {
-    log << maybeSubject.msg();
+    log << subject.msg();
     return;
   }
 
-  const auto subject = maybeSubject.moveValue();
   log << "Subject:";
-  log << "\tCommonName: " << subject.commonName;
-  log << "\tCountryName: " << subject.countryName;
-  log << "\tLocalityName: " << subject.localityName;
-  log << "\tOrganizationName: " << subject.organizationName;
-  log << "\tStateOrProvinceName: " << subject.stateOrProvinceName;
+  log << "\tCommonName: " << subject->commonName;
+  log << "\tCountryName: " << subject->countryName;
+  log << "\tLocalityName: " << subject->localityName;
+  log << "\tOrganizationName: " << subject->organizationName;
+  log << "\tStateOrProvinceName: " << subject->stateOrProvinceName;
 
   
-  auto maybeIssuer = x509::getIssuer(*cert);
-  if(!maybeIssuer)
+  auto issuer = x509::getIssuer(*cert);
+  if(!issuer)
   {
-    log << maybeIssuer.msg();
+    log << issuer.msg();
     return;
   }
-  const auto issuer = maybeIssuer.moveValue();
+  
   log << "Issuer:";
-  log << "\tCommonName: " << issuer.commonName;
-  log << "\tCountryName: " << issuer.countryName;
-  log << "\tLocalityName: " << issuer.localityName;
-  log << "\tOrganizationName: " << issuer.organizationName;
-  log << "\tStateOrProvinceName: " << issuer.stateOrProvinceName;
+  log << "\tCommonName: " << issuer->commonName;
+  log << "\tCountryName: " << issuer->countryName;
+  log << "\tLocalityName: " << issuer->localityName;
+  log << "\tOrganizationName: " << issuer->organizationName;
+  log << "\tStateOrProvinceName: " << issuer->stateOrProvinceName;
 
   const auto validity = x509::getValidity(*cert);
   if(!validity)
@@ -286,18 +285,17 @@ void handleCert(const std::string &fileName)
   }
 
   log << "Validity:";
-  log << "\tNot before: " << prettyString(validity.value.notBefore);
-  log << "\tNot after: " << prettyString(validity.value.notAfter);
+  log << "\tNot before: " << prettyString(validity->notBefore);
+  log << "\tNot after: " << prettyString(validity->notAfter);
 
-  auto maybePubKey = x509::getPubKey(*cert);
-  if(!maybePubKey)
+  auto pubKey = x509::getPubKey(*cert);
+  if(!pubKey)
   {
-    log << maybePubKey.msg();
+    log << pubKey.msg();
     return;
   }
   
-  auto pubKey = maybePubKey.moveValue(); 
-  const auto pubKeyBytes = evp::convertPubKeyToDer(*pubKey);
+  const auto pubKeyBytes = evp::convertPubKeyToDer(*pubKey.value);
   if(!pubKeyBytes)
   {
     log << pubKeyBytes.msg();
@@ -305,12 +303,12 @@ void handleCert(const std::string &fileName)
   }
  
   const std::string keyInfo = [&]{
-    if(auto rsa = evp::convertToRsa(*pubKey))
+    if(auto rsa = evp::convertToRsa(*pubKey.value))
     {
       auto key = rsa.moveValue();
       return "(" + std::to_string(static_cast<int>(rsa::getKeyBits(*key).value)) + " bit)";
     }
-    else if(auto ec = evp::convertToEcdsa(*pubKey))
+    else if(auto ec = evp::convertToEcdsa(*pubKey.value))
     {
       auto key = ec.moveValue();
       return ecdsa::convertCurveToString(ecdsa::getCurve(*key).value).value +
@@ -356,6 +354,7 @@ void handleCert(const std::string &fileName)
     log << sig.msg();
     return;
   } 
+
   const auto sigType = x509::getSignatureAlgorithm(*cert);
   log << "Signature: " << nid::getLongName(sigType).value;
   logHex(bin2Hex(sig.value), 36);
