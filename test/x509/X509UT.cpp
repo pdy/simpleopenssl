@@ -202,7 +202,7 @@ TEST(X509UT, getNonStandardX509Version)
   const auto actual = x509::getVersion(*cert);
 
   // THEN
-  EXPECT_EQ(x509::Version::vx, std::get<0>(actual));
+  EXPECT_EQ(x509::Version::NON_STANDARD, std::get<0>(actual));
   EXPECT_EQ(expectedNonStandardVersion, std::get<1>(actual));
 }
 
@@ -219,7 +219,7 @@ TEST(X509UT, getNonStandardX509VersionApiIntegrity)
 
   // THEN
   ASSERT_TRUE(setResult);
-  EXPECT_EQ(x509::Version::vx, std::get<0>(actual));
+  EXPECT_EQ(x509::Version::NON_STANDARD, std::get<0>(actual));
   EXPECT_EQ(expectedNonStandardVersion, std::get<1>(actual));
 }
 

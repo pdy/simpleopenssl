@@ -1674,7 +1674,8 @@ namespace x509 {
     v1 = 0,
     v2 = 1,
     v3 = 2,
-    vx = -1 
+    
+    NON_STANDARD = -1 
   };
 
   struct Revoked
@@ -3722,7 +3723,7 @@ namespace x509 {
   {
     const long version = X509_get_version(&cert);
     if(3 <= version || -1 >= version)
-      return std::make_tuple(Version::vx, version);
+      return std::make_tuple(Version::NON_STANDARD, version);
 
     return std::make_tuple(static_cast<Version>(version), version);
   }
@@ -4055,7 +4056,7 @@ namespace x509 {
   {
     const long version = X509_CRL_get_version(&crl);
     if(3 <= version || -1 >= version)
-      return std::make_tuple(Version::vx, version);
+      return std::make_tuple(Version::NON_STANDARD, version);
 
     return std::make_tuple(static_cast<Version>(version), version);
   }
