@@ -2513,12 +2513,11 @@ namespace asn1 {
 
   Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
   {
-    auto maybeBn = bignum::convertToBignum(bt);
-    if(!maybeBn)
+    auto bn = bignum::convertToBignum(bt);
+    if(!bn)
       return internal::err<ASN1_INTEGER_uptr>(); 
 
-    auto bn = maybeBn.moveValue();
-    auto integer = make_unique(BN_to_ASN1_INTEGER(bn.get(), nullptr));
+    auto integer = make_unique(BN_to_ASN1_INTEGER(bn.value.get(), nullptr));
     if(!integer)
       return internal::err<ASN1_INTEGER_uptr>();
 
@@ -2710,21 +2709,19 @@ namespace ecdsa {
 
   Result<Bytes> convertToDer(const Signature &signature)
   {
-    auto maybeR = bignum::convertToBignum(signature.r);
-    if(!maybeR)
-      return internal::err<Bytes>(maybeR.opensslErrCode);
+    auto r = bignum::convertToBignum(signature.r);
+    if(!r)
+      return internal::err<Bytes>(r.opensslErrCode);
 
-    auto maybeS = bignum::convertToBignum(signature.s);
-    if(!maybeS)
-      return internal::err<Bytes>(maybeS.opensslErrCode);
+    auto s = bignum::convertToBignum(signature.s);
+    if(!s)
+      return internal::err<Bytes>(s.opensslErrCode);
  
     auto sig = make_unique(ECDSA_SIG_new()); 
     if(!sig)
       return internal::err<Bytes>();
 
-    auto r = maybeR.moveValue();
-    auto s = maybeS.moveValue();
-    if(1 != ECDSA_SIG_set0(sig.get(), r.release(), s.release()))
+    if(1 != ECDSA_SIG_set0(sig.get(), r.value.release(), s.value.release()))
       return internal::err<Bytes>();
 
     const int derLen = i2d_ECDSA_SIG(sig.get(), nullptr); 
@@ -2746,20 +2743,20 @@ namespace ecdsa {
     if(!sig)
       return internal::err<Signature>();
 
-    const BIGNUM *r,*s;
-    ECDSA_SIG_get0(sig.get(), &r, &s);
+    const BIGNUM *rPtr,*sPtr;
+    ECDSA_SIG_get0(sig.get(), &rPtr, &sPtr);
 
-    auto maybeR = bignum::convertToBytes(*r);
-    if(!maybeR)
+    auto r = bignum::convertToBytes(*rPtr);
+    if(!r)
       return internal::err<Signature>();
 
-    auto maybeS = bignum::convertToBytes(*s);
-    if(!maybeS)
+    auto s = bignum::convertToBytes(*sPtr);
+    if(!s)
       return internal::err<Signature>();
  
     return internal::ok(Signature{
-      maybeR.moveValue(),
-      maybeS.moveValue(),
+      r.moveValue(),
+      s.moveValue(),
     });
   }
   
@@ -3630,12 +3627,11 @@ namespace x509 {
 
   Result<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical)
   {
-    auto maybeObj = asn1::encodeObject(oidNumerical);
-    if(!maybeObj)
-      return internal::err<CertExtension>(maybeObj.opensslErrCode);
+    auto obj = asn1::encodeObject(oidNumerical);
+    if(!obj)
+      return internal::err<CertExtension>(obj.opensslErrCode);
 
-    auto obj = maybeObj.moveValue();
-    const int loc = X509_get_ext_by_OBJ(&cert, obj.get(), -1);
+    const int loc = X509_get_ext_by_OBJ(&cert, obj.value.get(), -1);
     if(-1 == loc)
       return internal::err<CertExtension>();
 
@@ -3733,9 +3729,9 @@ namespace x509 {
 
   Result<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical)
   {
-    auto maybeAsn1Oid = asn1::encodeObject(oidNumerical);
-    if(!maybeAsn1Oid)
-      return internal::errVoid(maybeAsn1Oid.opensslErrCode);
+    auto asn1Oid = asn1::encodeObject(oidNumerical);
+    if(!asn1Oid)
+      return internal::errVoid(asn1Oid.opensslErrCode);
 
     auto extension = make_unique(X509_EXTENSION_new());
     if(!extension)
@@ -3744,8 +3740,7 @@ namespace x509 {
     if(1 != X509_EXTENSION_set_critical(extension.get(), static_cast<int>(critical)))
       return internal::errVoid();
 
-    auto asn1Oid = maybeAsn1Oid.moveValue();
-    if(1 != X509_EXTENSION_set_object(extension.get(), asn1Oid.get()))
+    if(1 != X509_EXTENSION_set_object(extension.get(), asn1Oid.value.get()))
       return internal::errVoid();
 
     if(1 != X509_EXTENSION_set_data(extension.get(), &octet))
@@ -3790,15 +3785,14 @@ namespace x509 {
 
   Result<void> setExtension(X509 &cert, const CertExtension &extension)
   {
-    auto maybeData = asn1::encodeOctet(extension.data);
-    if(!maybeData)
-      return internal::errVoid(maybeData.opensslErrCode);
+    auto data = asn1::encodeOctet(extension.data);
+    if(!data)
+      return internal::errVoid(data.opensslErrCode);
 
-    auto data = maybeData.moveValue();
     if(x509::CertExtensionId::UNDEF == extension.id)
-      return setCustomExtension(cert, extension.oidNumerical, *data, extension.critical);
+      return setCustomExtension(cert, extension.oidNumerical, *data.value, extension.critical);
 
-    return setExtension(cert, extension.id, *data, extension.critical);
+    return setExtension(cert, extension.id, *data.value, extension.critical);
   }
 
   Result<void> setIssuer(X509 &cert, const X509 &rootCert)
@@ -3815,12 +3809,11 @@ namespace x509 {
 
   Result<void> setIssuer(X509 &cert, const Issuer &info)
   {
-    auto maybeIssuer = internal::infoToX509Name(info);
-    if(!maybeIssuer)
-      return internal::errVoid(maybeIssuer.opensslErrCode);
+    auto issuer = internal::infoToX509Name(info);
+    if(!issuer)
+      return internal::errVoid(issuer.opensslErrCode);
 
-    auto getIssuer = maybeIssuer.moveValue();
-    if(1 != X509_set_issuer_name(&cert, getIssuer.get()))
+    if(1 != X509_set_issuer_name(&cert, issuer.value.get()))
       return internal::errVoid(); 
 
     return internal::okVoid();
@@ -3836,12 +3829,11 @@ namespace x509 {
  
   Result<void> setSerial(X509 &cert, const Bytes &bytes)
   {
-    auto maybeInt = asn1::encodeInteger(bytes);
-    if(!maybeInt)
-      return internal::errVoid(maybeInt.opensslErrCode);
+    auto integer = asn1::encodeInteger(bytes);
+    if(!integer)
+      return internal::errVoid(integer.opensslErrCode);
 
-    auto integer = maybeInt.moveValue();
-    if(1 != X509_set_serialNumber(&cert, integer.get()))
+    if(1 != X509_set_serialNumber(&cert, integer.value.get()))
       return internal::errVoid();
 
     return internal::okVoid();
@@ -3849,12 +3841,11 @@ namespace x509 {
 
   Result<void> setSubject(X509 &cert, const Subject &info)
   {
-    auto maybeSubject = internal::infoToX509Name(info); 
-    if(!maybeSubject)
-      return internal::errVoid(maybeSubject.opensslErrCode);
+    auto subject = internal::infoToX509Name(info); 
+    if(!subject)
+      return internal::errVoid(subject.opensslErrCode);
 
-    auto subject = maybeSubject.moveValue();
-    if(1 != X509_set_subject_name(&cert, subject.get()))
+    if(1 != X509_set_subject_name(&cert, subject.value.get()))
       return internal::errVoid();
 
     return internal::okVoid();
