@@ -1,6 +1,6 @@
 # Features
 * Simple API - **no fancy abstractions**, no templates in interface, just simple set of functions.
-* No custom processing added over OpenSSL - **if you got error, it came from OpenSSL**. Even IO is done by OpenSSL itself.
+* No custom crypto processing added over OpenSSL - **if you got error, it came from OpenSSL**. Even IO is done by OpenSSL itself.
 * Clear, unified error handling **without exceptions**.
 * All heap allocated OpenSSL **types encapsulated with unique pointers** with stateless deleters.
 
