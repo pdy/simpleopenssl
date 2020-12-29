@@ -57,8 +57,8 @@ if(!validity)
     return;
 }
 
-LOG_INF << "Cert not before: " << timetPrettyString(validity.value.notBefore);
-LOG_INF << "Cert not after: " << timetPrettyString(validity.value.notAfter);
+LOG_INF << "Cert not before: " << timetPrettyString(validity->notBefore);
+LOG_INF << "Cert not after: " << timetPrettyString(validity->notAfter);
 
 // ...............................
 
