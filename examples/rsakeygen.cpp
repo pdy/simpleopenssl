@@ -79,25 +79,25 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  auto maybeKey = so::rsa::create(static_cast<so::rsa::KeyBits>(keySize), static_cast<so::rsa::Exponent>(exponent));
-  if(!maybeKey)
+  auto key = so::rsa::create(static_cast<so::rsa::KeyBits>(keySize), static_cast<so::rsa::Exponent>(exponent));
+  if(!key)
   {
-    std::cout << "Error when generating the key: " << maybeKey.msg() << "\n";
+    std::cout << "Error when generating the key: " << key.msg() << "\n";
     return 0;
   }
   
   const std::string format = arg.get<std::string>("format");
-  auto key = maybeKey.moveValue();
+  
   if(format == "der")
-    return saveDer(*key, keySize);
+    return saveDer(*key.value, keySize);
   else if(format == "all")
   {
-    const auto pemRes = savePem(*key, keySize);
-    const auto derRes = saveDer(*key, keySize);
+    const auto pemRes = savePem(*key.value, keySize);
+    const auto derRes = saveDer(*key.value, keySize);
     return pemRes && derRes;
   }
   
-  return savePem(*key, keySize); 
+  return savePem(*key.value, keySize); 
 }
 
 int savePem(RSA &key, int keySize)
