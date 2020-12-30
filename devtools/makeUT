@@ -21,9 +21,17 @@
 # SOFTWARE.
 #
 
+rebuild="rebuild"
+
 pushd ./test/ &&
+cp makefiles/Makefile_incr ./Makefile &&
 if [ $# -ne 0 ]; then
-  make $1
+  if [ $1 == $rebuild ]; then
+    cp makefiles/Makefile_unif ./Makefile &&
+    make -j4
+  else
+    make $1
+  fi
 else
   make -j4
 fi

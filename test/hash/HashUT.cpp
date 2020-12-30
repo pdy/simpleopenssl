@@ -68,7 +68,7 @@ TEST_P(HashUT, hash)
   EXPECT_EQ(input.expectedHexString, utils::bin2Hex(strHash.value));
 }
 
-const auto testCases = ::testing::Values(
+const auto hashUTTestCases = ::testing::Values(
 
     HashTestInput{
       "md4",
@@ -130,6 +130,6 @@ const auto testCases = ::testing::Values(
 INSTANTIATE_TEST_CASE_P(
     Hash,
     HashUT,
-    testCases 
+    hashUTTestCases 
 );
 }}}
