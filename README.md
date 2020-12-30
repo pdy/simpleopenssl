@@ -39,7 +39,15 @@ if(!pemKey)
     return;
 }
 
-LOG_INF << "New key pem: " << pemKey.value;
+const auto pemPubKey = rsa::convertPubKeyToPem(*key.value);
+if(!pemPubKey)
+{
+    LOG_ERR << pemPubKey.msg();
+    return;
+}
+
+LOG_INF << "New priv key pem: " << pemKey.value;
+LOG_INF << "New pub key pem: " << pemPubKey.value;
 ```
 * Check certificate validity period
 ```cpp
