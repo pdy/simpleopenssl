@@ -1,5 +1,3 @@
-# SHELL=/bin/bash
-
 print-%  : ; @echo $* = $($*)
 
 CXX := clang++
@@ -50,7 +48,6 @@ unifiedTarget:
 	./unifiedfile_sym ../ecdsa ecdsa && \
 	./unifiedfile_sym ../evp evp && \
 	./unifiedfile_sym ../hash hash && \
-	./unifiedfile_sym ../nid nid && \
 	./unifiedfile_sym ../rsa rsa && \
 	./unifiedfile_sym ../x509 x509 && \
 	cd -
@@ -73,7 +70,6 @@ SRC_X509_TEST := $(wildcard $(TEST_PATH)/x509.cpp)
 SRC_ECDSA_TEST := $(wildcard $(TEST_PATH)/ecdsa.cpp)
 SRC_RSA_TEST := $(wildcard $(TEST_PATH)/rsa.cpp)
 SRC_HASH_TEST := $(wildcard $(TEST_PATH)/hash.cpp)
-SRC_NID_TEST := $(wildcard $(TEST_PATH)/nid.cpp)
 SRC_EVP_TEST := $(wildcard $(TEST_PATH)/evp.cpp)
 
 OBJS_TEST := $(patsubst $(TEST_PATH)/rest.cpp,$(OBJ_PATH)/rest.o, $(SRC_TEST))
@@ -81,7 +77,6 @@ OBJS_X509_TEST := $(patsubst $(TEST_PATH)/x509.cpp,$(OBJ_PATH)/x509.o, $(SRC_X50
 OBJS_ECDSA_TEST := $(patsubst $(TEST_PATH)/ecdsa.cpp,$(OBJ_PATH)/ecdsa.o, $(SRC_ECDSA_TEST))
 OBJS_RSA_TEST := $(patsubst $(TEST_PATH)/rsa.cpp,$(OBJ_PATH)/rsa.o, $(SRC_RSA_TEST))
 OBJS_HASH_TEST := $(patsubst $(TEST_PATH)/hash.cpp,$(OBJ_PATH)/hash.o, $(SRC_HASH_TEST))
-OBJS_NID_TEST := $(patsubst $(TEST_PATH)/nid.cpp,$(OBJ_PATH)/nid.o, $(SRC_NID_TEST))
 OBJS_EVP_TEST := $(patsubst $(TEST_PATH)/evp.cpp,$(OBJ_PATH)/evp.o, $(SRC_EVP_TEST))
 
 
@@ -89,7 +84,6 @@ $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	$(OBJS_X509_TEST) $(OBJS_HASH_TEST) \
 	$(OBJS_RSA_TEST) \
 	$(OBJS_ECDSA_TEST) \
-	$(OBJS_NID_TEST) \
 	$(OBJS_EVP_TEST)
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
 	@echo "$<"
