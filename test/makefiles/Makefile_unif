@@ -1,3 +1,5 @@
+# SHELL=/bin/bash
+
 print-%  : ; @echo $* = $($*)
 
 CXX := clang++
@@ -33,6 +35,37 @@ else
 	STRIP = echo
 endif
 
+.PHONY: all clean
+
+DESTBIN := $(BUILD)/bin
+OBJ_PATH := $(BUILD)/obj/unified
+
+all: unifiedTarget dist $(DESTBIN)/UnitTests copydata strip
+debug: all
+release: all
+
+unifiedTarget:
+	@cd $(TEST_PATH) && ./unifiedfile_sym ../ rest && cd - && \
+	cd $(TEST_PATH) && ./unifiedfile_sym ../ecdsa ecdsa && cd - && \
+	cd $(TEST_PATH) && ./unifiedfile_sym ../evp evp && cd - && \
+	cd $(TEST_PATH) && ./unifiedfile_sym ../hash hash && cd - && \
+	cd $(TEST_PATH) && ./unifiedfile_sym ../nid nid && cd - && \
+	cd $(TEST_PATH) && ./unifiedfile_sym ../rsa rsa && cd - && \
+	cd $(TEST_PATH) && ./unifiedfile_sym ../x509 x509 && cd -
+	
+dist:
+	@mkdir -p $(OBJ_PATH) \
+				$(DESTBIN)
+	
+clean:
+	@rm -r $(ROOT_BUILD)
+
+copydata:
+	@cp -r $(TEST_PATH)/../data $(DESTBIN)/
+
+strip:
+	$(STRIP) $(DESTBIN)/UnitTests
+
 SRC_TEST := $(wildcard $(TEST_PATH)/rest.cpp)
 SRC_X509_TEST := $(wildcard $(TEST_PATH)/x509.cpp)
 SRC_ECDSA_TEST := $(wildcard $(TEST_PATH)/ecdsa.cpp)
@@ -41,7 +74,6 @@ SRC_HASH_TEST := $(wildcard $(TEST_PATH)/hash.cpp)
 SRC_NID_TEST := $(wildcard $(TEST_PATH)/nid.cpp)
 SRC_EVP_TEST := $(wildcard $(TEST_PATH)/evp.cpp)
 
-OBJ_PATH := $(BUILD)/obj/unified
 OBJS_TEST := $(patsubst $(TEST_PATH)/rest.cpp,$(OBJ_PATH)/rest.o, $(SRC_TEST))
 
 OBJS_X509_TEST := $(patsubst $(TEST_PATH)/x509.cpp,$(OBJ_PATH)/x509.o, $(SRC_X509_TEST))
@@ -56,26 +88,6 @@ OBJS_NID_TEST := $(patsubst $(TEST_PATH)/nid.cpp,$(OBJ_PATH)/nid.o, $(SRC_NID_TE
 
 OBJS_EVP_TEST := $(patsubst $(TEST_PATH)/evp.cpp,$(OBJ_PATH)/evp.o, $(SRC_EVP_TEST))
 
-.PHONY: all clean
-
-DESTBIN := $(BUILD)/bin
-
-all: dist $(DESTBIN)/UnitTests copydata strip
-debug: all
-release: all
-
-dist:
-	@mkdir -p $(OBJ_PATH) \
-				$(DESTBIN)
-	
-clean:
-	@rm -r $(ROOT_BUILD)
-
-copydata:
-	@cp -r $(TEST_PATH)/../data $(DESTBIN)/
-
-strip:
-	$(STRIP) $(DESTBIN)/UnitTests
 
 $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	$(OBJS_X509_TEST) $(OBJS_HASH_TEST) \

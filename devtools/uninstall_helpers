@@ -29,3 +29,4 @@ fi
 so_path="$(cd "$(dirname "$1")"; pwd)/$(basename "$1")"
 
 rm $so_path/*_sym
+rm $so_path/test/unified/*_sym
