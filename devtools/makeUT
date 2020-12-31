@@ -29,6 +29,7 @@ if [ $# -ne 0 ]; then
   if [ $1 == $rebuild ]; then
     cp makefiles/Makefile_unif ./Makefile &&
     make clean
+    make unifiedTarget
     make -j4
   else
     make $1

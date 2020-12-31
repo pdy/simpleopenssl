@@ -32,6 +32,7 @@
 namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
+namespace ecdsa = ::so::ecdsa;
 
 TEST(X509UT, getIssuerOK)
 {

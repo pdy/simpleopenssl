@@ -40,18 +40,20 @@ endif
 DESTBIN := $(BUILD)/bin
 OBJ_PATH := $(BUILD)/obj/unified
 
-all: unifiedTarget dist $(DESTBIN)/UnitTests copydata strip
+all: dist $(DESTBIN)/UnitTests copydata strip
 debug: all
 release: all
 
 unifiedTarget:
-	@cd $(TEST_PATH) && ./unifiedfile_sym ../ rest && cd - && \
-	cd $(TEST_PATH) && ./unifiedfile_sym ../ecdsa ecdsa && cd - && \
-	cd $(TEST_PATH) && ./unifiedfile_sym ../evp evp && cd - && \
-	cd $(TEST_PATH) && ./unifiedfile_sym ../hash hash && cd - && \
-	cd $(TEST_PATH) && ./unifiedfile_sym ../nid nid && cd - && \
-	cd $(TEST_PATH) && ./unifiedfile_sym ../rsa rsa && cd - && \
-	cd $(TEST_PATH) && ./unifiedfile_sym ../x509 x509 && cd -
+	@cd $(TEST_PATH) && \
+	./unifiedfile_sym ../ rest &&  \
+	./unifiedfile_sym ../ecdsa ecdsa && \
+	./unifiedfile_sym ../evp evp && \
+	./unifiedfile_sym ../hash hash && \
+	./unifiedfile_sym ../nid nid && \
+	./unifiedfile_sym ../rsa rsa && \
+	./unifiedfile_sym ../x509 x509 && \
+	cd -
 	
 dist:
 	@mkdir -p $(OBJ_PATH) \
@@ -75,17 +77,11 @@ SRC_NID_TEST := $(wildcard $(TEST_PATH)/nid.cpp)
 SRC_EVP_TEST := $(wildcard $(TEST_PATH)/evp.cpp)
 
 OBJS_TEST := $(patsubst $(TEST_PATH)/rest.cpp,$(OBJ_PATH)/rest.o, $(SRC_TEST))
-
 OBJS_X509_TEST := $(patsubst $(TEST_PATH)/x509.cpp,$(OBJ_PATH)/x509.o, $(SRC_X509_TEST))
-
 OBJS_ECDSA_TEST := $(patsubst $(TEST_PATH)/ecdsa.cpp,$(OBJ_PATH)/ecdsa.o, $(SRC_ECDSA_TEST))
-
 OBJS_RSA_TEST := $(patsubst $(TEST_PATH)/rsa.cpp,$(OBJ_PATH)/rsa.o, $(SRC_RSA_TEST))
-
 OBJS_HASH_TEST := $(patsubst $(TEST_PATH)/hash.cpp,$(OBJ_PATH)/hash.o, $(SRC_HASH_TEST))
-
 OBJS_NID_TEST := $(patsubst $(TEST_PATH)/nid.cpp,$(OBJ_PATH)/nid.o, $(SRC_NID_TEST))
-
 OBJS_EVP_TEST := $(patsubst $(TEST_PATH)/evp.cpp,$(OBJ_PATH)/evp.o, $(SRC_EVP_TEST))
 
 

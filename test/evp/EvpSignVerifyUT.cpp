@@ -33,6 +33,7 @@
 namespace so { namespace ut { namespace evp {
 
 namespace evp = ::so::evp;
+namespace ecdsa = ::so::ecdsa;
 
 struct EvpSignVerifyInput
 {
