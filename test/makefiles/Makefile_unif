@@ -38,7 +38,7 @@ endif
 DESTBIN := $(BUILD)/bin
 OBJ_PATH := $(BUILD)/obj/unified
 
-all: dist $(DESTBIN)/UnitTests copydata strip
+all: dist $(DESTBIN)/UnitTests copydata # strip
 debug: all
 release: all
 
