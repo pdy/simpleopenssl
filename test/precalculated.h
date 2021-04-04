@@ -585,7 +585,7 @@ gfcKzw==
 -----END CERTIFICATE-----
 )";
 
-const static std::string meaninglessValidPemCert = R"(-----BEGIN CERTIFICATE-----
+const static std::string selfSignedCAPemCert = R"(-----BEGIN CERTIFICATE-----
 MIICiTCCAg+gAwIBAgIQH0evqmIAcFBUTAGem2OZKjAKBggqhkjOPQQDAzCBhTEL
 MAkGA1UEBhMCR0IxGzAZBgNVBAgTEkdyZWF0ZXIgTWFuY2hlc3RlcjEQMA4GA1UE
 BxMHU2FsZm9yZDEaMBgGA1UEChMRQ09NT0RPIENBIExpbWl0ZWQxKzApBgNVBAMT

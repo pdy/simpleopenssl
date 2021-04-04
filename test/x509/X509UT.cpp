@@ -85,7 +85,7 @@ TEST(X509UT, getSubjectOK)
 TEST(X509UT, setGetIssuerWithAnotherCertAPIIntegrityOK)
 {
   // GIVEN
-  auto maybeRootCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeRootCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeRootCert);
   auto rootCert = maybeRootCert.moveValue();
   auto rootCertSubj = x509::getSubject(*rootCert);
@@ -446,7 +446,7 @@ TEST(X509UT, getSerialNumberWithPrecalculatedData)
   // GIVEN
   const std::vector<uint8_t> expected {0x1f, 0x47, 0xaf, 0xaa, 0x62, 0x00, 0x70, 0x50, 0x54, 0x4c, 0x01, 0x9e, 0x9b, 0x63, 0x99, 0x2a};
 
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -537,7 +537,7 @@ TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
 TEST(X509UT, getEcdsaSignature)
 {
   // GIVEN
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -553,15 +553,11 @@ TEST(X509UT, getEcdsaSignature)
 
 TEST(X509UT, isSelfSignedShouldBeTrue)
 {
-  // GIVEN  
-  auto name = so::make_unique(X509_NAME_new());
-  ASSERT_TRUE(X509_NAME_add_entry_by_NID(name.get(), NID_countryName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("UK"), -1, -1, 0));
-  ASSERT_TRUE(X509_NAME_add_entry_by_NID(name.get(), NID_organizationName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Unorganized"), -1, -1, 0));
-  ASSERT_TRUE(X509_NAME_add_entry_by_NID(name.get(), NID_commonName, MBSTRING_ASC, reinterpret_cast<const unsigned char*>("Joe Briggs"), -1, -1, 0));
+   // GIVEN
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
 
-  auto cert = so::make_unique(X509_new());
-  ASSERT_TRUE(X509_set_issuer_name(cert.get(), name.get()));
-  ASSERT_TRUE(X509_set_subject_name(cert.get(), name.get()));
 
   // WHEN
   const auto isSelfSigned = x509::isSelfSigned(*cert);
@@ -597,7 +593,7 @@ TEST(X509UT, isSelfSignedShouldBeFalse)
 TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
 {
   // GIVEN
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -619,7 +615,7 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
 TEST(X509UT, isCA)
 {
   // GIVEN
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -630,7 +626,7 @@ TEST(X509UT, isCA)
 TEST(X509UT, getPubKeyAlgo)
 {
   // GIVEN
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -641,7 +637,7 @@ TEST(X509UT, getPubKeyAlgo)
 TEST(X509UT, getSignatureAlgo)
 {
   // GIVEN
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 

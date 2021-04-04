@@ -64,7 +64,7 @@ TEST(X509CertExtensionsUT, getExtensionCountShouldEqualToZero)
 TEST(X509CertExtensionsUT, getExtensionsCountShouldEqualToThree)
 {
   // GIVEN
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -103,7 +103,7 @@ TEST(X509CertExtensionsUT, getExtensions)
     } 
   };
   
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -131,7 +131,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsage)
     bytes::fromString("Certificate Sign, CRL Sign")
   };
 
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -155,7 +155,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsageByOidNumerical)
     bytes::fromString("Certificate Sign, CRL Sign")
   };
 
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -170,7 +170,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsageByOidNumerical)
 TEST(X509CertExtensionsUT, getExtensionShouldReturnErrorWhenExtensionDoesNotExists)
 {
   // GIVEN 
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
 
@@ -306,7 +306,7 @@ TEST(X509CertExtensionsUT, addCustomExtensionToAlreadyExistingStandardExtensions
     "1.3.6.1.4.1.343.2.7.2",
     {0xaa, 0xbb}
   }; 
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
   auto maybeData = so::asn1::encodeOctet(expected.data);

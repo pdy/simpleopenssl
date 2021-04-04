@@ -42,7 +42,7 @@ TEST(X509UT, pemStringToX509ShouldFail)
 TEST(X509UT, pemStringToX509ShouldSuccess)
 {
   // WHEN
-  auto cert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto cert = x509::convertPemToX509(data::selfSignedCAPemCert);
   
   // THEN
   EXPECT_TRUE(cert);
@@ -51,7 +51,7 @@ TEST(X509UT, pemStringToX509ShouldSuccess)
 TEST(X509UT, x509ToPem)
 {
   // GIVEN
-  const auto pemCert = data::meaninglessValidPemCert;
+  const auto pemCert = data::selfSignedCAPemCert;
   BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
   ASSERT_TRUE(bio);
   ASSERT_TRUE(BIO_write(bio.get(), pemCert.c_str(), static_cast<int>(pemCert.length())));

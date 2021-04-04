@@ -182,7 +182,7 @@ TEST(EvpKeyUT, derToPubKeyConversion_ok)
 TEST(EvpKeyUT, getKeyType)
 {
   // GIVEN
-  auto maybeCert = x509::convertPemToX509(data::meaninglessValidPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
   auto maybePubKey = x509::getPubKey(*cert);
