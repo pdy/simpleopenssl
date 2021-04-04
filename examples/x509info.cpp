@@ -116,7 +116,7 @@ void handleCrl(const std::string &fileName)
     case x509::Version::v3:
       log << "Version: 3 (" << versionRaw << ")";
       break;
-    case x509::Version::vx:
+    case x509::Version::NON_STANDARD:
       log << "Version: " << versionRaw;
       break;
   }
@@ -235,7 +235,7 @@ void handleCert(const std::string &fileName)
     case x509::Version::v3:
       log << "Version: 3 (" << versionRaw << ")";
       break;
-    case x509::Version::vx:
+    case x509::Version::NON_STANDARD:
       log << "Version: " << versionRaw;
       break;
   }
