@@ -32,6 +32,7 @@
 namespace so { namespace ut { namespace ecdsa {
 
 namespace ecdsa = ::so::ecdsa;
+namespace rsa = ::so::rsa;
 
 TEST(EcdsaKeyUT, pem2PubKeyConversion_shouldSuccess)
 {

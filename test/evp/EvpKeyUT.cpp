@@ -31,6 +31,7 @@
 namespace so { namespace ut { namespace evp {
 
 namespace evp = ::so::evp;
+namespace x509 = ::so::x509;
 
 TEST(EvpKeyUT, create)
 {

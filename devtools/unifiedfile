@@ -28,10 +28,10 @@ fi
 
 path=$1
 outputFile="$2.cpp"
-filenames=`ls $path/*.cpp`
+
+filenames=`find $path -name "*.cpp"`
 
 :> $outputFile
-
 
 for eachfile in $filenames
 do
