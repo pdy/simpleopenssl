@@ -21,21 +21,27 @@
 # SOFTWARE.
 #
 
-rebuild="rebuild"
+unif="unif"
+incr="incr"
+
+build=1
 
 pushd ./test/ &&
-cp makefiles/Makefile_incr ./Makefile &&
 if [ $# -ne 0 ]; then
-  if [ $1 == $rebuild ]; then
+  if [ $1 == $unif ]; then
     cp makefiles/Makefile_unif ./Makefile &&
     make clean
-    make unifiedTarget
-    make -j4
+  elif [ $1 == $incr ]; then
+    cp makefiles/Makefile_incr ./Makefile &&
+    make clean
   else
     make $1
+    build=0
   fi
-else
-  make -j4
+fi
+
+if [ $build -eq 1 ]; then
+  make -j4 
 fi
 
 popd

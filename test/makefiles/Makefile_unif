@@ -33,14 +33,24 @@ else
 	STRIP = echo
 endif
 
-.PHONY: all clean
+.PHONY: all clean unifiedTarget 
 
 DESTBIN := $(BUILD)/bin
 OBJ_PATH := $(BUILD)/obj/unified
 
-all: dist $(DESTBIN)/UnitTests copydata # strip
+all: post-build 
 debug: all
 release: all
+
+pre-build: unifiedTarget
+	@mkdir -p $(OBJ_PATH) $(DESTBIN) # prepare dist
+
+post-build: main-build
+	@cp -r $(TEST_PATH)/../data $(DESTBIN)/ # copydata
+	$(STRIP) $(DESTBIN)/UnitTests
+
+main-build: pre-build
+	@$(MAKE) --no-print-directory $(DESTBIN)/UnitTests	
 
 unifiedTarget:
 	@cd $(TEST_PATH) && \
@@ -52,18 +62,11 @@ unifiedTarget:
 	./unifiedfile_sym ../x509 x509 && \
 	cd -
 	
-dist:
-	@mkdir -p $(OBJ_PATH) \
-				$(DESTBIN)
 	
 clean:
 	@rm -r $(ROOT_BUILD)
 
-copydata:
-	@cp -r $(TEST_PATH)/../data $(DESTBIN)/
 
-strip:
-	$(STRIP) $(DESTBIN)/UnitTests
 
 SRC_TEST := $(wildcard $(TEST_PATH)/rest.cpp)
 SRC_X509_TEST := $(wildcard $(TEST_PATH)/x509.cpp)
