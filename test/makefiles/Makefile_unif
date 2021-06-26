@@ -88,10 +88,10 @@ $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	$(OBJS_RSA_TEST) \
 	$(OBJS_ECDSA_TEST) \
 	$(OBJS_EVP_TEST)
-	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
+	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
 	@echo "$<"
 
 $(OBJ_PATH)/%.o: $(TEST_PATH)/%.cpp
-	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@$(CXX) -ftime-trace $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
 	@echo "$<"
 
