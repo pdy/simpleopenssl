@@ -92,6 +92,6 @@ $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	@echo "$<"
 
 $(OBJ_PATH)/%.o: $(TEST_PATH)/%.cpp
-	@$(CXX) -ftime-trace $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
+	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
 	@echo "$<"
 
