@@ -33,7 +33,7 @@ else
 	STRIP = echo
 endif
 
-.PHONY: all clean unifiedTarget 
+.PHONY: all clean unifiedTarget precompHeader 
 
 DESTBIN := $(BUILD)/bin
 OBJ_PATH := $(BUILD)/obj/unified
@@ -42,7 +42,7 @@ all: post-build
 debug: all
 release: all
 
-pre-build: unifiedTarget
+pre-build: unifiedTarget 
 	@mkdir -p $(OBJ_PATH) $(DESTBIN) # prepare dist
 
 post-build: main-build
@@ -62,7 +62,10 @@ unifiedTarget:
 	./unifiedfile_sym ../x509 x509 && \
 	cd -
 	
-	
+precompHeader:
+	 $(CXX) -x c++-header -std=c++11 $(TEST_PATH)/../pch/pch.hpp -o $(TEST_PATH)/../pch/pch.hpp.pch $(INCLUDES)
+
+
 clean:
 	@rm -r $(ROOT_BUILD)
 
@@ -70,10 +73,10 @@ SRC_TEST := $(wildcard $(TEST_PATH)/*.cpp)
 OBJS_TEST := $(patsubst $(TEST_PATH)/%.cpp,$(OBJ_PATH)/%.o, $(SRC_TEST))
 
 $(DESTBIN)/UnitTests: $(OBJS_TEST)	
-	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
+	@$(CXX) -include $(TEST_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
 	@echo "$<"
 
 $(OBJ_PATH)/%.o: $(TEST_PATH)/%.cpp
-	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
+	@$(CXX) -include $(TEST_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
 	@echo "$<"
 
