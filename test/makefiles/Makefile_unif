@@ -42,7 +42,7 @@ all: post-build
 debug: all
 release: all
 
-pre-build: unifiedTarget
+pre-build: unifiedTarget precompHeader
 	@mkdir -p $(OBJ_PATH) $(DESTBIN) # prepare dist
 
 post-build: main-build
@@ -62,7 +62,10 @@ unifiedTarget:
 	./unifiedfile_sym ../x509 x509 && \
 	cd -
 	
-	
+precompHeader:
+	 #$(CXX) -c pch.hpp $(INCLUDES)
+
+
 clean:
 	@rm -r $(ROOT_BUILD)
 
