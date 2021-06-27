@@ -15,6 +15,7 @@ flags = [
     '-Wno-exit-time-destructors',
     '-Wno-padded',
     '-Wno-unused-function',
+    '-Wno-weak-vtables',
     '-std=c++11',
     '-stdlib=libstdc++',
     '-x','c++',
