@@ -66,28 +66,10 @@ unifiedTarget:
 clean:
 	@rm -r $(ROOT_BUILD)
 
+SRC_TEST := $(wildcard $(TEST_PATH)/*.cpp)
+OBJS_TEST := $(patsubst $(TEST_PATH)/%.cpp,$(OBJ_PATH)/%.o, $(SRC_TEST))
 
-
-SRC_TEST := $(wildcard $(TEST_PATH)/rest.cpp)
-SRC_X509_TEST := $(wildcard $(TEST_PATH)/x509.cpp)
-SRC_ECDSA_TEST := $(wildcard $(TEST_PATH)/ecdsa.cpp)
-SRC_RSA_TEST := $(wildcard $(TEST_PATH)/rsa.cpp)
-SRC_HASH_TEST := $(wildcard $(TEST_PATH)/hash.cpp)
-SRC_EVP_TEST := $(wildcard $(TEST_PATH)/evp.cpp)
-
-OBJS_TEST := $(patsubst $(TEST_PATH)/rest.cpp,$(OBJ_PATH)/rest.o, $(SRC_TEST))
-OBJS_X509_TEST := $(patsubst $(TEST_PATH)/x509.cpp,$(OBJ_PATH)/x509.o, $(SRC_X509_TEST))
-OBJS_ECDSA_TEST := $(patsubst $(TEST_PATH)/ecdsa.cpp,$(OBJ_PATH)/ecdsa.o, $(SRC_ECDSA_TEST))
-OBJS_RSA_TEST := $(patsubst $(TEST_PATH)/rsa.cpp,$(OBJ_PATH)/rsa.o, $(SRC_RSA_TEST))
-OBJS_HASH_TEST := $(patsubst $(TEST_PATH)/hash.cpp,$(OBJ_PATH)/hash.o, $(SRC_HASH_TEST))
-OBJS_EVP_TEST := $(patsubst $(TEST_PATH)/evp.cpp,$(OBJ_PATH)/evp.o, $(SRC_EVP_TEST))
-
-
-$(DESTBIN)/UnitTests: $(OBJS_TEST) \
-	$(OBJS_X509_TEST) $(OBJS_HASH_TEST) \
-	$(OBJS_RSA_TEST) \
-	$(OBJS_ECDSA_TEST) \
-	$(OBJS_EVP_TEST)
+$(DESTBIN)/UnitTests: $(OBJS_TEST)	
 	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
 	@echo "$<"
 
