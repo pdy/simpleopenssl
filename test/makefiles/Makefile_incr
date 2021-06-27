@@ -62,11 +62,11 @@ OBJS_EVP_TEST := $(patsubst $(TEST_PATH)/evp/%.cpp,$(OBJ_EVP_PATH)/%.o, $(SRC_EV
 
 DESTBIN := $(BUILD)/bin
 
-all: dist $(DESTBIN)/UnitTests copydata strip
+all: post-build 
 debug: all
 release: all
 
-dist:
+pre-build:
 	@mkdir -p $(OBJ_PATH) \
 		$(OBJ_X509_PATH) \
 		$(OBJ_HASH_PATH) \
@@ -74,15 +74,16 @@ dist:
 		$(OBJ_ECDSA_PATH) \
 		$(OBJ_EVP_PATH) \
 		$(DESTBIN)
-	
+
+post-build: main-build
+	@cp -r $(TEST_PATH)/data $(DESTBIN)/ # copydata
+	$(STRIP) $(DESTBIN)/UnitTests
+
+main-build: pre-build
+	$(MAKE) --no-print-directory $(DESTBIN)/UnitTests
+
 clean:
 	@rm -r $(ROOT_BUILD)
-
-copydata:
-	@cp -r $(TEST_PATH)/data $(DESTBIN)/
-
-strip:
-	$(STRIP) $(DESTBIN)/UnitTests
 
 $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	$(OBJS_X509_TEST) $(OBJS_HASH_TEST) \
