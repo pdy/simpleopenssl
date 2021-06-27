@@ -22,7 +22,7 @@
 */
 
 
-#include "pch.hpp"
+
 #include <gtest/gtest.h>
 #define SO_IMPLEMENTATION
 #include <simpleopenssl/simpleopenssl.h>

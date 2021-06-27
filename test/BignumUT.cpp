@@ -21,7 +21,7 @@
 *
 */
 
-#include "pch.hpp"
+
 #include <gtest/gtest.h>
 #include <simpleopenssl/simpleopenssl.h>
 #include <numeric>
