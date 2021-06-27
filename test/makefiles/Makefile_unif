@@ -63,7 +63,7 @@ unifiedTarget:
 	cd -
 	
 precompHeader:
-	 $(CXX) -x c++-header -std=c++11 pch.hpp -o pch.hpp.pch $(INCLUDES)
+	 $(CXX) -x c++-header -std=c++11 $(TEST_PATH)/../pch/pch.hpp -o $(TEST_PATH)/../pch/pch.hpp.pch $(INCLUDES)
 
 
 clean:
@@ -73,10 +73,10 @@ SRC_TEST := $(wildcard $(TEST_PATH)/*.cpp)
 OBJS_TEST := $(patsubst $(TEST_PATH)/%.cpp,$(OBJ_PATH)/%.o, $(SRC_TEST))
 
 $(DESTBIN)/UnitTests: $(OBJS_TEST)	
-	@$(CXX) -include pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
+	@$(CXX) -include $(TEST_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
 	@echo "$<"
 
 $(OBJ_PATH)/%.o: $(TEST_PATH)/%.cpp
-	@$(CXX) -include pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
+	@$(CXX) -include $(TEST_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
 	@echo "$<"
 
