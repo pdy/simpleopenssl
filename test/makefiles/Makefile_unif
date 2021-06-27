@@ -42,7 +42,7 @@ all: post-build
 debug: all
 release: all
 
-pre-build: unifiedTarget #precompHeader
+pre-build: unifiedTarget 
 	@mkdir -p $(OBJ_PATH) $(DESTBIN) # prepare dist
 
 post-build: main-build
