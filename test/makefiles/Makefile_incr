@@ -66,7 +66,7 @@ all: post-build
 debug: all
 release: all
 
-pre-build:
+pre-build: $(TEST_PATH)/pch.hpp.pch
 	@mkdir -p $(OBJ_PATH) \
 		$(OBJ_X509_PATH) \
 		$(OBJ_HASH_PATH) \
@@ -82,10 +82,12 @@ post-build: main-build
 main-build: pre-build
 	$(MAKE) --no-print-directory $(DESTBIN)/UnitTests
 
-precompHeader:
-	 $(CXX) -x c++-header -std=c++11 $(TEST_PATH)/pch.hpp -o $(TEST_PATH)/pch.hpp.pch $(INCLUDES)
+$(TEST_PATH)/pch.hpp.pch:
+	 @$(CXX) -x c++-header -std=c++11 $(TEST_PATH)/pch.hpp -o $@  $(INCLUDES)
+	 @echo "$@"
 
 clean:
+	@rm $(TEST_PATH)/pch.hpp.pch
 	@rm -r $(ROOT_BUILD)
 
 $(DESTBIN)/UnitTests: $(OBJS_TEST) \

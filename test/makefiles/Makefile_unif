@@ -33,7 +33,7 @@ else
 	STRIP = echo
 endif
 
-.PHONY: all clean unifiedTarget precompHeader 
+.PHONY: all clean unifiedTarget 
 
 DESTBIN := $(BUILD)/bin
 OBJ_PATH := $(BUILD)/obj/unified
@@ -42,7 +42,7 @@ all: post-build
 debug: all
 release: all
 
-pre-build: unifiedTarget 
+pre-build: unifiedTarget $(UNIFIED_PATH)/../pch.hpp.pch 
 	@mkdir -p $(OBJ_PATH) $(DESTBIN) # prepare dist
 
 post-build: main-build
@@ -62,11 +62,13 @@ unifiedTarget:
 	$(PROJ_ROOT)/devtools/unifiedfile ../rsa rsa && \
 	$(PROJ_ROOT)/devtools/unifiedfile ../x509 x509 && \
 	cd -
-	
-precompHeader:
-	 $(CXX) -x c++-header -std=c++11 $(UNIFIED_PATH)/../pch.hpp -o $(UNIFIED_PATH)/../pch.hpp.pch $(INCLUDES)
+
+$(UNIFIED_PATH)/../pch.hpp.pch: 
+	@$(CXX) -x c++-header -std=c++11 $(UNIFIED_PATH)/../pch.hpp -o $@ $(INCLUDES)
+	@echo "$@"
 
 clean:
+	@rm $(UNIFIED_PATH)/../pch.hpp.pch
 	@rm -r $(ROOT_BUILD)
 	@rm -r $(UNIFIED_PATH)
 

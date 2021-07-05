@@ -31,11 +31,9 @@ if [ $# -ne 0 ]; then
   if [ $1 == $unif ]; then
     cp makefiles/Makefile_unif ./Makefile &&
     make clean
-    make precompHeader
   elif [ $1 == $incr ]; then
     cp makefiles/Makefile_incr ./Makefile &&
     make clean
-    make precompHeader
   else
     make $1
     build=0
