@@ -28,4 +28,8 @@
 #include <chrono>
 #include <iterator>
 
+// so
+#include "precalculated.h"
+#include "utils.h"
+
 #endif
