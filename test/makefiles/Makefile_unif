@@ -53,6 +53,7 @@ main-build: pre-build
 	@$(MAKE) --no-print-directory $(DESTBIN)/UnitTests	
 
 unifiedTarget:
+	@mkdir -p $(TEST_PATH)
 	@cd $(TEST_PATH) && \
 	./unifiedfile_sym ../ rest &&  \
 	./unifiedfile_sym ../ecdsa ecdsa && \
