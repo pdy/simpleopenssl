@@ -6,7 +6,7 @@ STRIP := strip
 PROJ_ROOT := ..
 OPENSSL_PATH := $(PROJ_ROOT)/3rd/openssl_1.1.0f
 GTEST_PATH := $(PROJ_ROOT)/3rd/gtest
-TEST_PATH := $(PROJ_ROOT)/test/unified
+UNIFIED_PATH:= $(PROJ_ROOT)/test/unified
 
 # suppress GTEST warnings
 TEST_FLAGS := -Wno-global-constructors -Wno-exit-time-destructors -Wno-missing-prototypes -Wno-weak-vtables \
@@ -46,15 +46,15 @@ pre-build: unifiedTarget
 	@mkdir -p $(OBJ_PATH) $(DESTBIN) # prepare dist
 
 post-build: main-build
-	@cp -r $(TEST_PATH)/../data $(DESTBIN)/ # copydata
+	@cp -r $(UNIFIED_PATH)/../data $(DESTBIN)/ # copydata
 	$(STRIP) $(DESTBIN)/UnitTests
 
 main-build: pre-build
 	@$(MAKE) --no-print-directory $(DESTBIN)/UnitTests	
 
 unifiedTarget:
-	@mkdir -p $(TEST_PATH)
-	@cd $(TEST_PATH) && \
+	@mkdir -p $(UNIFIED_PATH)
+	@cd $(UNIFIED_PATH) && \
 	./unifiedfile_sym ../ rest &&  \
 	./unifiedfile_sym ../ecdsa ecdsa && \
 	./unifiedfile_sym ../evp evp && \
@@ -64,20 +64,20 @@ unifiedTarget:
 	cd -
 	
 precompHeader:
-	 $(CXX) -x c++-header -std=c++11 $(TEST_PATH)/../pch/pch.hpp -o $(TEST_PATH)/../pch/pch.hpp.pch $(INCLUDES)
-
+	 $(CXX) -x c++-header -std=c++11 $(UNIFIED_PATH)/../pch/pch.hpp -o $(UNIFIED_PATH)/../pch/pch.hpp.pch $(INCLUDES)
 
 clean:
 	@rm -r $(ROOT_BUILD)
+	@rm -r $(UNIFIED_PATH)
 
-SRC_TEST := $(wildcard $(TEST_PATH)/*.cpp)
-OBJS_TEST := $(patsubst $(TEST_PATH)/%.cpp,$(OBJ_PATH)/%.o, $(SRC_TEST))
+SRC_TEST := $(wildcard $(UNIFIED_PATH)/*.cpp)
+OBJS_TEST := $(patsubst $(UNIFIED_PATH)/%.cpp,$(OBJ_PATH)/%.o, $(SRC_TEST))
 
 $(DESTBIN)/UnitTests: $(OBJS_TEST)	
-	@$(CXX) -include $(TEST_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
+	@$(CXX) -include $(UNIFIED_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
 	@echo "$<"
 
-$(OBJ_PATH)/%.o: $(TEST_PATH)/%.cpp
-	@$(CXX) -include $(TEST_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
+$(OBJ_PATH)/%.o: $(UNIFIED_PATH)/%.cpp
+	@$(CXX) -include $(UNIFIED_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
 	@echo "$<"
 
