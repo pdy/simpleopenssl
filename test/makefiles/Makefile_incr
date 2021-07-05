@@ -83,7 +83,7 @@ main-build: pre-build
 	$(MAKE) --no-print-directory $(DESTBIN)/UnitTests
 
 precompHeader:
-	 $(CXX) -x c++-header -std=c++11 $(TEST_PATH)/pch/pch.hpp -o $(TEST_PATH)/pch/pch.hpp.pch $(INCLUDES)
+	 $(CXX) -x c++-header -std=c++11 $(TEST_PATH)/pch.hpp -o $(TEST_PATH)/pch.hpp.pch $(INCLUDES)
 
 clean:
 	@rm -r $(ROOT_BUILD)
@@ -93,30 +93,30 @@ $(DESTBIN)/UnitTests: $(OBJS_TEST) \
 	$(OBJS_RSA_TEST) \
 	$(OBJS_ECDSA_TEST) \
 	$(OBJS_EVP_TEST)
-	@$(CXX) -include $(TEST_PATH)/pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
+	@$(CXX) -include $(TEST_PATH)/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS)
 	@echo "$<"
 
 $(OBJ_PATH)/%.o: $(TEST_PATH)/%.cpp
-	@$(CXX) -include $(TEST_PATH)/pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@$(CXX) -include $(TEST_PATH)/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
 $(OBJ_X509_PATH)/%.o: $(TEST_PATH)/x509/%.cpp
-	@$(CXX) -include $(TEST_PATH)/pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@$(CXX) -include $(TEST_PATH)/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
 $(OBJ_HASH_PATH)/%.o: $(TEST_PATH)/hash/%.cpp
-	@$(CXX) -include $(TEST_PATH)/pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@$(CXX) -include $(TEST_PATH)/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
 $(OBJ_EVP_PATH)/%.o: $(TEST_PATH)/evp/%.cpp
-	@$(CXX) -include $(TEST_PATH)/pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@$(CXX) -include $(TEST_PATH)/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
 (OBJ_RSA_PATH)/%.o: $(TEST_PATH)/rsa/%.cpp
-	@$(CXX) -include $(TEST_PATH)/pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@$(CXX) -include $(TEST_PATH)/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 
 $(OBJ_ECDSA_PATH)/%.o: $(TEST_PATH)/ecdsa/%.cpp
-	@$(CXX) -include $(TEST_PATH)/pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
+	@$(CXX) -include $(TEST_PATH)/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^
 	@echo "$<"
 

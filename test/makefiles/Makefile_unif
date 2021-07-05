@@ -3,7 +3,7 @@ print-%  : ; @echo $* = $($*)
 CXX := clang++
 STRIP := strip
 
-PROJ_ROOT := ..
+PROJ_ROOT := $(PWD)/..
 OPENSSL_PATH := $(PROJ_ROOT)/3rd/openssl_1.1.0f
 GTEST_PATH := $(PROJ_ROOT)/3rd/gtest
 UNIFIED_PATH:= $(PROJ_ROOT)/test/unified
@@ -55,16 +55,16 @@ main-build: pre-build
 unifiedTarget:
 	@mkdir -p $(UNIFIED_PATH)
 	@cd $(UNIFIED_PATH) && \
-	./unifiedfile_sym ../ rest &&  \
-	./unifiedfile_sym ../ecdsa ecdsa && \
-	./unifiedfile_sym ../evp evp && \
-	./unifiedfile_sym ../hash hash && \
-	./unifiedfile_sym ../rsa rsa && \
-	./unifiedfile_sym ../x509 x509 && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../ rest &&  \
+	$(PROJ_ROOT)/devtools/unifiedfile ../ecdsa ecdsa && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../evp evp && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../hash hash && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../rsa rsa && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../x509 x509 && \
 	cd -
 	
 precompHeader:
-	 $(CXX) -x c++-header -std=c++11 $(UNIFIED_PATH)/../pch/pch.hpp -o $(UNIFIED_PATH)/../pch/pch.hpp.pch $(INCLUDES)
+	 $(CXX) -x c++-header -std=c++11 $(UNIFIED_PATH)/../pch.hpp -o $(UNIFIED_PATH)/../pch.hpp.pch $(INCLUDES)
 
 clean:
 	@rm -r $(ROOT_BUILD)
@@ -74,10 +74,10 @@ SRC_TEST := $(wildcard $(UNIFIED_PATH)/*.cpp)
 OBJS_TEST := $(patsubst $(UNIFIED_PATH)/%.cpp,$(OBJ_PATH)/%.o, $(SRC_TEST))
 
 $(DESTBIN)/UnitTests: $(OBJS_TEST)	
-	@$(CXX) -include $(UNIFIED_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
+	@$(CXX) -include $(UNIFIED_PATH)/../pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
 	@echo "$<"
 
 $(OBJ_PATH)/%.o: $(UNIFIED_PATH)/%.cpp
-	@$(CXX) -include $(UNIFIED_PATH)/../pch/pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
+	@$(CXX) -include $(UNIFIED_PATH)/../pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
 	@echo "$<"
 

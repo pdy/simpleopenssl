@@ -31,4 +31,3 @@ so_path="$(cd "$(dirname "$1")"; pwd)/$(basename "$1")"
 ln -sf $so_path/devtools/gdbUT $so_path/gdbUT_sym
 ln -sf $so_path/devtools/makeUT $so_path/makeUT_sym
 ln -sf $so_path/devtools/runUT $so_path/runUT_sym
-ln -sf $so_path/devtools/unifiedfile $so_path/test/unified/unifiedfile_sym
