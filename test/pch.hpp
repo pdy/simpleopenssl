@@ -1,5 +1,5 @@
-#ifndef PDY_PCH_H_
-#define PDY_PCH_H_
+#ifndef PDY_TEST_PCH_H_
+#define PDY_TEST_PCH_H_
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
