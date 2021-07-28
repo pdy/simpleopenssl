@@ -1683,7 +1683,7 @@ namespace x509 {
 
   //---- Cerificates----------
   //----------------------------------------------------------------------------------------------
-  X509_uptr create();
+  Result<X509_uptr> create();
 
   Result<X509_uptr> convertPemToX509(const std::string &pemCert);
   Result<std::string> convertX509ToPem(X509 &cert);
@@ -3479,9 +3479,13 @@ namespace x509 {
     return false;
   }
 
-  X509_uptr create()
+  Result<X509_uptr> create()
   {
-    return make_unique(X509_new());
+    auto ret = make_unique(X509_new());
+    if(!ret)
+      return internal::err<X509_uptr>();
+
+    return internal::ok(std::move(ret));
   }
 
   Result<X509_uptr> convertPemToX509(const std::string &pemCert)
