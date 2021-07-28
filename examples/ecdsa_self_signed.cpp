@@ -136,28 +136,25 @@ int main(int argc, char *argv[])
     log << evpKey.msg();
     return 0;
   }
-  log<<"debug"; 
+  
   if(const auto result = evp::assign(*evpKey.value, *key.value.release()); !result)
   {
     log << result.msg();
     return 0;
   }
-
-  log<<"debug 2"; 
+  
   if(const auto result = x509::setPubKey(*cert.value, *evpKey.value); !result)
   {
     log << result.msg();
     return 0;
   }
 
-  log<<"debug 3"; 
   if(const auto result = x509::signSha1(*cert.value, *evpKey.value); !result)
   {
     log << result.msg();
     return 0;
   }
 
-  log<<"debug 4"; 
   /*
   if(format == "pem")
   {
