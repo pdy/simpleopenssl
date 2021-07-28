@@ -105,6 +105,37 @@ void handleCrl(const std::string &fileName)
   auto crl = maybeX509.moveValue();
 
   const auto[version, versionRaw] = x509::getVersion(*crl);
+    
+  auto issuer = x509::getIssuer(*crl);
+  if(!issuer)
+  {
+    log << issuer.msg();
+    return;
+  }
+  
+  const auto extensions = x509::getExtensions(*crl);
+  if(!extensions)
+  {
+    log << extensions.msg();
+    return;
+  }
+
+  const auto revoked = x509::getRevoked(*crl);
+  if(!revoked)
+  {
+    log << revoked.msg();
+    return;
+  } 
+
+  const auto sig = x509::getSignature(*crl);
+  if(!sig)
+  {
+    log << sig.msg();
+    return;
+  }
+
+  // print
+  
   switch(version)
   {
     case x509::Version::v1:
@@ -120,14 +151,7 @@ void handleCrl(const std::string &fileName)
       log << "Version: " << versionRaw;
       break;
   }
-   
-  auto issuer = x509::getIssuer(*crl);
-  if(!issuer)
-  {
-    log << issuer.msg();
-    return;
-  }
-  
+
   log << "Issuer:";
   log << "\tCommonName: " << issuer->commonName;
   log << "\tCountryName: " << issuer->countryName;
@@ -135,12 +159,6 @@ void handleCrl(const std::string &fileName)
   log << "\tOrganizationName: " << issuer->organizationName;
   log << "\tStateOrProvinceName: " << issuer->stateOrProvinceName;
 
-  const auto extensions = x509::getExtensions(*crl);
-  if(!extensions)
-  {
-    log << extensions.msg();
-    return;
-  }
   log << "ExtensionCount: " << extensions->size();
 
   if(!extensions->empty())
@@ -162,13 +180,6 @@ void handleCrl(const std::string &fileName)
     }
   }
 
-  const auto revoked = x509::getRevoked(*crl);
-  if(!revoked)
-  {
-    log << revoked.msg();
-    return;
-  }
-  
   const auto &revokedList = revoked.value;
   log << "Revoked Certificates ( " << revokedList.size() << " )" << (revokedList.empty() ? "" : ":");
   if(!revokedList.empty())
@@ -200,16 +211,9 @@ void handleCrl(const std::string &fileName)
     }
   }
 
-  const auto sig = x509::getSignature(*crl);
-  if(!sig)
-  {
-    log << sig.msg();
-    return;
-  } 
   const auto sigType = x509::getSignatureAlgorithm(*crl);
   log << "Signature: " << nid::getLongName(sigType).value;
   logHex(bin2Hex(sig.value), 36);
-
 }
 
 void handleCert(const std::string &fileName)
@@ -298,7 +302,8 @@ void handleCert(const std::string &fileName)
   } 
 
 
-   // print
+  // print
+
   switch(version)
   {
     case x509::Version::v1:
