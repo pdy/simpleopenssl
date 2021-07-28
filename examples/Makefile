@@ -37,11 +37,12 @@ main-build: pre-build
 	@$(MAKE) --no-print-directory $(BUILD)/hashfile
 	@$(MAKE) --no-print-directory $(BUILD)/rsakeygen
 	@$(MAKE) --no-print-directory $(BUILD)/x509info
+	@$(MAKE) --no-print-directory $(BUILD)/ecdsa_self_signed
 
 clean:
 	@rm -r ./bin
 
-PROGRAMS: $(BUILD)/hashfile $(BUILD)/rsakeygen $(BUILD)/x509info $(BUILD)/ecdsa_self_signed
+# PROGRAMS: $(BUILD)/hashfile $(BUILD)/rsakeygen $(BUILD)/x509info $(BUILD)/ecdsa_self_signed
 
 $(BUILD)/%: ./%.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LD_FLAGS) $(LD_LIBS)
