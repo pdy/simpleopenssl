@@ -224,21 +224,6 @@ void handleCert(const std::string &fileName)
   auto cert = x509.moveValue();
 
   const auto[version, versionRaw] = x509::getVersion(*cert);
-  switch(version)
-  {
-    case x509::Version::v1:
-      log << "Version: 1 (" << versionRaw << ")";
-      break;
-    case x509::Version::v2:
-      log << "Version: 2 (" << versionRaw << ")";
-      break;
-    case x509::Version::v3:
-      log << "Version: 3 (" << versionRaw << ")";
-      break;
-    case x509::Version::NON_STANDARD:
-      log << "Version: " << versionRaw;
-      break;
-  }
   
   const auto serial = x509::getSerialNumber(*cert);
   if(!serial)
@@ -246,7 +231,6 @@ void handleCert(const std::string &fileName)
     log << serial.msg();
     return;
   }
-  log << "Serial: " << bin2Hex(serial.value);
 
   auto subject = x509::getSubject(*cert);
   if(!subject)
@@ -255,14 +239,6 @@ void handleCert(const std::string &fileName)
     return;
   }
 
-  log << "Subject:";
-  log << "\tCommonName: " << subject->commonName;
-  log << "\tCountryName: " << subject->countryName;
-  log << "\tLocalityName: " << subject->localityName;
-  log << "\tOrganizationName: " << subject->organizationName;
-  log << "\tStateOrProvinceName: " << subject->stateOrProvinceName;
-
-  
   auto issuer = x509::getIssuer(*cert);
   if(!issuer)
   {
@@ -270,23 +246,12 @@ void handleCert(const std::string &fileName)
     return;
   }
   
-  log << "Issuer:";
-  log << "\tCommonName: " << issuer->commonName;
-  log << "\tCountryName: " << issuer->countryName;
-  log << "\tLocalityName: " << issuer->localityName;
-  log << "\tOrganizationName: " << issuer->organizationName;
-  log << "\tStateOrProvinceName: " << issuer->stateOrProvinceName;
-
   const auto validity = x509::getValidity(*cert);
   if(!validity)
   {
     log << validity.msg();
     return;
   }
-
-  log << "Validity:";
-  log << "\tNot before: " << prettyString(validity->notBefore);
-  log << "\tNot after: " << prettyString(validity->notAfter);
 
   auto pubKey = x509::getPubKey(*cert);
   if(!pubKey)
@@ -316,10 +281,7 @@ void handleCert(const std::string &fileName)
     }
 
     return std::string(); 
-  }();
-
-  log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value << " " << keyInfo;
-  logHex(bin2Hex(pubKeyBytes.value), 30);
+  }(); 
 
   const auto extensions = x509::getExtensions(*cert);
   if(!extensions)
@@ -327,8 +289,57 @@ void handleCert(const std::string &fileName)
     log << extensions.msg();
     return;
   }
+   
+  const auto sig = x509::getSignature(*cert);
+  if(!sig)
+  {
+    log << sig.msg();
+    return;
+  } 
+
+
+   // print
+  switch(version)
+  {
+    case x509::Version::v1:
+      log << "Version: 1 (" << versionRaw << ")";
+      break;
+    case x509::Version::v2:
+      log << "Version: 2 (" << versionRaw << ")";
+      break;
+    case x509::Version::v3:
+      log << "Version: 3 (" << versionRaw << ")";
+      break;
+    case x509::Version::NON_STANDARD:
+      log << "Version: " << versionRaw;
+      break;
+  }
+    
+  log << "Serial: " << bin2Hex(serial.value);
+
+  log << "Subject:";
+  log << "\tCommonName: " << subject->commonName;
+  log << "\tCountryName: " << subject->countryName;
+  log << "\tLocalityName: " << subject->localityName;
+  log << "\tOrganizationName: " << subject->organizationName;
+  log << "\tStateOrProvinceName: " << subject->stateOrProvinceName;
+
+  log << "Issuer:";
+  log << "\tCommonName: " << issuer->commonName;
+  log << "\tCountryName: " << issuer->countryName;
+  log << "\tLocalityName: " << issuer->localityName;
+  log << "\tOrganizationName: " << issuer->organizationName;
+  log << "\tStateOrProvinceName: " << issuer->stateOrProvinceName;
+
+  log << "Validity:";
+  log << "\tNot before: " << prettyString(validity->notBefore);
+  log << "\tNot after: " << prettyString(validity->notAfter);
+
+  log << "PublicKey: " << nid::getLongName(x509::getPubKeyAlgorithm(*cert)).value << " " << keyInfo;
+  logHex(bin2Hex(pubKeyBytes.value), 30);
+
   log << "ExtensionCount: " << extensions->size();
-  
+
   if(!extensions->empty())
   {
     for(const auto &ext : extensions.value)
@@ -347,13 +358,6 @@ void handleCert(const std::string &fileName)
       }
     }
   }
- 
-  const auto sig = x509::getSignature(*cert);
-  if(!sig)
-  {
-    log << sig.msg();
-    return;
-  } 
 
   const auto sigType = x509::getSignatureAlgorithm(*cert);
   log << "Signature: " << nid::getLongName(sigType).value;
