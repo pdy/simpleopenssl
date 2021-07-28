@@ -38,7 +38,7 @@ TEST(EvpKeyUT, create)
   // WHEN
   auto evp = evp::create();
   ASSERT_TRUE(evp);
-  const auto type = evp::getKeyType(*evp);
+  const auto type = evp::getKeyType(*evp.value);
 
   // THEN
   EXPECT_EQ(evp::KeyType::NONE, type);

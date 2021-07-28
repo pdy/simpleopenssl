@@ -360,7 +360,7 @@ namespace evp {
     DH    = EVP_PKEY_DH
   };
 
-  EVP_PKEY_uptr create();
+  Result<EVP_PKEY_uptr> create();
 
   Result<void> assign(EVP_PKEY &evp, RSA &rsa);
   Result<void> assign(EVP_PKEY &evp, EC_KEY &ec);
@@ -2915,9 +2915,13 @@ namespace ecdsa {
 } //namespace ecdsa
 
 namespace evp {
-  EVP_PKEY_uptr create()
+  Result<EVP_PKEY_uptr> create()
   {
-    return make_unique(EVP_PKEY_new());
+    auto key = make_unique(EVP_PKEY_new());
+    if(!key)
+      return internal::err<EVP_PKEY_uptr>();
+
+    return internal::ok(std::move(key)); 
   }
 
   Result<void> assign(EVP_PKEY &evp, RSA &rsa)
