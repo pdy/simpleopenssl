@@ -16,6 +16,8 @@ flags = [
     '-Wno-padded',
     '-Wno-unused-function',
     '-Wno-weak-vtables',
+    '-Wno-missing-braces',
+    '-Wno-missing-field-initializers',
     '-std=c++11',
     '-stdlib=libstdc++',
     '-x','c++',

@@ -24,19 +24,24 @@ endif
 
 .PHONY: all clean
 
-all: dist PROGRAMS strip
+all: post-build 
 debug: all
 
-dist:
+pre-build:
 	@mkdir -p $(BUILD) 
-	
+
+post-build: main-build
+	$(STRIP) $(BUILD)/*
+
+main-build: pre-build
+	@$(MAKE) --no-print-directory $(BUILD)/hashfile
+	@$(MAKE) --no-print-directory $(BUILD)/rsakeygen
+	@$(MAKE) --no-print-directory $(BUILD)/x509info
+
 clean:
 	@rm -r ./bin
 
-strip:
-	$(STRIP) $(BUILD)/*
-
-PROGRAMS: $(BUILD)/hashfile $(BUILD)/rsakeygen $(BUILD)/x509info
+PROGRAMS: $(BUILD)/hashfile $(BUILD)/rsakeygen $(BUILD)/x509info $(BUILD)/ecdsa_self_signed
 
 $(BUILD)/%: ./%.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LD_FLAGS) $(LD_LIBS)
