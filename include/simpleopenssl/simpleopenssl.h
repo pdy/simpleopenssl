@@ -49,6 +49,7 @@
 #include <cstring>
 #include <chrono>
 #include <iterator>
+#include <sstream>
 
 namespace so {
 
