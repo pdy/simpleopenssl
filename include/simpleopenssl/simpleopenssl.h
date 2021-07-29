@@ -253,7 +253,7 @@ namespace asn1 {
 } // namepsace asn1
 
 namespace bignum {
-  BIGNUM_uptr create();
+  Result<BIGNUM_uptr> create();
 
   Result<BIGNUM_uptr> convertToBignum(const Bytes &bt);
   Result<Bytes> convertToBytes(const BIGNUM &bn);
@@ -313,7 +313,7 @@ namespace ecdsa {
   };
 
 
-  EC_KEY_uptr create();
+  Result<EC_KEY_uptr> create();
   Result<EC_KEY_uptr> create(Curve curve);
 
   Result<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
@@ -1509,7 +1509,7 @@ namespace rsa {
     _65537_ = RSA_F4
   };
 
-  RSA_uptr create(); 
+  Result<RSA_uptr> create(); 
   Result<RSA_uptr> create(KeyBits keySize, Exponent exponent = Exponent::_65537_);
 
   Result<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
@@ -1732,7 +1732,7 @@ namespace x509 {
   
   //---- Revocation ----------
   //---------------------------------------------------------------------------------------------- 
-  X509_CRL_uptr createCrl();
+  Result<X509_CRL_uptr> createCrl();
 
   Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
   Result<std::string> convertCrlToPem(X509_CRL &crl);
@@ -2548,9 +2548,13 @@ namespace asn1 {
 } // namespace asn1
 
 namespace bignum {
-  BIGNUM_uptr create()
+  Result<BIGNUM_uptr> create()
   {
-    return make_unique(BN_new());
+    auto ret = make_unique(BN_new());
+    if(!ret)
+      return internal::err<BIGNUM_uptr>();
+
+    return internal::ok(std::move(ret));
   }
 
   Result<Bytes> convertToBytes(const BIGNUM &bn)
@@ -2805,9 +2809,13 @@ namespace ecdsa {
     return internal::ok(std::move(evpKey));
   }
 
-  EC_KEY_uptr create()
+  Result<EC_KEY_uptr> create()
   {
-    return make_unique(EC_KEY_new());
+    auto ret = make_unique(EC_KEY_new());
+    if(!ret)
+      return internal::err<EC_KEY_uptr>();
+
+    return internal::ok(std::move(ret));
   }
 
   Result<EC_KEY_uptr> create(Curve curve)
@@ -3293,9 +3301,13 @@ namespace rsa {
     return internal::ok(true);
   }
 
-  RSA_uptr create()
+  Result<RSA_uptr> reate()
   {
-    return make_unique(RSA_new());
+    auto ret = make_unique(RSA_new());
+    if(!ret)
+      return internal::err<RSA_uptr>();
+
+    return internal::ok(std::move(ret));
   }
 
   Result<RSA_uptr> create(KeyBits keySize, Exponent exponent)
@@ -3890,9 +3902,13 @@ namespace x509 {
     return internal::okVoid();
   }
 
-  X509_CRL_uptr createCrl()
+  Result<X509_CRL_uptr> createCrl()
   {
-    return make_unique(X509_CRL_new());
+    auto ret = make_unique(X509_CRL_new());
+    if(!ret)
+      return internal::err<X509_CRL_uptr>();
+
+    return internal::ok(std::move(ret));
   }
 
   Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl)
