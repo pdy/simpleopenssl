@@ -78,8 +78,8 @@ int main(int argc, char *argv[])
     return std::string{"key"};
   }();
 
-  const auto certPath = certName + format;
-  const auto keyPath = keyName + format;
+  const auto certPath = certName + "." + format;
+  const auto keyPath = keyName + "." + format;
 
   auto cert = x509::create();
   if(!cert)
@@ -155,16 +155,23 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  /*
   if(format == "pem")
   {
+    /*
     if(const auto result = evp::converKe(*cert.value, *evpKey.value); !result)
     {
       log << result.msg();
       return 0;
     }
+    */
+
+    if(const auto result = x509::convertX509ToPemFile(*cert.value, certPath); !result)
+    {
+      log << result.msg();
+      return 0;
+    }
+
   }
-  */
 
 
   return 0;
