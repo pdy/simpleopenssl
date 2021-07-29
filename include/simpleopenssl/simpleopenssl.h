@@ -3588,7 +3588,7 @@ namespace x509 {
 
   Result<size_t> signSha1(X509 &cert, EVP_PKEY &pkey)
   {
-    return internal::signCert(cert, pkey, EVP_sha256());  
+    return internal::signCert(cert, pkey, EVP_sha1());  
   }
 
   Result<size_t> signSha256(X509 &cert, EVP_PKEY &key)
