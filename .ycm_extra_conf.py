@@ -18,6 +18,7 @@ flags = [
     '-Wno-weak-vtables',
     '-Wno-missing-braces',
     '-Wno-missing-field-initializers',
+    '-Wno-deprecated-copy-dtor',
     '-std=c++11',
     '-stdlib=libstdc++',
     '-x','c++',
