@@ -1691,6 +1691,8 @@ namespace x509 {
   Result<void> convertX509ToPemFile(X509 &cert, const std::string &filePath);
   Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
 
+  Result<X509_uptr> copy(X509 &cert);
+
   Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
   Result<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
   Result<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical);
@@ -3548,6 +3550,24 @@ namespace x509 {
       return internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
+    if(!ret)
+      return internal::err<X509_uptr>();
+
+    return internal::ok(std::move(ret));
+  }
+
+  Result<X509_uptr> copy(X509 &cert)
+  {
+    unsigned char *buf = nullptr;
+    const int len = i2d_X509(&cert, &buf);
+    if(0 > len)
+      return internal::err<X509_uptr>();
+
+    const auto freeOpenssl = [](unsigned char *ptr) { OPENSSL_free(ptr); };
+    std::unique_ptr<unsigned char[], decltype(freeOpenssl)> buf_uptr(buf, freeOpenssl);
+
+    const unsigned char *it = buf_uptr.get();
+    auto ret = make_unique(d2i_X509(nullptr, &it, len));
     if(!ret)
       return internal::err<X509_uptr>();
 

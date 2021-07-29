@@ -646,4 +646,19 @@ TEST(X509UT, getSignatureAlgo)
   ASSERT_EQ(nid::Nid::ECDSA_WITH_SHA384, x509::getSignatureAlgorithm(*cert));
 }
 
+TEST(X509UT, copy)
+{
+  // GIVEN
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN
+  auto certCopy = x509::copy(*cert);
+  ASSERT_TRUE(certCopy);
+
+  // THEN
+  EXPECT_EQ(0, X509_cmp(cert.get(), certCopy.value.get()));
+}
+
 }}}
