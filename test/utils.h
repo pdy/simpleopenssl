@@ -28,11 +28,13 @@
 #define PDY_SO_TESTS_UTILS_H_
 
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <vector>
 #include <iterator>
 #include <fstream>
 
+#include "platform.h"
 #include "simpleopenssl/simpleopenssl.h"
 
 
@@ -89,5 +91,34 @@ inline bool operator==(const ::so::Bytes &lhs, const ::so::Bytes &rhs)
 }
 
 }}}
+
+template<typename FUNC>
+class ScopeGuard final
+{
+public:
+  ScopeGuard(FUNC &&func)
+    : m_func{std::move(func)}
+  {}
+
+  ~ScopeGuard()
+  {
+    try{
+      m_func();
+    }catch(...)
+    {
+      std::cout << "ScopeGuard exception\n";
+    }
+
+  }
+private:
+  FUNC m_func;
+
+};
+
+template<typename T>
+ScopeGuard<T> makeScopeGuard(T &&func)
+{
+  return ScopeGuard<T>(std::move(func));
+}
 
 #endif
