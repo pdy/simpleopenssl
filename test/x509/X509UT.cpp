@@ -658,7 +658,8 @@ TEST(X509UT, copy)
   ASSERT_TRUE(certCopy);
 
   // THEN
-  EXPECT_EQ(0, X509_cmp(cert.get(), certCopy.value.get()));
+  constexpr int correct = 0;
+  EXPECT_EQ(correct, X509_cmp(cert.get(), certCopy.value.get()));
 }
 
 }}}
