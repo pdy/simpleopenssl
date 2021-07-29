@@ -1687,6 +1687,8 @@ namespace x509 {
 
   Result<X509_uptr> convertPemToX509(const std::string &pemCert);
   Result<std::string> convertX509ToPem(X509 &cert);
+
+  Result<void> convertX509ToPemFile(X509 &cert, const std::string &filePath);
   Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
 
   Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
@@ -3512,6 +3514,18 @@ namespace x509 {
       return internal::err<X509_uptr>();
 
     return internal::ok(std::move(ret));
+  }
+
+  Result<void> convertX509ToPemFile(X509 &cert, const std::string &filePath)
+  {
+    BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "w"));
+    if(!bio)
+      return internal::errVoid();
+
+    if(!PEM_write_bio_X509(bio.get(), &cert))
+      return internal::errVoid();
+
+    return internal::okVoid();
   }
 
   Result<std::string> convertX509ToPem(X509 &cert)
