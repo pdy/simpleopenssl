@@ -31,7 +31,7 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
-TEST(X509UT, pemStringToX509ShouldFail)
+TEST(X509PEMUT, pemStringToX509ShouldFail)
 {
   // WHEN
   auto cert = x509::convertPemToX509(data::meaninglessInvalidPemCert);
@@ -40,7 +40,7 @@ TEST(X509UT, pemStringToX509ShouldFail)
   EXPECT_FALSE(cert);
 }
 
-TEST(X509UT, pemStringToX509ShouldSuccess)
+TEST(X509PEMUT, pemStringToX509ShouldSuccess)
 {
   // WHEN
   auto cert = x509::convertPemToX509(data::selfSignedCAPemCert);
@@ -49,7 +49,7 @@ TEST(X509UT, pemStringToX509ShouldSuccess)
   EXPECT_TRUE(cert);
 }
 
-TEST(X509UT, x509ToPem)
+TEST(X509PEMUT, x509ToPem)
 {
   // GIVEN
   const auto pemCert = data::selfSignedCAPemCert;
@@ -66,6 +66,19 @@ TEST(X509UT, x509ToPem)
   //THEN
   ASSERT_TRUE(actual);
   EXPECT_EQ(pemCert, actual.value);
+}
+
+TEST(X509PEMUT, pemFileToX509)
+{
+  // WHEN
+  auto cert = x509::convertPemFileToX509("data/validpemcert.pem");
+  ASSERT_TRUE(cert);
+
+  auto pemCert = x509::convertX509ToPem(*cert.value);
+  ASSERT_TRUE(pemCert);
+
+  // THEN
+  EXPECT_EQ(pemCert.value, data::selfSignedCAPemCert); 
 }
 
 }}}
