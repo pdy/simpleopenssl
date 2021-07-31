@@ -1692,6 +1692,8 @@ namespace x509 {
   Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
 
   Result<X509_uptr> copy(X509 &cert);
+  
+  bool equal(const X509 &lhs, const X509 &rhs);
 
   Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
   Result<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId);
@@ -3572,6 +3574,11 @@ namespace x509 {
       return internal::err<X509_uptr>();
 
     return internal::ok(std::move(ret));
+  }
+
+  bool equal(const X509 &lhs, const X509 &rhs)
+  {
+    return X509_cmp(&lhs, &rhs) == 0;
   }
 
   Result<EVP_PKEY_uptr> getPubKey(X509 &cert)

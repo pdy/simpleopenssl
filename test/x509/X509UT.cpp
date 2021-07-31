@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2021 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,28 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 namespace ecdsa = ::so::ecdsa;
+
+namespace {
+
+X509_uptr copy(X509 &cert)
+{
+  unsigned char *buf = nullptr;
+  const int len = i2d_X509(&cert, &buf);
+  if(0 > len)
+    return nullptr;
+
+  const auto freeOpenssl = [](unsigned char *ptr) { OPENSSL_free(ptr); };
+  std::unique_ptr<unsigned char[], decltype(freeOpenssl)> buf_uptr(buf, freeOpenssl);
+
+  const unsigned char *it = buf_uptr.get();
+  auto ret = make_unique(d2i_X509(nullptr, &it, len));
+  if(!ret)
+    return nullptr;
+  
+  return ret;
+}
+
+} // namespace
 
 TEST(X509UT, getIssuerOK)
 {
@@ -367,81 +389,6 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
   ASSERT_TRUE(ver2Result.value);
 }
 
-TEST(X509UT, certSignSha256VerifyAPIIntegrity)
-{
-  // GIVEN
-  x509::Subject name;
-  name.commonName = "CommonName";
-  name.organizationName = "simpleopenssl";
-  auto cert = ::so::make_unique(X509_new());
-  ASSERT_TRUE(x509::setSubject(*cert, name));
-  ASSERT_TRUE(x509::setIssuer(*cert, name));
-  auto maybeEcKey = ::so::ecdsa::create(::so::ecdsa::Curve::SECP384R1);
-  ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::convertToEvp(*maybeEcKey.moveValue());
-  ASSERT_TRUE(maybeKey);
-  auto key = maybeKey.moveValue();
-
-  // WHEN
-  const auto signResult = x509::signSha256(*cert, *key);
-  const auto verResult = x509::verifySignature(*cert, *key);
-
-  // THEN
-  ASSERT_TRUE(signResult);
-  ASSERT_TRUE(verResult);
-  EXPECT_TRUE(verResult.value);  
-}
-
-TEST(X509UT, certSignSha1VerifyAPIIntegrity)
-{
-  // GIVEN
-  x509::Subject name;
-  name.commonName = "CommonName";
-  name.organizationName = "simpleopenssl";
-  auto cert = ::so::make_unique(X509_new());
-  ASSERT_TRUE(x509::setSubject(*cert, name));
-  ASSERT_TRUE(x509::setIssuer(*cert, name));
-  auto maybeEcKey = ::so::ecdsa::create(::so::ecdsa::Curve::SECP384R1);
-  ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::convertToEvp(*maybeEcKey.moveValue());
-  ASSERT_TRUE(maybeKey);
-  auto key = maybeKey.moveValue();
-
-  // WHEN
-  const auto signResult = x509::signSha1(*cert, *key);
-  const auto verResult = x509::verifySignature(*cert, *key);
-
-  // THEN
-  ASSERT_TRUE(signResult);
-  ASSERT_TRUE(verResult);
-  EXPECT_TRUE(verResult.value);  
-}
-
-TEST(X509UT, certSignSha384VerifyAPIIntegrity)
-{
-  // GIVEN
-  x509::Subject name;
-  name.commonName = "CommonName";
-  name.organizationName = "simpleopenssl";
-  auto cert = ::so::make_unique(X509_new());
-  ASSERT_TRUE(x509::setSubject(*cert, name));
-  ASSERT_TRUE(x509::setIssuer(*cert, name));
-  auto maybeEcKey = ::so::ecdsa::create(::so::ecdsa::Curve::SECT193R1);
-  ASSERT_TRUE(maybeEcKey);
-  auto maybeKey = ::so::ecdsa::convertToEvp(*maybeEcKey.moveValue());
-  ASSERT_TRUE(maybeKey);
-  auto key = maybeKey.moveValue();
-
-  // WHEN
-  const auto signResult = x509::signSha384(*cert, *key);
-  const auto verResult = x509::verifySignature(*cert, *key);
-
-  // THEN
-  ASSERT_TRUE(signResult);
-  ASSERT_TRUE(verResult);
-  EXPECT_TRUE(verResult.value);  
-}
-
 TEST(X509UT, getSerialNumberWithPrecalculatedData)
 {
   // GIVEN
@@ -660,6 +607,38 @@ TEST(X509UT, copy)
   // THEN
   constexpr int correct = 0;
   EXPECT_EQ(correct, X509_cmp(cert.get(), certCopy.value.get()));
+}
+
+TEST(X509UT, equal)
+{
+  // GIVEN
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN
+  auto certCopy = copy(*cert);
+  ASSERT_TRUE(certCopy);
+
+  // THEN
+  EXPECT_TRUE(x509::equal(*cert, *certCopy));
+}
+
+TEST(X509UT, copyAndEqualAPIIntegrity)
+{
+  // GIVEN
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
+  ASSERT_TRUE(maybeCert);
+  auto cert = maybeCert.moveValue();
+
+  // WHEN
+  auto certCopy = x509::copy(*cert);
+  ASSERT_TRUE(certCopy);
+
+  // THEN
+  constexpr int correct = 0;
+  EXPECT_EQ(correct, X509_cmp(cert.get(), certCopy.value.get()));
+  EXPECT_TRUE(x509::equal(*cert, *certCopy.value));
 }
 
 }}}

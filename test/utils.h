@@ -121,4 +121,14 @@ ScopeGuard<T> makeScopeGuard(T &&func)
   return ScopeGuard<T>(std::move(func));
 }
 
+inline std::string osslLastError()
+{
+    static constexpr size_t SIZE = 1024;
+    char buff[SIZE];
+    std::memset(buff, 0x00, SIZE);
+    ERR_error_string_n(ERR_get_error(), buff, SIZE);
+    return std::string(buff);
+
+}
+
 #endif
