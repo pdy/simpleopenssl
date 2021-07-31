@@ -367,11 +367,18 @@ namespace evp {
 
   Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
+
   Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der);
   Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
+
   Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
   Result<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
+
+  Result<std::string> convertPrivKeyToPem(EVP_PKEY &privKey);
+  Result<std::string> convertPubKeyToPem(EVP_PKEY &pubKey);
+
   std::string convertPubkeyTypeToString(KeyType pubKeyType);
+
   Result<EC_KEY_uptr> convertToEcdsa(EVP_PKEY &key);
   Result<RSA_uptr> convertToRsa(EVP_PKEY &key);
 
@@ -2982,6 +2989,16 @@ namespace evp {
   Result<Bytes> convertPubKeyToDer(EVP_PKEY &pkey)
   {
     return internal::convertKeyToDer(pkey, i2d_PUBKEY);
+  }
+
+  Result<std::string> convertPrivKeyToPem(EVP_PKEY &privKey)
+  {
+    return internal::convertToPem(PEM_write_bio_PrivateKey, &privKey, nullptr, nullptr, 0, nullptr, nullptr);
+  }
+
+  Result<std::string> convertPubKeyToPem(EVP_PKEY &pubKey)
+  {
+    return internal::convertToPem(PEM_write_bio_PUBKEY, &pubKey);
   }
 
   std::string convertPubkeyTypeToString(KeyType pubKeyType)

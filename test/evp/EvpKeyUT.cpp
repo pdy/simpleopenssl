@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2021 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -21,13 +21,11 @@
 *
 */
 
-
 #include <gtest/gtest.h>
 #include <functional>
 #include <simpleopenssl/simpleopenssl.h>
 
 #include "../precalculated.h"
-
 
 namespace so { namespace ut { namespace evp {
 
@@ -178,6 +176,77 @@ TEST(EvpKeyUT, derToPubKeyConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybePubKey);
+}
+
+TEST(EvpKeyUT, privKeyToPemConversion_ok)
+{
+  // GIVEN
+  const auto pemPriv = data::evpPrivKey;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto actualPemPriv = evp::convertPrivKeyToPem(*key);
+
+  // THEN
+  ASSERT_TRUE(actualPemPriv);
+  EXPECT_EQ(pemPriv, actualPemPriv.value);
+}
+
+TEST(EvpKeyUT, privKeyToPemConversion_shouldFailWithPubkey)
+{
+  // GIVEN
+  const auto pemPub = data::evpPubKey;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto actualPemPriv = evp::convertPrivKeyToPem(*key);
+
+  // THEN
+  EXPECT_FALSE(actualPemPriv);
+}
+
+TEST(EvpKeyUT, pubKeyToPemConversion_ok)
+{
+  // GIVEN
+  const auto pemPub = data::evpPubKey;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto actualPemPub = evp::convertPubKeyToPem(*key);
+
+  // THEN
+  ASSERT_TRUE(actualPemPub);
+  EXPECT_EQ(pemPub, actualPemPub.value);
+}
+
+TEST(EvpKeyUT, pubKeyToPemConversion_shouldSuccessWithPrivKey)
+{
+  // GIVEN
+  const auto pemPriv = data::evpPrivKey;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto actualPemPub = evp::convertPubKeyToPem(*key);
+
+  // THEN
+  EXPECT_TRUE(actualPemPub);
+  EXPECT_EQ(data::evpPubKey, actualPemPub.value);
 }
 
 TEST(EvpKeyUT, getKeyType)

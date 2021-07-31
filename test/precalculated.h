@@ -43,6 +43,21 @@ const static std::vector<uint8_t> signedTextBytes = []{
   return ret;
 }();
 
+// from https://cran.r-project.org/web/packages/openssl/vignettes/keys.html
+const static std::string evpPrivKey = R"(-----BEGIN PRIVATE KEY-----
+MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgJte+OVrL/CDjxwf2
+QFDtX75TokoDZcrIVXBLR6wNY3WhRANCAAQCVcCKpW4XGl0YWCcfCs9PDsdT6Vvd
+cjQBImhPl/EkMj5/ANiT2liPNtIEpEBGPu+jHYwwyoMCyGC4txzxjpoi
+-----END PRIVATE KEY-----
+)";
+
+// from https://cran.r-project.org/web/packages/openssl/vignettes/keys.html
+const static std::string evpPubKey = R"(-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAlXAiqVuFxpdGFgnHwrPTw7HU+lb
+3XI0ASJoT5fxJDI+fwDYk9pYjzbSBKRARj7vox2MMMqDAshguLcc8Y6aIg==
+-----END PUBLIC KEY-----
+)";
+
 // openssl ecparam -name secp256k1 -genkey -noout -out secp256k1-key.pem
 const static std::string secp256k1PrivKeyPem = R"(-----BEGIN EC PRIVATE KEY-----
 MHQCAQEEILN0LpgGaItTy9e/Jxmat+lHS8NgONqTylUVQ8LxhuD1oAcGBSuBBAAK
