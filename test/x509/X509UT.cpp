@@ -609,6 +609,67 @@ TEST(X509UT, copy)
   EXPECT_EQ(correct, X509_cmp(cert.get(), certCopy.value.get()));
 }
 
+TEST(X509UT, copyMissingComponentsShouldFail)
+{
+  /*
+   * Mininal requirements for successful copy:
+   * 1. version
+   * 2. serial
+   * 3. validity times
+   * 4. pub key
+   * 5. signature
+   *
+   */
+
+  x509::Subject name;
+  name.commonName = "CommonName";
+  name.organizationName = "simpleopenssl";
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(x509::setSubject(*cert, name));
+  ASSERT_TRUE(x509::setIssuer(*cert, name));
+
+  // WHEN
+  auto result = x509::copy(*cert);
+
+  // THEN
+  EXPECT_FALSE(result);
+}
+
+TEST(X509UT, copyMinimalStruct)
+{
+  /*
+   * Mininal requirements for successful copy:
+   * 1. version
+   * 2. serial
+   * 3. validity times
+   * 4. pub key
+   * 5. signature
+   *
+   */
+
+  // GIVEN
+  auto rsa = ::so::rsa::create(::so::rsa::KeyBits::_1024_, ::so::rsa::Exponent::_17_);
+  ASSERT_TRUE(rsa);
+  auto evp = ::so::evp::create();
+  ASSERT_TRUE(::so::evp::assign(*evp.value, *rsa.value.release()));
+  auto serial = ::so::asn1::encodeInteger(::so::Bytes{0x01, 0x02, 0x03});
+  ASSERT_TRUE(serial);
+
+  auto cert = ::so::make_unique(X509_new());
+  ASSERT_TRUE(X509_gmtime_adj(X509_get_notBefore(cert.get()), 0));
+  ASSERT_TRUE(X509_gmtime_adj(X509_get_notAfter(cert.get()), 0));
+  ASSERT_TRUE(X509_set_version(cert.get(), 2));
+  ASSERT_TRUE(X509_set_serialNumber(cert.get(), serial.value.get()));
+  ASSERT_TRUE(X509_set_pubkey(cert.get(), evp.value.get()));
+  ASSERT_TRUE(X509_sign(cert.get(), evp.value.get(), EVP_sha1()));
+
+  // WHEN
+  auto result = x509::copy(*cert);
+  
+  // THEN
+  EXPECT_TRUE(result);
+}
+
 TEST(X509UT, equal)
 {
   // GIVEN

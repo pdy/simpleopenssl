@@ -3560,10 +3560,28 @@ namespace x509 {
 
   Result<X509_uptr> copy(X509 &cert)
   {
+    /*
+     * Mininal requirements for successful copy:
+     * 1. version
+     * 2. serial
+     * 3. validity times
+     * 4. pub key
+     * 5. signature
+     *
+     */
+    
+    auto ret = make_unique(X509_dup(&cert));
+    if(!ret)
+      return internal::err<X509_uptr>();
+
+    return internal::ok(std::move(ret));
+
+    // alternative impl
+    /*
     unsigned char *buf = nullptr;
     const int len = i2d_X509(&cert, &buf);
     if(0 > len)
-      return internal::err<X509_uptr>();
+      return nullptr;
 
     const auto freeOpenssl = [](unsigned char *ptr) { OPENSSL_free(ptr); };
     std::unique_ptr<unsigned char[], decltype(freeOpenssl)> buf_uptr(buf, freeOpenssl);
@@ -3571,9 +3589,10 @@ namespace x509 {
     const unsigned char *it = buf_uptr.get();
     auto ret = make_unique(d2i_X509(nullptr, &it, len));
     if(!ret)
-      return internal::err<X509_uptr>();
-
-    return internal::ok(std::move(ret));
+      return nullptr;
+    
+    return ret;
+    */
   }
 
   bool equal(const X509 &lhs, const X509 &rhs)
