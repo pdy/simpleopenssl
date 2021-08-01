@@ -35,13 +35,17 @@ if [ $# -ne 0 ]; then
     cp makefiles/Makefile_incr ./Makefile &&
     make clean
   else
-    make $1
+    make -j4 $1
     build=0
   fi
 fi
 
 if [ $build -eq 1 ]; then
-  make -j4 
+  if [ $# -eq 2 ]; then
+    make -j4 $2
+  else
+    make -j4
+  fi
 fi
 
 popd

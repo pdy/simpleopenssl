@@ -1,7 +1,6 @@
 print-%  : ; @echo $* = $($*)
 
 CXX := clang++
-STRIP := strip
 
 PROJ_ROOT := $(PWD)/..
 OPENSSL_PATH := $(PROJ_ROOT)/3rd/openssl_1.1.0f
@@ -24,16 +23,16 @@ LD_LIBS := -Wl,-Bstatic $(OPENSSL_LIBS) -Wl,-Bdynamic -pthread -ldl
 INCLUDES := -I$(PROJ_ROOT)/include/ -isystem$(OPENSSL_PATH)/include -isystem$(GTEST_PATH)/include
 ROOT_BUILD := $(PROJ_ROOT)/build
 
-ifeq ($(MAKECMDGOALS),release)
+BUILD = $(ROOT_BUILD)/debug
+CXXFLAGS = $(FLAGS) $(INCLUDES) -g -Weverything
+STRIP := echo 
+ifneq (,$(findstring release,$(MAKECMDGOALS)))
 	BUILD = $(ROOT_BUILD)/release
 	CXXFLAGS = $(FLAGS) $(INCLUDES) -O3 -Wall
-else	
-	BUILD = $(ROOT_BUILD)/debug
-	CXXFLAGS = $(FLAGS) $(INCLUDES) -g -Weverything
-	STRIP = echo
+	STRIP = strip 
 endif
 
-.PHONY: all clean unifiedTarget 
+.PHONY: all clean unifiedTarget debug release 
 
 DESTBIN := $(BUILD)/bin
 OBJ_PATH := $(BUILD)/obj/unified
@@ -42,7 +41,7 @@ all: post-build
 debug: all
 release: all
 
-pre-build: unifiedTarget $(UNIFIED_PATH)/../pch.hpp.pch 
+pre-build: unifiedTarget # $(UNIFIED_PATH)/../pch.hpp.pch 
 	@mkdir -p $(OBJ_PATH) $(DESTBIN) # prepare dist
 
 post-build: main-build
@@ -63,23 +62,25 @@ unifiedTarget:
 	$(PROJ_ROOT)/devtools/unifiedfile ../x509 x509 && \
 	cd -
 
-$(UNIFIED_PATH)/../pch.hpp.pch: 
-	@$(CXX) -x c++-header -std=c++11 $(UNIFIED_PATH)/../pch.hpp -o $@ $(INCLUDES)
-	@echo "$@"
+#$(UNIFIED_PATH)/../pch.hpp.pch: 
+#	@$(CXX) -x c++-header -std=c++11 $(UNIFIED_PATH)/../pch.hpp -o $@ $(INCLUDES)
+#	@echo "$@"
 
 clean:
-	@rm $(UNIFIED_PATH)/../pch.hpp.pch
+	#@rm $(UNIFIED_PATH)/../pch.hpp.pch
 	@rm -r $(ROOT_BUILD)
 	@rm -r $(UNIFIED_PATH)
 
 SRC_TEST := $(wildcard $(UNIFIED_PATH)/*.cpp)
 OBJS_TEST := $(patsubst $(UNIFIED_PATH)/%.cpp,$(OBJ_PATH)/%.o, $(SRC_TEST))
 
+# -include $(UNIFIED_PATH)/../pch.hpp to be added after CXX
 $(DESTBIN)/UnitTests: $(OBJS_TEST)	
-	@$(CXX) -include $(UNIFIED_PATH)/../pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
+	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -o $@ $^ $(LD_FLAGS) $(GTEST_LIBS) $(LD_LIBS) 
 	@echo "$<"
 
+# -include $(UNIFIED_PATH)/../pch.hpp to be added after CXX
 $(OBJ_PATH)/%.o: $(UNIFIED_PATH)/%.cpp
-	@$(CXX) -include $(UNIFIED_PATH)/../pch.hpp $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
+	@$(CXX) $(CXXFLAGS) $(TEST_FLAGS) -c -o $@ $^ 
 	@echo "$<"
 
