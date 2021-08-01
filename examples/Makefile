@@ -26,6 +26,7 @@ endif
 
 all: post-build 
 debug: all
+release: all
 
 pre-build:
 	@mkdir -p $(BUILD) 
@@ -42,8 +43,6 @@ main-build: pre-build
 clean:
 	@rm -r ./bin
 
-# PROGRAMS: $(BUILD)/hashfile $(BUILD)/rsakeygen $(BUILD)/x509info $(BUILD)/ecdsa_self_signed
-
 $(BUILD)/%: ./%.cpp
 	@$(CXX) $(CXXFLAGS) -o $@ $^ $(LD_FLAGS) $(LD_LIBS)
-	@echo "$<"
+	@echo "$@"
