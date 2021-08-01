@@ -21,6 +21,7 @@ flags = [
     '-stdlib=libstdc++',
     '-x','c++',
     '-I','../include',
+    '-isystem', 'cmdline',
     '-isystem','../3rd/openssl/include',
 ]
 

@@ -21,14 +21,13 @@
 *
 */
 
+#include <cmdline.h> 
 #include <chrono>
 #include <ctime>
 #define SO_IMPLEMENTATION
 #include <simpleopenssl/simpleopenssl.h>
 #include "simplelog/simplelog.h"
-#include "cmdline/cmdline.h"
 #include <iomanip>
-
 
 using namespace so;
 
