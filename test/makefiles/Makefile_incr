@@ -1,7 +1,6 @@
 print-%  : ; @echo $* = $($*)
 
 CXX := clang++
-STRIP := strip
 
 PROJ_ROOT := ..
 OPENSSL_PATH := $(PROJ_ROOT)/3rd/openssl_1.1.0f
@@ -24,13 +23,13 @@ LD_LIBS := -Wl,-Bstatic $(OPENSSL_LIBS) -Wl,-Bdynamic -pthread -ldl
 INCLUDES := -I$(PROJ_ROOT)/include/ -isystem$(OPENSSL_PATH)/include -isystem$(GTEST_PATH)/include
 ROOT_BUILD := $(PROJ_ROOT)/build
 
-ifeq ($(MAKECMDGOALS),release)
+BUILD = $(ROOT_BUILD)/debug
+CXXFLAGS = $(FLAGS) $(INCLUDES) -g -Weverything
+STRIP := echo 
+ifneq (,$(findstring release,$(MAKECMDGOALS)))
 	BUILD = $(ROOT_BUILD)/release
 	CXXFLAGS = $(FLAGS) $(INCLUDES) -O3 -Wall
-else	
-	BUILD = $(ROOT_BUILD)/debug
-	CXXFLAGS = $(FLAGS) $(INCLUDES) -g -Weverything
-	STRIP = echo
+	STRIP = strip 
 endif
 
 SRC_TEST := $(wildcard $(TEST_PATH)/*cpp)
