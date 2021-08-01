@@ -13,16 +13,15 @@ LD_LIBS := -pthread $(OPENSSL_LIBS)
 
 INCLUDES := -isystem../include -isystem../3rd/openssl/include
 
-ifeq ($(MAKECMDGOALS),debug)
+BUILD = ./bin/release
+CXXFLAGS = $(FLAGS) $(INCLUDES) -O3 -Wall
+ifneq (,$(findstring debug,$(MAKECMDGOALS)))
 	BUILD = ./bin/debug
 	CXXFLAGS = $(FLAGS) $(INCLUDES) -g -Weverything
 	STRIP = echo
-else
-	BUILD = ./bin/release
-	CXXFLAGS = $(FLAGS) $(INCLUDES) -O3 -Wall
 endif
 
-.PHONY: all clean
+.PHONY: all clean debug release
 
 all: post-build 
 debug: all
