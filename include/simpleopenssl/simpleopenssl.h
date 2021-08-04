@@ -1516,7 +1516,6 @@ namespace rsa {
     _65537_ = RSA_F4
   };
 
-  Result<RSA_uptr> create(); 
   Result<RSA_uptr> create(KeyBits keySize, Exponent exponent = Exponent::_65537_);
 
   Result<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
@@ -3322,15 +3321,6 @@ namespace rsa {
       return internal::err(false);
     
     return internal::ok(true);
-  }
-
-  Result<RSA_uptr> reate()
-  {
-    auto ret = make_unique(RSA_new());
-    if(!ret)
-      return internal::err<RSA_uptr>();
-
-    return internal::ok(std::move(ret));
   }
 
   Result<RSA_uptr> create(KeyBits keySize, Exponent exponent)
