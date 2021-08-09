@@ -136,6 +136,13 @@ PDY_CUSTOM_DELETER_UPTR(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 
 namespace internal {
 
+namespace bytes {
+  std::string toString(const Bytes &bt);
+  std::string toString(const Bytes &bt, const Bytes::const_iterator &start);
+  Bytes fromString(const std::string &str);
+} // namespace bytes
+
+
 template<typename UPTRTag, typename ArithTag>
 struct IsUptrOrArithmeticTag : std::false_type {};
 
@@ -223,7 +230,6 @@ struct Result<void>
   }
 };
 
-
 /////////////////////////////////////////////////////////////////////////////////
 //
 //                           MAIN API 
@@ -260,12 +266,6 @@ namespace bignum {
   
   Result<size_t> getByteLen(const BIGNUM &bn);
 }
-
-namespace bytes {
-  std::string toString(const Bytes &bt);
-  std::string toString(const Bytes &bt, const Bytes::const_iterator &start);
-  Bytes fromString(const std::string &str);
-} // namespace bytes
 
 namespace ecdsa {
   enum class Curve : int
@@ -1781,6 +1781,35 @@ namespace so {
 
 namespace internal {
 
+namespace bytes {
+  std::string toString(const Bytes &bt)
+  {
+    std::ostringstream ss;
+    std::copy(bt.begin(), bt.end(), std::ostream_iterator<char>(ss, ""));
+    return ss.str();
+  }
+
+  std::string toString(const Bytes &bt, const Bytes::const_iterator &start)
+  {
+    std::ostringstream ss;
+    std::copy(start, bt.end(), std::ostream_iterator<char>(ss, ""));
+    return ss.str();
+  }
+
+  Bytes fromString(const std::string &str)
+  {
+    so::Bytes ret;
+    ret.reserve(str.size());
+    std::transform(str.begin(), str.end(), std::back_inserter(ret), [](char chr){
+        return static_cast<uint8_t>(chr);
+    });
+
+    return ret;
+  }
+
+} // namespace bytes
+
+
   bool X509Name::operator ==(const X509Name &other) const
   {
     return commonName == other.commonName
@@ -2555,7 +2584,7 @@ namespace asn1 {
   
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
   {
-    return encodeOctet(bytes::fromString(str));
+    return encodeOctet(internal::bytes::fromString(str));
   } 
 } // namespace asn1
 
@@ -2598,34 +2627,6 @@ namespace bignum {
     return internal::ok(static_cast<size_t>(bnlen));
   }
 }// namespace bignum
-
-namespace bytes {
-  std::string toString(const Bytes &bt)
-  {
-    std::ostringstream ss;
-    std::copy(bt.begin(), bt.end(), std::ostream_iterator<char>(ss, ""));
-    return ss.str();
-  }
-
-  std::string toString(const Bytes &bt, const Bytes::const_iterator &start)
-  {
-    std::ostringstream ss;
-    std::copy(start, bt.end(), std::ostream_iterator<char>(ss, ""));
-    return ss.str();
-  }
-
-  Bytes fromString(const std::string &str)
-  {
-    so::Bytes ret;
-    ret.reserve(str.size());
-    std::transform(str.begin(), str.end(), std::back_inserter(ret), [](char chr){
-        return static_cast<uint8_t>(chr);
-    });
-
-    return ret;
-  }
-
-} // namespace bytes
 
 namespace ecdsa {
   bool Signature::operator ==(const Signature &other) const
