@@ -96,9 +96,12 @@ template<typename FUNC>
 class ScopeGuard final
 {
 public:
-  ScopeGuard(FUNC &&func)
+  explicit ScopeGuard(FUNC &&func)
     : m_func{std::move(func)}
   {}
+
+  ScopeGuard(const ScopeGuard&) = delete;
+  ScopeGuard(ScopeGuard&&) = default;
 
   ~ScopeGuard()
   {
