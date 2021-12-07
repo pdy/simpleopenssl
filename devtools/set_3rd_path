@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Copyright (c) 2020 Pawel Drzycimski
+# Copyright (c) 2021 Pawel Drzycimski
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
+# of this symbolicware and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
@@ -21,14 +21,12 @@
 # SOFTWARE.
 #
 
-if [ $# -ne 1 ]; then
-  echo "Missing path argument pointing to simpleopenssl project root directory - the one with README."
+if [ $# -ne 2 ]; then
+  echo "Require two arguments - first the name of 3rd party (ex. 'openssl'), second path to folder that includes 'lib' and 'include' folders."
   exit 1
 fi
 
-so_path="$(cd "$(dirname "$1")"; pwd)/$(basename "$1")"
+symbolic_link=./3rd/$1
+path=$2
 
-ln -sf $so_path/devtools/gdbUT $so_path/gdbUT_sym
-ln -sf $so_path/devtools/makeUT $so_path/makeUT_sym
-ln -sf $so_path/devtools/runUT $so_path/runUT_sym
-ln -sf $so_path/devtools/set_3rd_path $so_path/set_3rd_path_sym
+ln -sf $path $symbolic_link

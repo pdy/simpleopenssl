@@ -3,7 +3,7 @@ print-%  : ; @echo $* = $($*)
 CXX := clang++
 
 PROJ_ROOT := ..
-OPENSSL_PATH := $(PROJ_ROOT)/3rd/openssl_1.1.0f
+OPENSSL_PATH := $(PROJ_ROOT)/3rd/openssl
 GTEST_PATH := $(PROJ_ROOT)/3rd/gtest
 TEST_PATH := $(PROJ_ROOT)/test
 
@@ -15,7 +15,7 @@ FLAGS := -std=c++11 -Wno-deprecated-register -Wno-c++98-compat -Wno-c++98-compat
 
 LD_FLAGS := -L$(GTEST_PATH)/lib -L$(OPENSSL_PATH)/lib
 
-GTEST_LIBS := -lgtest -lgmock -lgmock_main
+GTEST_LIBS := -lgtest -lgmock_main -lgmock 
 OPENSSL_LIBS := -lssl -lcrypto
 
 LD_LIBS := -Wl,-Bstatic $(OPENSSL_LIBS) -Wl,-Bdynamic -pthread -ldl
