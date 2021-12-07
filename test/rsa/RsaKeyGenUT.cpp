@@ -56,7 +56,7 @@ TEST_P(RsaKeyGenUT, shouldGenerateAndPassChecks)
 }
 
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Rsa,
     RsaKeyGenUT,
     ::testing::Values(

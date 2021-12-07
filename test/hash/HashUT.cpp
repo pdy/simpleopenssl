@@ -127,7 +127,7 @@ const auto hashUTTestCases = ::testing::Values(
     }
 );
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Hash,
     HashUT,
     hashUTTestCases 

@@ -222,7 +222,7 @@ const auto testCases = ::testing::Values(
   
 );
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Ecdsa,
     EcdsaSignVerifyUT,
     testCases 

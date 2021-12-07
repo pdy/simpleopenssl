@@ -55,7 +55,7 @@ TEST_P(EcdsaKeyGenUT, shouldExtractCurveInfoFromGeneratedKey)
 }
 
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Ecdsa,
     EcdsaKeyGenUT,
     ::testing::Values(

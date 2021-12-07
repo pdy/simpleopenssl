@@ -80,7 +80,7 @@ TEST_P(Asn1ObjectEncodeUT, encodeDecodeApiIntegrity)
   EXPECT_EQ(input, actual.value);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Asn1UT,
     Asn1ObjectEncodeUT,
     ::testing::Values(
