@@ -56,7 +56,10 @@ std::string timetPrettyString(std::time_t time);
 
 so::X509_uptr cert = so::make_unique(SSL_get_peer_certificate(ssl));
 if(!cert)
+{
+    LOG_ERR << "Get peer cert error: " << so::getLastErrString();
     return;
+}
   
 const auto validity = x509::getValidity(*cert);
 if(!validity)

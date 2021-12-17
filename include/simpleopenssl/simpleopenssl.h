@@ -240,6 +240,9 @@ struct Result<void>
 void init();
 void cleanUp();
 
+unsigned long getLastErrCode();
+std::string getLastErrString();
+
 namespace asn1 {
   enum class Form : int
   {
@@ -2491,6 +2494,16 @@ void init()
 void cleanUp()
 {
   ERR_free_strings();
+}
+
+unsigned long getLastErrCode()
+{
+  return ERR_get_error();
+}
+
+std::string getLastErrString()
+{
+  return internal::errCodeToString(getLastErrCode()); 
 }
 
 namespace asn1 {
