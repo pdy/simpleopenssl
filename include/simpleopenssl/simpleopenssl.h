@@ -241,6 +241,7 @@ void init();
 void cleanUp();
 
 unsigned long getLastErrCode();
+std::string errCodeToString(unsigned long osslErrCode);
 std::string getLastErrString();
 
 namespace asn1 {
@@ -2499,6 +2500,12 @@ void cleanUp()
 unsigned long getLastErrCode()
 {
   return ERR_get_error();
+}
+
+
+std::string errCodeToString(unsigned long osslErrCode)
+{
+  return internal::errCodeToString(osslErrCode);
 }
 
 std::string getLastErrString()
