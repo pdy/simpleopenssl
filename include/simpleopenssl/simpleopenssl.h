@@ -2502,7 +2502,6 @@ unsigned long getLastErrCode()
   return ERR_get_error();
 }
 
-
 std::string errCodeToString(unsigned long osslErrCode)
 {
   return internal::errCodeToString(osslErrCode);
@@ -2510,7 +2509,7 @@ std::string errCodeToString(unsigned long osslErrCode)
 
 std::string getLastErrString()
 {
-  return internal::errCodeToString(getLastErrCode()); 
+  return errCodeToString(getLastErrCode()); 
 }
 
 namespace asn1 {
