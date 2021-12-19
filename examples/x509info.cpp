@@ -31,10 +31,12 @@
 
 using namespace so;
 
+enum class Format { PEM, DER };
+
 std::string bin2Hex(const so::Bytes &buff);
 std::string bin2Text(const so::Bytes &buff);
 void logHex(const std::string &hexStr, size_t newLine);
-void handleCert(const std::string &fileName);
+void handleCert(const std::string &fileName, Format format);
 void handleCrl(const std::string &fileName);
 std::string prettyString(std::time_t time);
 
@@ -42,8 +44,9 @@ int main(int argc, char *argv[])
 {
   cmdline::parser arg;
   arg.add("help", 'h', "Print help.");
-  arg.add<std::string>("file", 'f', "PEM cert or crl file to be printed.", true);
+  arg.add<std::string>("input", 'i', "Input cert or crl file to be printed.", true);
   arg.add<std::string>("type", 't', "Type of input - 'cert' (default) or 'crl'", false);
+  arg.add<std::string>("format", 'f', "Input format - 'pem' (default) or 'der (certificates only)'", false);
  
   if(!arg.parse(argc, const_cast<const char* const*>(argv)))
   {
@@ -61,14 +64,14 @@ int main(int argc, char *argv[])
     return 0;
   } 
 
-  if(!arg.exist("file"))
+  if(!arg.exist("input"))
   {
-    log << "--file or -f argument is mandatory!";
+    log << "--input or -i argument is mandatory!";
     log << arg.usage();
     return 0;
   }
   
-  const std::string file = arg.get<std::string>("file");
+  const std::string file = arg.get<std::string>("input");
 
   const std::string type = [&]{
     if(arg.exist("type"))
@@ -84,8 +87,29 @@ int main(int argc, char *argv[])
     return 0;
   }
 
+  const std::string format = [&] {
+    if(arg.exist("format"))
+      return arg.get<std::string>("format");
+
+    return std::string{"pem"};
+  }();
+
+  if(format != "pem" && format != "der")
+  {
+    log << "--format or -f argument invalid!";
+    log << arg.usage();
+    return 0;
+  }
+
+  if(format == "der" && type == "crl")
+  {
+    log << "'der' format is not available for CRL!";
+    log << arg.usage();
+    return 0;
+  }
+
   if(type == "cert")
-    handleCert(file);
+    handleCert(file, format == "pem" ? Format::PEM : Format::DER);
   else if(type == "crl")
     handleCrl(file);
 
@@ -216,9 +240,15 @@ void handleCrl(const std::string &fileName)
   logHex(bin2Hex(sig.value), 36);
 }
 
-void handleCert(const std::string &fileName)
+void handleCert(const std::string &fileName, Format format)
 {
-  auto x509 = x509::convertPemFileToX509(fileName);
+  auto x509 = [&] { 
+    if(format == Format::PEM)
+      return so::x509::convertPemFileToX509(fileName);
+      
+    return so::x509::convertDerFileToX509(fileName); 
+  }();
+
   if(!x509)
   {
     log << x509.msg();
