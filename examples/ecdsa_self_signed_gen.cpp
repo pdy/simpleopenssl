@@ -140,7 +140,7 @@ int main(int argc, char *argv[])
     return 0;
   }
   
-  if(const auto result = evp::assign(*evpKey.value, *key.value.release()); !result)
+  if(const auto result = evp::assign(*evpKey.value, *key.value); !result)
   {
     log << result.msg();
     return 0;

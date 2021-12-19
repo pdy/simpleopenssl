@@ -2974,7 +2974,11 @@ namespace evp {
   
   Result<void> assign(EVP_PKEY &evp, EC_KEY &ec)
   {
-    if (1 != EVP_PKEY_assign_EC_KEY(&evp, &ec))
+    auto *copy = EC_KEY_dup(&ec);
+    if(!copy)
+      return internal::errVoid();
+
+    if (1 != EVP_PKEY_assign_EC_KEY(&evp, copy))
         return internal::errVoid();
     
     return internal::okVoid();

@@ -35,11 +35,8 @@ std::tuple<unsigned long, std::string> makeFaultyOperation()
 {
   auto cert = ::so::x509::create();
 
-  if(auto copy = ::so::make_unique(X509_dup(cert.value.get())))
-    std::cout << "PAWEL success\n";
-  else
-    std::cout << "PAWEL fail\n";
-
+  ::so::make_unique(X509_dup(cert.value.get()));
+  
   return std::make_tuple(0x0D078079, "error:0D078079:asn1 encoding routines:asn1_item_embed_d2i:field missing");
 }
 
