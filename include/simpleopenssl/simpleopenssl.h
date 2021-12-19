@@ -1699,7 +1699,8 @@ namespace x509 {
   Result<std::string> convertX509ToPem(X509 &cert);
 
   Result<void> convertX509ToDerFile(X509 &cert, const std::string &filePath);
-
+  Result<X509_uptr> convertDerFileToX509(const std::string &filePath);
+    
   Result<void> convertX509ToPemFile(X509 &cert, const std::string &filePath);
   Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
 
@@ -3589,6 +3590,19 @@ namespace x509 {
     return internal::okVoid();
   }
 
+  Result<X509_uptr> convertDerFileToX509(const std::string &filePath)
+  {
+    BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "r"));
+    if(!bio)
+      return internal::err<X509_uptr>();
+
+    auto cert = make_unique(d2i_X509_bio(bio.get(), nullptr));
+    if(!cert)
+      return internal::err<X509_uptr>();
+
+    return internal::ok(std::move(cert));
+  }
+  
   Result<void> convertX509ToPemFile(X509 &cert, const std::string &filePath)
   {
     BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "w"));
