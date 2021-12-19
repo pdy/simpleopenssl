@@ -126,4 +126,15 @@ TEST(ResultUT, errUsageWithUnsignedLong)
   EXPECT_EQ(5ul, expected.opensslErrCode);
 }
 
+TEST(ResultUT, arrowOperator)
+{
+  // This will be always true but won't compile if I'll break something
+
+  // WHEN
+  const auto expected = ::so::internal::ok(::so::x509::Issuer{});
+
+  // THEN
+  EXPECT_EQ("", expected->commonName);  
+}
+
 }}} // namespace so { namespace ut { namespace bignum {
