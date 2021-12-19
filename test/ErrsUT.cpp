@@ -76,7 +76,7 @@ TEST(Errs, getLastErrorCode)
   EXPECT_TRUE(actualErrString.find(expectedErrCodeHexStr) != std::string::npos);
 }
 
-TEST(Errs, getLastErrorStr)
+TEST(Errs, DISABLED_getLastErrorStr)
 { 
   // GIVEN
   unsigned long expectedErrCode;
