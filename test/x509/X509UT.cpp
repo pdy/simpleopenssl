@@ -651,7 +651,7 @@ TEST(X509UT, copyMinimalStruct)
   auto rsa = ::so::rsa::create(::so::rsa::KeyBits::_1024_, ::so::rsa::Exponent::_17_);
   ASSERT_TRUE(rsa);
   auto evp = ::so::evp::create();
-  ASSERT_TRUE(::so::evp::assign(*evp.value, *rsa.value.release()));
+  ASSERT_TRUE(::so::evp::assign(*evp.value, *rsa.value));
   auto serial = ::so::asn1::encodeInteger(::so::Bytes{0x01, 0x02, 0x03});
   ASSERT_TRUE(serial);
 

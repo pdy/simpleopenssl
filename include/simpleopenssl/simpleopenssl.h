@@ -2966,8 +2966,32 @@ namespace evp {
 
   Result<void> assign(EVP_PKEY &evp, RSA &rsa)
   {
-    if (1 != EVP_PKEY_assign_RSA(&evp, &rsa))
-        return internal::errVoid();
+    const int checkKeyResult = RSA_check_key_ex(&rsa, nullptr);
+    if(-1 == checkKeyResult)
+      return internal::errVoid();
+    
+    auto keyCopy = [&] {
+      if(1 == checkKeyResult)
+      {
+        const auto pemCopy = ::so::rsa::convertPrivKeyToPem(rsa);
+        if(!pemCopy)
+          return internal::err<RSA_uptr>(pemCopy.opensslErrCode);
+
+        return ::so::rsa::convertPemToPrivKey(pemCopy.value);
+      }
+
+      const auto pemCopy = ::so::rsa::convertPubKeyToPem(rsa);
+      if(!pemCopy)
+        return internal::err<RSA_uptr>(pemCopy.opensslErrCode);
+
+      return ::so::rsa::convertPemToPubKey(pemCopy.value);
+    }();
+
+    if(!keyCopy)
+      return internal::errVoid(keyCopy.opensslErrCode);
+
+    if (1 != EVP_PKEY_assign_RSA(&evp, keyCopy.value.release()))
+      return internal::errVoid();
     
     return internal::okVoid();
   }
