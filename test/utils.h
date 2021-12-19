@@ -40,6 +40,45 @@
 
 namespace so { namespace ut { namespace utils {
 
+namespace internal {
+
+inline ::so::Bytes doHashFile(const std::string &path, const EVP_MD *evpMd)
+{    
+  auto bioRaw = make_unique(BIO_new_file(path.c_str(), "rb"));
+  if(!bioRaw)
+    return ::so::Bytes{}; 
+
+  // mdtmp will be freed with bio
+  BIO *mdtmp = BIO_new(BIO_f_md());
+  if(!mdtmp)
+    return ::so::Bytes{};
+
+  // WTF OpenSSL?
+  // Every EVP_<digest>() function returns const pointer, but
+  // BIO_set_md which supposed to consume this pointer takes.... non const!
+  // WTF OpenSSL?
+  BIO_set_md(mdtmp, const_cast<EVP_MD*>(evpMd));
+  auto bio = make_unique(BIO_push(mdtmp, bioRaw.release()));
+  if(!bio)
+    return ::so::Bytes{};
+
+  {
+    char buf[10240];
+    int rdlen;
+    do {
+      char *bufFirstPos = buf;
+      rdlen = BIO_read(bio.get(), bufFirstPos, sizeof(buf));
+    } while (rdlen > 0);
+  }
+
+  uint8_t mdbuf[EVP_MAX_MD_SIZE];
+  const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
+
+  return ::so::Bytes(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen));
+}
+
+} // namespace internal
+
 inline std::string bin2Hex(const so::Bytes &buff)
 {
   std::ostringstream oss;
@@ -88,6 +127,14 @@ inline bool operator==(const ::so::Bytes &lhs, const ::so::Bytes &rhs)
 {
   return lhs.size() == rhs.size() &&
     std::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+inline bool filesEqual(const std::string &file_1, const std::string &file_2)
+{
+  const auto file_1_hash = internal::doHashFile(file_1, EVP_sha256());
+  const auto file_2_hash = internal::doHashFile(file_2, EVP_sha256());
+
+  return file_1_hash == file_2_hash;
 }
 
 }}}

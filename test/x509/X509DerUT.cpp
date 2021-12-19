@@ -49,13 +49,7 @@ TEST(X509DERUT, certToDerFile)
 
   // THEN
   ASSERT_TRUE(result);
-
-  const auto correctFileHash = so::hash::fileSHA256("data/validdercert.der");
-  ASSERT_TRUE(correctFileHash);
-  const auto actualFileHash = so::hash::fileSHA256(TMP_OUT_FILENAME);
-  ASSERT_TRUE(actualFileHash);
-
-  EXPECT_EQ(correctFileHash.value, actualFileHash.value);
+  EXPECT_TRUE(utils::filesEqual("data/validdercert.der", TMP_OUT_FILENAME));
 }
 
 
