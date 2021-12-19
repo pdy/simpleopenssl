@@ -28,8 +28,12 @@
 #include <simpleopenssl/simpleopenssl.h>
 #include "simplelog/simplelog.h"
 #include <iomanip>
+#include <fstream>
+#include <filesystem>
 
 using namespace so;
+
+void saveToFile(std::string_view pemContent, const std::filesystem::path &filePath);
 
 int main(int argc, char *argv[])
 {
@@ -156,25 +160,33 @@ int main(int argc, char *argv[])
 
   if(format == "pem")
   {
-    /*
-    if(const auto result = evp::converKe(*cert.value, *evpKey.value); !result)
+    // TODO I'm missing direct "ToPemFile" converters 
+    if(const auto result = evp::convertPrivKeyToPem(*evpKey.value))
+    {
+      saveToFile(result.value, keyPath); 
+    }
+    else
     {
       log << result.msg();
       return 0;
     }
-    */
 
     if(const auto result = x509::convertX509ToPemFile(*cert.value, certPath); !result)
     {
       log << result.msg();
-      return 0;
-    }
-
+      return 0; 
+    } 
   }
-
-
+  
   return 0;
 }
 
+void saveToFile(std::string_view pemContent, const std::filesystem::path &filePath)
+{
+  std::ofstream out(filePath);
+  if(!out.is_open())
+    return;
 
-
+  out << pemContent;
+  out.close();
+}
