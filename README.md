@@ -96,7 +96,7 @@ std::string timetPrettyString(std::time_t time)
 3. Use plain ```#include "simpleopenssl.h"``` in every other place.
  
 # Dependencies
-* OpenSSL version 1.1.0 or higher
+* OpenSSL version 1.1.1 
 * C++11 or higher
 * STL
 

@@ -66,7 +66,16 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_hmac_sha1, so::nid::Nid::HMAC_SHA1
  },
  NidUTInput {
+  NID_x509ExtAdmission, so::nid::Nid::X509EXTADMISSION
+ },
+ NidUTInput {
   NID_certicom_arc, so::nid::Nid::CERTICOM_ARC
+ },
+ NidUTInput {
+  NID_ieee, so::nid::Nid::IEEE
+ },
+ NidUTInput {
+  NID_ieee_siswg, so::nid::Nid::IEEE_SISWG
  },
  NidUTInput {
   NID_international_organizations, so::nid::Nid::INTERNATIONAL_ORGANIZATIONS
@@ -91,6 +100,15 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
  },
  NidUTInput {
   NID_X9cm, so::nid::Nid::X9CM
+ },
+ NidUTInput {
+  NID_ISO_CN, so::nid::Nid::ISO_CN
+ },
+ NidUTInput {
+  NID_oscca, so::nid::Nid::OSCCA
+ },
+ NidUTInput {
+  NID_sm_scheme, so::nid::Nid::SM_SCHEME
  },
  NidUTInput {
   NID_dsa, so::nid::Nid::DSA
@@ -420,6 +438,12 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_sha224WithRSAEncryption, so::nid::Nid::SHA224WITHRSAENCRYPTION
  },
  NidUTInput {
+  NID_sha512_224WithRSAEncryption, so::nid::Nid::SHA512_224WITHRSAENCRYPTION
+ },
+ NidUTInput {
+  NID_sha512_256WithRSAEncryption, so::nid::Nid::SHA512_256WITHRSAENCRYPTION
+ },
+ NidUTInput {
   NID_pkcs3, so::nid::Nid::PKCS3
  },
  NidUTInput {
@@ -687,6 +711,9 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_id_smime_aa_dvcs_dvc, so::nid::Nid::ID_SMIME_AA_DVCS_DVC
  },
  NidUTInput {
+  NID_id_smime_aa_signingCertificateV2, so::nid::Nid::ID_SMIME_AA_SIGNINGCERTIFICATEV2
+ },
+ NidUTInput {
   NID_id_smime_alg_ESDHwith3DES, so::nid::Nid::ID_SMIME_ALG_ESDHWITH3DES
  },
  NidUTInput {
@@ -813,6 +840,15 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_hmacWithSHA1, so::nid::Nid::HMACWITHSHA1
  },
  NidUTInput {
+  NID_sm2, so::nid::Nid::SM2
+ },
+ NidUTInput {
+  NID_sm3, so::nid::Nid::SM3
+ },
+ NidUTInput {
+  NID_sm3WithRSAEncryption, so::nid::Nid::SM3WITHRSAENCRYPTION
+ },
+ NidUTInput {
   NID_hmacWithSHA224, so::nid::Nid::HMACWITHSHA224
  },
  NidUTInput {
@@ -823,6 +859,12 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
  },
  NidUTInput {
   NID_hmacWithSHA512, so::nid::Nid::HMACWITHSHA512
+ },
+ NidUTInput {
+  NID_hmacWithSHA512_224, so::nid::Nid::HMACWITHSHA512_224
+ },
+ NidUTInput {
+  NID_hmacWithSHA512_256, so::nid::Nid::HMACWITHSHA512_256
  },
  NidUTInput {
   NID_rc2_cbc, so::nid::Nid::RC2_CBC
@@ -1111,6 +1153,12 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
  },
  NidUTInput {
   NID_sendProxiedOwner, so::nid::Nid::SENDPROXIEDOWNER
+ },
+ NidUTInput {
+  NID_cmcCA, so::nid::Nid::CMCCA
+ },
+ NidUTInput {
+  NID_cmcRA, so::nid::Nid::CMCRA
  },
  NidUTInput {
   NID_id_it_caProtEncCert, so::nid::Nid::ID_IT_CAPROTENCCERT
@@ -1620,6 +1668,18 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_role, so::nid::Nid::ROLE
  },
  NidUTInput {
+  NID_organizationIdentifier, so::nid::Nid::ORGANIZATIONIDENTIFIER
+ },
+ NidUTInput {
+  NID_countryCode3c, so::nid::Nid::COUNTRYCODE3C
+ },
+ NidUTInput {
+  NID_countryCode3n, so::nid::Nid::COUNTRYCODE3N
+ },
+ NidUTInput {
+  NID_dnsName, so::nid::Nid::DNSNAME
+ },
+ NidUTInput {
   NID_X500algorithms, so::nid::Nid::X500ALGORITHMS
  },
  NidUTInput {
@@ -1878,6 +1938,12 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_id_aes256_wrap_pad, so::nid::Nid::ID_AES256_WRAP_PAD
  },
  NidUTInput {
+  NID_aes_128_xts, so::nid::Nid::AES_128_XTS
+ },
+ NidUTInput {
+  NID_aes_256_xts, so::nid::Nid::AES_256_XTS
+ },
+ NidUTInput {
   NID_aes_128_cfb1, so::nid::Nid::AES_128_CFB1
  },
  NidUTInput {
@@ -1914,12 +1980,6 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_aes_256_ocb, so::nid::Nid::AES_256_OCB
  },
  NidUTInput {
-  NID_aes_128_xts, so::nid::Nid::AES_128_XTS
- },
- NidUTInput {
-  NID_aes_256_xts, so::nid::Nid::AES_256_XTS
- },
- NidUTInput {
   NID_des_cfb1, so::nid::Nid::DES_CFB1
  },
  NidUTInput {
@@ -1944,10 +2004,88 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_sha224, so::nid::Nid::SHA224
  },
  NidUTInput {
+  NID_sha512_224, so::nid::Nid::SHA512_224
+ },
+ NidUTInput {
+  NID_sha512_256, so::nid::Nid::SHA512_256
+ },
+ NidUTInput {
+  NID_sha3_224, so::nid::Nid::SHA3_224
+ },
+ NidUTInput {
+  NID_sha3_256, so::nid::Nid::SHA3_256
+ },
+ NidUTInput {
+  NID_sha3_384, so::nid::Nid::SHA3_384
+ },
+ NidUTInput {
+  NID_sha3_512, so::nid::Nid::SHA3_512
+ },
+ NidUTInput {
+  NID_shake128, so::nid::Nid::SHAKE128
+ },
+ NidUTInput {
+  NID_shake256, so::nid::Nid::SHAKE256
+ },
+ NidUTInput {
+  NID_hmac_sha3_224, so::nid::Nid::HMAC_SHA3_224
+ },
+ NidUTInput {
+  NID_hmac_sha3_256, so::nid::Nid::HMAC_SHA3_256
+ },
+ NidUTInput {
+  NID_hmac_sha3_384, so::nid::Nid::HMAC_SHA3_384
+ },
+ NidUTInput {
+  NID_hmac_sha3_512, so::nid::Nid::HMAC_SHA3_512
+ },
+ NidUTInput {
   NID_dsa_with_SHA224, so::nid::Nid::DSA_WITH_SHA224
  },
  NidUTInput {
   NID_dsa_with_SHA256, so::nid::Nid::DSA_WITH_SHA256
+ },
+ NidUTInput {
+  NID_dsa_with_SHA384, so::nid::Nid::DSA_WITH_SHA384
+ },
+ NidUTInput {
+  NID_dsa_with_SHA512, so::nid::Nid::DSA_WITH_SHA512
+ },
+ NidUTInput {
+  NID_dsa_with_SHA3_224, so::nid::Nid::DSA_WITH_SHA3_224
+ },
+ NidUTInput {
+  NID_dsa_with_SHA3_256, so::nid::Nid::DSA_WITH_SHA3_256
+ },
+ NidUTInput {
+  NID_dsa_with_SHA3_384, so::nid::Nid::DSA_WITH_SHA3_384
+ },
+ NidUTInput {
+  NID_dsa_with_SHA3_512, so::nid::Nid::DSA_WITH_SHA3_512
+ },
+ NidUTInput {
+  NID_ecdsa_with_SHA3_224, so::nid::Nid::ECDSA_WITH_SHA3_224
+ },
+ NidUTInput {
+  NID_ecdsa_with_SHA3_256, so::nid::Nid::ECDSA_WITH_SHA3_256
+ },
+ NidUTInput {
+  NID_ecdsa_with_SHA3_384, so::nid::Nid::ECDSA_WITH_SHA3_384
+ },
+ NidUTInput {
+  NID_ecdsa_with_SHA3_512, so::nid::Nid::ECDSA_WITH_SHA3_512
+ },
+ NidUTInput {
+  NID_RSA_SHA3_224, so::nid::Nid::RSA_SHA3_224
+ },
+ NidUTInput {
+  NID_RSA_SHA3_256, so::nid::Nid::RSA_SHA3_256
+ },
+ NidUTInput {
+  NID_RSA_SHA3_384, so::nid::Nid::RSA_SHA3_384
+ },
+ NidUTInput {
+  NID_RSA_SHA3_512, so::nid::Nid::RSA_SHA3_512
  },
  NidUTInput {
   NID_hold_instruction_code, so::nid::Nid::HOLD_INSTRUCTION_CODE
@@ -2796,6 +2934,24 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_id_tc26_cipher, so::nid::Nid::ID_TC26_CIPHER
  },
  NidUTInput {
+  NID_id_tc26_cipher_gostr3412_2015_magma, so::nid::Nid::ID_TC26_CIPHER_GOSTR3412_2015_MAGMA
+ },
+ NidUTInput {
+  NID_id_tc26_cipher_gostr3412_2015_magma_ctracpkm, so::nid::Nid::ID_TC26_CIPHER_GOSTR3412_2015_MAGMA_CTRACPKM
+ },
+ NidUTInput {
+  NID_id_tc26_cipher_gostr3412_2015_magma_ctracpkm_omac, so::nid::Nid::ID_TC26_CIPHER_GOSTR3412_2015_MAGMA_CTRACPKM_OMAC
+ },
+ NidUTInput {
+  NID_id_tc26_cipher_gostr3412_2015_kuznyechik, so::nid::Nid::ID_TC26_CIPHER_GOSTR3412_2015_KUZNYECHIK
+ },
+ NidUTInput {
+  NID_id_tc26_cipher_gostr3412_2015_kuznyechik_ctracpkm, so::nid::Nid::ID_TC26_CIPHER_GOSTR3412_2015_KUZNYECHIK_CTRACPKM
+ },
+ NidUTInput {
+  NID_id_tc26_cipher_gostr3412_2015_kuznyechik_ctracpkm_omac, so::nid::Nid::ID_TC26_CIPHER_GOSTR3412_2015_KUZNYECHIK_CTRACPKM_OMAC
+ },
+ NidUTInput {
   NID_id_tc26_agreement, so::nid::Nid::ID_TC26_AGREEMENT
  },
  NidUTInput {
@@ -2805,10 +2961,40 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_id_tc26_agreement_gost_3410_2012_512, so::nid::Nid::ID_TC26_AGREEMENT_GOST_3410_2012_512
  },
  NidUTInput {
+  NID_id_tc26_wrap, so::nid::Nid::ID_TC26_WRAP
+ },
+ NidUTInput {
+  NID_id_tc26_wrap_gostr3412_2015_magma, so::nid::Nid::ID_TC26_WRAP_GOSTR3412_2015_MAGMA
+ },
+ NidUTInput {
+  NID_id_tc26_wrap_gostr3412_2015_magma_kexp15, so::nid::Nid::ID_TC26_WRAP_GOSTR3412_2015_MAGMA_KEXP15
+ },
+ NidUTInput {
+  NID_id_tc26_wrap_gostr3412_2015_kuznyechik, so::nid::Nid::ID_TC26_WRAP_GOSTR3412_2015_KUZNYECHIK
+ },
+ NidUTInput {
+  NID_id_tc26_wrap_gostr3412_2015_kuznyechik_kexp15, so::nid::Nid::ID_TC26_WRAP_GOSTR3412_2015_KUZNYECHIK_KEXP15
+ },
+ NidUTInput {
   NID_id_tc26_constants, so::nid::Nid::ID_TC26_CONSTANTS
  },
  NidUTInput {
   NID_id_tc26_sign_constants, so::nid::Nid::ID_TC26_SIGN_CONSTANTS
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_256_constants, so::nid::Nid::ID_TC26_GOST_3410_2012_256_CONSTANTS
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_256_paramSetA, so::nid::Nid::ID_TC26_GOST_3410_2012_256_PARAMSETA
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_256_paramSetB, so::nid::Nid::ID_TC26_GOST_3410_2012_256_PARAMSETB
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_256_paramSetC, so::nid::Nid::ID_TC26_GOST_3410_2012_256_PARAMSETC
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_256_paramSetD, so::nid::Nid::ID_TC26_GOST_3410_2012_256_PARAMSETD
  },
  NidUTInput {
   NID_id_tc26_gost_3410_2012_512_constants, so::nid::Nid::ID_TC26_GOST_3410_2012_512_CONSTANTS
@@ -2821,6 +3007,9 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
  },
  NidUTInput {
   NID_id_tc26_gost_3410_2012_512_paramSetB, so::nid::Nid::ID_TC26_GOST_3410_2012_512_PARAMSETB
+ },
+ NidUTInput {
+  NID_id_tc26_gost_3410_2012_512_paramSetC, so::nid::Nid::ID_TC26_GOST_3410_2012_512_PARAMSETC
  },
  NidUTInput {
   NID_id_tc26_digest_constants, so::nid::Nid::ID_TC26_DIGEST_CONSTANTS
@@ -2866,6 +3055,24 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
  },
  NidUTInput {
   NID_grasshopper_mac, so::nid::Nid::GRASSHOPPER_MAC
+ },
+ NidUTInput {
+  NID_magma_ecb, so::nid::Nid::MAGMA_ECB
+ },
+ NidUTInput {
+  NID_magma_ctr, so::nid::Nid::MAGMA_CTR
+ },
+ NidUTInput {
+  NID_magma_ofb, so::nid::Nid::MAGMA_OFB
+ },
+ NidUTInput {
+  NID_magma_cbc, so::nid::Nid::MAGMA_CBC
+ },
+ NidUTInput {
+  NID_magma_cfb, so::nid::Nid::MAGMA_CFB
+ },
+ NidUTInput {
+  NID_magma_mac, so::nid::Nid::MAGMA_MAC
  },
  NidUTInput {
   NID_camellia_128_cbc, so::nid::Nid::CAMELLIA_128_CBC
@@ -2967,6 +3174,87 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_camellia_256_cfb8, so::nid::Nid::CAMELLIA_256_CFB8
  },
  NidUTInput {
+  NID_aria_128_ecb, so::nid::Nid::ARIA_128_ECB
+ },
+ NidUTInput {
+  NID_aria_128_cbc, so::nid::Nid::ARIA_128_CBC
+ },
+ NidUTInput {
+  NID_aria_128_cfb128, so::nid::Nid::ARIA_128_CFB128
+ },
+ NidUTInput {
+  NID_aria_128_ofb128, so::nid::Nid::ARIA_128_OFB128
+ },
+ NidUTInput {
+  NID_aria_128_ctr, so::nid::Nid::ARIA_128_CTR
+ },
+ NidUTInput {
+  NID_aria_192_ecb, so::nid::Nid::ARIA_192_ECB
+ },
+ NidUTInput {
+  NID_aria_192_cbc, so::nid::Nid::ARIA_192_CBC
+ },
+ NidUTInput {
+  NID_aria_192_cfb128, so::nid::Nid::ARIA_192_CFB128
+ },
+ NidUTInput {
+  NID_aria_192_ofb128, so::nid::Nid::ARIA_192_OFB128
+ },
+ NidUTInput {
+  NID_aria_192_ctr, so::nid::Nid::ARIA_192_CTR
+ },
+ NidUTInput {
+  NID_aria_256_ecb, so::nid::Nid::ARIA_256_ECB
+ },
+ NidUTInput {
+  NID_aria_256_cbc, so::nid::Nid::ARIA_256_CBC
+ },
+ NidUTInput {
+  NID_aria_256_cfb128, so::nid::Nid::ARIA_256_CFB128
+ },
+ NidUTInput {
+  NID_aria_256_ofb128, so::nid::Nid::ARIA_256_OFB128
+ },
+ NidUTInput {
+  NID_aria_256_ctr, so::nid::Nid::ARIA_256_CTR
+ },
+ NidUTInput {
+  NID_aria_128_cfb1, so::nid::Nid::ARIA_128_CFB1
+ },
+ NidUTInput {
+  NID_aria_192_cfb1, so::nid::Nid::ARIA_192_CFB1
+ },
+ NidUTInput {
+  NID_aria_256_cfb1, so::nid::Nid::ARIA_256_CFB1
+ },
+ NidUTInput {
+  NID_aria_128_cfb8, so::nid::Nid::ARIA_128_CFB8
+ },
+ NidUTInput {
+  NID_aria_192_cfb8, so::nid::Nid::ARIA_192_CFB8
+ },
+ NidUTInput {
+  NID_aria_256_cfb8, so::nid::Nid::ARIA_256_CFB8
+ },
+ NidUTInput {
+  NID_aria_128_ccm, so::nid::Nid::ARIA_128_CCM
+ },
+ NidUTInput {
+  NID_aria_192_ccm, so::nid::Nid::ARIA_192_CCM
+ },
+ NidUTInput {
+  NID_aria_256_ccm, so::nid::Nid::ARIA_256_CCM
+ },
+ NidUTInput {
+  NID_aria_128_gcm, so::nid::Nid::ARIA_128_GCM
+ },
+ NidUTInput {
+  NID_aria_192_gcm, so::nid::Nid::ARIA_192_GCM
+ },
+ NidUTInput {
+  NID_aria_256_gcm, so::nid::Nid::ARIA_256_GCM
+ },
+ NidUTInput {
   NID_kisa, so::nid::Nid::KISA
  },
  NidUTInput {
@@ -2980,6 +3268,27 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
  },
  NidUTInput {
   NID_seed_ofb128, so::nid::Nid::SEED_OFB128
+ },
+ NidUTInput {
+  NID_sm4_ecb, so::nid::Nid::SM4_ECB
+ },
+ NidUTInput {
+  NID_sm4_cbc, so::nid::Nid::SM4_CBC
+ },
+ NidUTInput {
+  NID_sm4_ofb128, so::nid::Nid::SM4_OFB128
+ },
+ NidUTInput {
+  NID_sm4_cfb128, so::nid::Nid::SM4_CFB128
+ },
+ NidUTInput {
+  NID_sm4_cfb1, so::nid::Nid::SM4_CFB1
+ },
+ NidUTInput {
+  NID_sm4_cfb8, so::nid::Nid::SM4_CFB8
+ },
+ NidUTInput {
+  NID_sm4_ctr, so::nid::Nid::SM4_CTR
  },
  NidUTInput {
   NID_hmac, so::nid::Nid::HMAC
@@ -3141,6 +3450,12 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_X448, so::nid::Nid::X448
  },
  NidUTInput {
+  NID_ED25519, so::nid::Nid::ED25519
+ },
+ NidUTInput {
+  NID_ED448, so::nid::Nid::ED448
+ },
+ NidUTInput {
   NID_kx_rsa, so::nid::Nid::KX_RSA
  },
  NidUTInput {
@@ -3168,6 +3483,9 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
   NID_kx_gost, so::nid::Nid::KX_GOST
  },
  NidUTInput {
+  NID_kx_any, so::nid::Nid::KX_ANY
+ },
+ NidUTInput {
   NID_auth_rsa, so::nid::Nid::AUTH_RSA
  },
  NidUTInput {
@@ -3190,6 +3508,90 @@ static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {
  },
  NidUTInput {
   NID_auth_null, so::nid::Nid::AUTH_NULL
+ },
+ NidUTInput {
+  NID_auth_any, so::nid::Nid::AUTH_ANY
+ },
+ NidUTInput {
+  NID_poly1305, so::nid::Nid::POLY1305
+ },
+ NidUTInput {
+  NID_siphash, so::nid::Nid::SIPHASH
+ },
+ NidUTInput {
+  NID_ffdhe2048, so::nid::Nid::FFDHE2048
+ },
+ NidUTInput {
+  NID_ffdhe3072, so::nid::Nid::FFDHE3072
+ },
+ NidUTInput {
+  NID_ffdhe4096, so::nid::Nid::FFDHE4096
+ },
+ NidUTInput {
+  NID_ffdhe6144, so::nid::Nid::FFDHE6144
+ },
+ NidUTInput {
+  NID_ffdhe8192, so::nid::Nid::FFDHE8192
+ },
+ NidUTInput {
+  NID_ISO_UA, so::nid::Nid::ISO_UA
+ },
+ NidUTInput {
+  NID_ua_pki, so::nid::Nid::UA_PKI
+ },
+ NidUTInput {
+  NID_dstu28147, so::nid::Nid::DSTU28147
+ },
+ NidUTInput {
+  NID_dstu28147_ofb, so::nid::Nid::DSTU28147_OFB
+ },
+ NidUTInput {
+  NID_dstu28147_cfb, so::nid::Nid::DSTU28147_CFB
+ },
+ NidUTInput {
+  NID_dstu28147_wrap, so::nid::Nid::DSTU28147_WRAP
+ },
+ NidUTInput {
+  NID_hmacWithDstu34311, so::nid::Nid::HMACWITHDSTU34311
+ },
+ NidUTInput {
+  NID_dstu34311, so::nid::Nid::DSTU34311
+ },
+ NidUTInput {
+  NID_dstu4145le, so::nid::Nid::DSTU4145LE
+ },
+ NidUTInput {
+  NID_dstu4145be, so::nid::Nid::DSTU4145BE
+ },
+ NidUTInput {
+  NID_uacurve0, so::nid::Nid::UACURVE0
+ },
+ NidUTInput {
+  NID_uacurve1, so::nid::Nid::UACURVE1
+ },
+ NidUTInput {
+  NID_uacurve2, so::nid::Nid::UACURVE2
+ },
+ NidUTInput {
+  NID_uacurve3, so::nid::Nid::UACURVE3
+ },
+ NidUTInput {
+  NID_uacurve4, so::nid::Nid::UACURVE4
+ },
+ NidUTInput {
+  NID_uacurve5, so::nid::Nid::UACURVE5
+ },
+ NidUTInput {
+  NID_uacurve6, so::nid::Nid::UACURVE6
+ },
+ NidUTInput {
+  NID_uacurve7, so::nid::Nid::UACURVE7
+ },
+ NidUTInput {
+  NID_uacurve8, so::nid::Nid::UACURVE8
+ },
+ NidUTInput {
+  NID_uacurve9, so::nid::Nid::UACURVE9
  }
 };
 
