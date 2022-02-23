@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2021 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
   log << "Writing to " << soOutFile;
   log << "Writing to " << ecdsaCurveOutFile;
 
-  testsOut << "const static NidUTInput NID_VALIDITY_UT_VALUES[] {\n";
+  testsOut << "static constexpr NidUTInput NID_VALIDITY_UT_VALUES[] {\n";
 
   soOut << "enum class Nid : int\n{\n";
 
@@ -159,7 +159,7 @@ std::string formTestSecion(const std::string &nidLine, const size_t pos)
   std::string ret = " NidUTInput {\n";
   const auto nid = getNid(nidLine, pos);
   //log << "NID to be added " << nid;
-  ret += "  " + nid + ", nid::Nid::" + toUpper(stripNid(nid));
+  ret += "  " + nid + ", so::nid::Nid::" + toUpper(stripNid(nid));
   ret += "\n },\n";
 
   return ret;
