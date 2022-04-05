@@ -33,27 +33,6 @@ namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
 
-namespace {
-
-bool equal(const ::so::Bytes &lhs, unsigned char *rhs, int rhsLen)
-{
-  if(static_cast<int>(lhs.size()) != rhsLen)
-    return false;
-
-  size_t idx = 0;
-  for(const auto &bt : lhs)
-  {
-    if(bt != rhs[idx])
-      return false;
-
-    ++idx;
-  }
-
-  return true;
-}
-
-} // namespace
-
 TEST(X509DERUT, certToDerFile)
 {
   static constexpr auto TMP_OUT_FILENAME = "data/tmp_der_cert.der";
@@ -83,7 +62,7 @@ TEST(X509DERUT, derFileToCert)
   unsigned char *der = nullptr;
   const int len = i2d_X509(cert.value.get(), &der);
   ASSERT_TRUE(len >= 0); 
-  EXPECT_TRUE(equal(data::validDerCert, der, len));
+  EXPECT_TRUE(utils::equal(data::validDerCert, der, len));
   OPENSSL_free(der);
 }
 

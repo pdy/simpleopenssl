@@ -29,31 +29,9 @@
 #include "../utils.h"
 #include "../platform.h"
 
-namespace {
-
-bool equal(const ::so::Bytes &lhs, unsigned char *rhs, int rhsLen)
-{
-  if(static_cast<int>(lhs.size()) != rhsLen)
-    return false;
-
-  size_t idx = 0;
-  for(const auto &bt : lhs)
-  {
-    if(bt != rhs[idx])
-      return false;
-
-    ++idx;
-  }
-
-  return true;
-}
-
-} // namespace
-
 namespace so { namespace ut { namespace x509 {
 
 namespace x509 = ::so::x509;
-
 
 TEST(CRLDERUT, certToDerFile)
 {
@@ -84,7 +62,9 @@ TEST(CRLDERUT, derFileToCert)
   unsigned char *der = nullptr;
   const int len = i2d_X509_CRL(crl.value.get(), &der);
   ASSERT_TRUE(len >= 0); 
-  EXPECT_TRUE(equal(data::validDerCrl, der, len));
+
+
+  EXPECT_TRUE(utils::equal(data::validDerCrl, der, len));
   OPENSSL_free(der);
 }
 

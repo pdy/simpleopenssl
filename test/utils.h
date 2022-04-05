@@ -79,6 +79,23 @@ inline ::so::Bytes doHashFile(const std::string &path, const EVP_MD *evpMd)
 
 } // namespace internal
 
+inline bool equal(const ::so::Bytes &lhs, unsigned char *rhs, int rhsLen)
+{
+  if(static_cast<int>(lhs.size()) != rhsLen)
+    return false;
+
+  size_t idx = 0;
+  for(const auto &bt : lhs)
+  {
+    if(bt != rhs[idx])
+      return false;
+
+    ++idx;
+  }
+
+  return true;
+}
+
 inline std::string bin2Hex(const so::Bytes &buff)
 {
   std::ostringstream oss;
