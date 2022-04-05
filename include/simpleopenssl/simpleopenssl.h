@@ -1891,6 +1891,9 @@ namespace x509 {
   Result<std::string> convertCrlToPem(X509_CRL &crl);
   Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrlFile);
 
+  Result<void> convertCrlToDerFile(X509_CRL &crl, const std::string &filePath);
+  Result<X509_CRL_uptr> convertDerFileToCrl(const std::string &filePath);
+
   Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
   Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl);
   Result<size_t> getExtensionsCount(X509_CRL &crl);
@@ -4221,6 +4224,31 @@ namespace x509 {
       return internal::err<X509_CRL_uptr>();
 
     return internal::ok(std::move(ret));
+  }
+
+  Result<void> convertCrlToDerFile(X509_CRL &crl, const std::string &filePath)
+  {
+    BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "w"));
+    if(!bio)
+      return internal::errVoid();
+
+    if(0 == i2d_X509_CRL_bio(bio.get(), &crl))
+      return internal::errVoid();
+
+    return internal::okVoid();
+  }
+
+  Result<X509_CRL_uptr> convertDerFileToCrl(const std::string &filePath)
+  {
+    BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "r"));
+    if(!bio)
+      return internal::err<X509_CRL_uptr>();
+
+    auto crl = make_unique(d2i_X509_CRL_bio(bio.get(), nullptr));
+    if(!crl)
+      return internal::err<X509_CRL_uptr>();
+
+    return internal::ok(std::move(crl));
   }
 
   Result<std::string> convertCrlToPem(X509_CRL &crl)
