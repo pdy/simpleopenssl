@@ -63,7 +63,7 @@ TEST(CRLDERUT, certToDerFile)
   auto crl = ::so::make_unique(d2i_X509_CRL(nullptr, &it, static_cast<long>(data::validDerCrl.size())));
   ASSERT_TRUE(crl);
 
-  auto scope = ::makeScopeGuard([&] { ::remove(TMP_OUT_FILENAME); });
+  auto scope = ::makeScopeGuard([&] { ::removeFile(TMP_OUT_FILENAME); });
 
   // WHEN
   const auto result = x509::convertCrlToDerFile(*crl, TMP_OUT_FILENAME);

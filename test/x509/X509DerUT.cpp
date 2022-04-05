@@ -22,7 +22,6 @@
 */
 
 
-#include <cstdio>
 #include <gtest/gtest.h>
 
 #include <simpleopenssl/simpleopenssl.h>
@@ -63,7 +62,7 @@ TEST(X509DERUT, certToDerFile)
   auto cert = ::so::make_unique(d2i_X509(nullptr, &it, static_cast<long>(data::validDerCert.size())));
   ASSERT_TRUE(cert);
 
-  auto scope = ::makeScopeGuard([&] { ::remove(TMP_OUT_FILENAME); });
+  auto scope = ::makeScopeGuard([&] { ::removeFile(TMP_OUT_FILENAME); });
 
   // WHEN
   const auto result = x509::convertX509ToDerFile(*cert, TMP_OUT_FILENAME);
