@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -66,4 +66,17 @@ TEST(CRLPemUT, crlToPem)
   ASSERT_TRUE(actual);
   EXPECT_EQ(pemCrl, actual.value);
 }
+
+TEST(CRLPemUT, crlFromPemFile)
+{
+  // GIVEN
+  const std::string PEM_FILENAME = "data/validpemcrl.pem";
+
+  // WHEN
+  auto crl = x509::convertPemFileToCRL(PEM_FILENAME);
+
+  // THEN
+  ASSERT_TRUE(crl);
+}
+
 }}}

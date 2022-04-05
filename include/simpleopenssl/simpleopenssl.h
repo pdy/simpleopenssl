@@ -1889,6 +1889,7 @@ namespace x509 {
 
   Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
   Result<std::string> convertCrlToPem(X509_CRL &crl);
+
   Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrlFile);
 
   Result<void> convertCrlToDerFile(X509_CRL &crl, const std::string &filePath);
