@@ -24,6 +24,7 @@
 #include <cmdline.h> 
 #include <chrono>
 #include <ctime>
+#include <ios>
 #define SO_IMPLEMENTATION
 #include <simpleopenssl/simpleopenssl.h>
 #include "simplelog/simplelog.h"
@@ -34,6 +35,7 @@
 using namespace so;
 
 void saveToFile(std::string_view pemContent, const std::filesystem::path &filePath);
+void saveToFile(const so::Bytes &der, const std::filesystem::path &filePath);
 
 int main(int argc, char *argv[])
 {
@@ -177,6 +179,25 @@ int main(int argc, char *argv[])
       return 0; 
     } 
   }
+  else if(format == "der")
+  {
+    // TODO I'm missing direct "ToDerFile" converters 
+    if(const auto result = evp::convertPrivKeyToDer(*evpKey.value))
+    {
+      saveToFile(result.value, keyPath); 
+    }
+    else
+    {
+      log << result.msg();
+      return 0;
+    }
+
+    if(const auto result = x509::convertX509ToDerFile(*cert.value, certPath); !result)
+    {
+      log << result.msg();
+      return 0; 
+    }
+  }
   
   return 0;
 }
@@ -185,8 +206,28 @@ void saveToFile(std::string_view pemContent, const std::filesystem::path &filePa
 {
   std::ofstream out(filePath);
   if(!out.is_open())
+  {
+    log << "Couldn't open " << filePath;
     return;
+  }
 
   out << pemContent;
+  out.close();
+}
+
+void saveToFile(const so::Bytes &der, const std::filesystem::path &filePath)
+{
+  std::ofstream out(filePath, std::ios::binary);
+  if(!out.is_open())
+  {
+    log << "Couldn't open " << filePath;
+    return;
+  }
+
+  if(!out.write(reinterpret_cast<const char*>(der.data()), static_cast<std::streamsize>(der.size())))
+  {
+    log << "Couldn write to " << filePath;
+  }
+
   out.close();
 }
