@@ -37,7 +37,7 @@ main-build: pre-build
 	@$(MAKE) --no-print-directory $(BUILD)/hashfile
 	@$(MAKE) --no-print-directory $(BUILD)/rsakeygen
 	@$(MAKE) --no-print-directory $(BUILD)/x509info
-	@$(MAKE) --no-print-directory $(BUILD)/ecdsa_self_signed_gen
+	@$(MAKE) --no-print-directory $(BUILD)/self_signed_ecdsa_cert
 
 clean:
 	@rm -r ./bin
