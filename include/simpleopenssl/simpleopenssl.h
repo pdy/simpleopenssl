@@ -243,6 +243,7 @@ void cleanUp();
 unsigned long getLastErrCode();
 std::string errCodeToString(unsigned long osslErrCode);
 std::string getLastErrString();
+std::string getOpenSSLVersion();
 
 namespace asn1 {
   enum class Form : int
@@ -2651,6 +2652,11 @@ std::string errCodeToString(unsigned long osslErrCode)
 std::string getLastErrString()
 {
   return errCodeToString(getLastErrCode()); 
+}
+
+std::string getOpenSSLVersion()
+{
+  return OpenSSL_version(OPENSSL_VERSION);
 }
 
 namespace asn1 {
