@@ -1663,7 +1663,10 @@ namespace rsa {
   Result<std::string> convertPubKeyToPem(RSA &rsa);
 
   Result<RSA_uptr> convertDerToPrivKey(const Bytes &der);
+  Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size);
   Result<RSA_uptr> convertDerToPubKey(const Bytes &der);
+  Result<RSA_uptr> convertDerToPubKey(const uint8_t der[], size_t size);
+  
   Result<Bytes> convertPrivKeyToDer(RSA &rsa);
   Result<Bytes> convertPubKeyToDer(RSA &rsa);
 
@@ -2548,10 +2551,9 @@ namespace bytes {
   }
 
   template<typename Key, typename FUNC>
-  Result<Key> convertDerToKey(const Bytes &der, FUNC d2iFunction)
+  Result<Key> convertDerToKey(FUNC d2iFunction, const uint8_t *derData, size_t size)
   {
-    const uint8_t *ptr = der.data();
-    auto ret = make_unique(d2iFunction(nullptr, &ptr, static_cast<long>(der.size())));
+    auto ret = make_unique(d2iFunction(nullptr, &derData, static_cast<long>(size)));
     if(!ret)
       return internal::err<Key>();
 
@@ -2834,14 +2836,14 @@ namespace ecdsa {
 
   Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der)
   {
-    return internal::convertDerToKey<EC_KEY_uptr>(der, d2i_ECPrivateKey);
+    return internal::convertDerToKey<EC_KEY_uptr>(d2i_ECPrivateKey, der.data(), der.size());
   }
 
   Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der)
   {
-    return internal::convertDerToKey<EC_KEY_uptr>(der, d2i_EC_PUBKEY);
-  }
-
+    return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der.data(), der.size());
+  } 
+  
   Result<Bytes> convertPrivKeyToDer(EC_KEY &ec)
   {
     const auto check = ecdsa::checkKey(ec);
@@ -3167,12 +3169,12 @@ namespace evp {
 
   Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der)
   {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(der, d2i_AutoPrivateKey);
+    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_AutoPrivateKey, der.data(), der.size());
   }
 
   Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der)
   {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(der, d2i_PUBKEY);
+    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der.data(), der.size());
   }
 
   Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey)
@@ -3476,12 +3478,22 @@ namespace rsa {
  
   Result<RSA_uptr> convertDerToPrivKey(const Bytes &der)
   {
-    return internal::convertDerToKey<RSA_uptr>(der, d2i_RSAPrivateKey);
+    return internal::convertDerToKey<RSA_uptr>(d2i_RSAPrivateKey, der.data(), der.size());
   }
 
   Result<RSA_uptr> convertDerToPubKey(const Bytes &der)
   {
-    return internal::convertDerToKey<RSA_uptr>(der, d2i_RSA_PUBKEY);
+    return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der.data(), der.size());
+  }
+  
+  Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size)
+  {
+    return internal::convertDerToKey<RSA_uptr>(d2i_RSAPrivateKey, der, size);
+  }
+
+  Result<RSA_uptr> convertDerToPubKey(const uint8_t der[], size_t size)
+  {
+    return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der, size);
   }
 
   Result<Bytes> convertPrivKeyToDer(RSA &rsa)
@@ -3803,8 +3815,7 @@ namespace x509 {
 
     return internal::ok(std::move(ret));
 
-    // alternative impl
-    /*
+#if 0 // alternative impl
     unsigned char *buf = nullptr;
     const int len = i2d_X509(&cert, &buf);
     if(0 > len)
@@ -3819,7 +3830,7 @@ namespace x509 {
       return nullptr;
     
     return ret;
-    */
+#endif
   }
 
   bool equal(const X509 &lhs, const X509 &rhs)

@@ -197,20 +197,26 @@ TEST(RsaKeyUT, derToPrivKeyConversion_ok)
 {
   // WHEN
   auto maybePrivKey = rsa::convertDerToPrivKey(data::rsa3072PrivKeyDer);
+  auto maybePrivKey_2 = rsa::convertDerToPrivKey(data::rsa3072PrivKeyDer.data(), data::rsa3072PrivKeyDer.size());
 
   // THEN
   ASSERT_TRUE(maybePrivKey);
   auto privKey = maybePrivKey.moveValue();
   EXPECT_EQ(1, RSA_check_key(privKey.get()));
+
+  ASSERT_TRUE(maybePrivKey_2);
+  EXPECT_EQ(1, RSA_check_key(maybePrivKey_2.value.get()));
 }
 
 TEST(RsaKeyUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
 {
   // WHEN
   auto maybePrivKey = rsa::convertDerToPrivKey(data::rsa3072PubKeyDer);
+  auto maybePrivKey_2 = rsa::convertDerToPrivKey(data::rsa3072PubKeyDer.data(), data::rsa3072PubKeyDer.size());
 
   // THEN
-  ASSERT_FALSE(maybePrivKey);
+  EXPECT_FALSE(maybePrivKey);
+  EXPECT_FALSE(maybePrivKey_2);
 }
 
 TEST(RsaKeyUT, pubKey2DerConversion_ok)
@@ -235,9 +241,11 @@ TEST(RsaKeyUT, derToPubKeyConversion_ok)
 {
   // WHEN
   auto maybePubKey = rsa::convertDerToPubKey(data::rsa3072PubKeyDer);
+  auto maybePubKey_2 = rsa::convertDerToPubKey(data::rsa3072PubKeyDer.data(), data::rsa3072PubKeyDer.size());
 
   // THEN
-  ASSERT_TRUE(maybePubKey);
+  EXPECT_TRUE(maybePubKey);
+  EXPECT_TRUE(maybePubKey_2);
 }
 
 TEST(RsaKeyUT, extractPublicKeyOK)
