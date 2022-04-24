@@ -34,8 +34,7 @@ TEST(Asn1UT, asn1TimeToStdTimeOK)
 {
   // GIVEN
   auto now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-  so::ASN1_TIME_uptr time;
-  ASN1_TIME_set(time.get(), now);
+  so::ASN1_TIME_uptr time = so::make_unique(ASN1_TIME_set(nullptr, now));
 
   // WHEN
   auto actual = asn1::convertToStdTime(*time);

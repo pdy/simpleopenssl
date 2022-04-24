@@ -3852,7 +3852,7 @@ namespace x509 {
     if(!serialNumber)
       return internal::err<Bytes>();
 
-    const BIGNUM *bn = ASN1_INTEGER_to_BN(serialNumber, nullptr);
+    const BIGNUM_uptr bn = make_unique(ASN1_INTEGER_to_BN(serialNumber, nullptr));
     if(!bn)
       return internal::err<Bytes>();
 

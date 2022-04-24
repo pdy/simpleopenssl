@@ -185,7 +185,7 @@ TEST(EvpKeyUT, privKeyToPemConversion_ok)
   auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
   ASSERT_TRUE(bio);
 
-  auto key = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
+  auto key = so::make_unique(PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
   ASSERT_TRUE(key);
 
   // WHEN
@@ -203,7 +203,7 @@ TEST(EvpKeyUT, privKeyToPemConversion_shouldFailWithPubkey)
   auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
   ASSERT_TRUE(bio);
 
-  auto key = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
+  auto key = so::make_unique(PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
   ASSERT_TRUE(key);
 
   // WHEN
@@ -220,7 +220,7 @@ TEST(EvpKeyUT, pubKeyToPemConversion_ok)
   auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPub.c_str()), static_cast<int>(pemPub.size())));
   ASSERT_TRUE(bio);
 
-  auto key = PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr);
+  auto key = so::make_unique(PEM_read_bio_PUBKEY(bio.get(), nullptr, nullptr, nullptr));
   ASSERT_TRUE(key);
 
   // WHEN
@@ -238,7 +238,7 @@ TEST(EvpKeyUT, pubKeyToPemConversion_shouldSuccessWithPrivKey)
   auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
   ASSERT_TRUE(bio);
 
-  auto key = PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr);
+  auto key = so::make_unique(PEM_read_bio_PrivateKey(bio.get(), nullptr, nullptr, nullptr));
   ASSERT_TRUE(key);
 
   // WHEN
