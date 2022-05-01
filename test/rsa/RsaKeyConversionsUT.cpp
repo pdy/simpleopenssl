@@ -161,7 +161,7 @@ TEST(RsaKeyConversionsUT, pubKey2PemConversion_shouldSuccessWhenGivenPrivKey)
   const auto maybePemPub = rsa::convertPubKeyToPem(*key);
 
   // THEN
-  EXPECT_TRUE(maybePemPub);
+  ASSERT_TRUE(maybePemPub);
   EXPECT_EQ(data::rsa3072PubKeyPem, maybePemPub.value); 
 }
 
@@ -238,5 +238,22 @@ TEST(RsaKeyConversionsUT, derToPubKeyConversion_ok)
   EXPECT_TRUE(maybePubKey_2);
 }
 
+TEST(RsaKeyConversionsUT, pubKeyDerFromPriv)
+{
+  // GIVEN
+  const auto pemPriv= data::rsa3072PrivKeyPem;
+  auto bio = make_unique(BIO_new_mem_buf(static_cast<const void*>(pemPriv.c_str()), static_cast<int>(pemPriv.size())));
+  ASSERT_TRUE(bio);
+
+  auto key = make_unique(PEM_read_bio_RSAPrivateKey(bio.get(), nullptr, nullptr, nullptr));
+  ASSERT_TRUE(key);
+
+  // WHEN
+  const auto pub = rsa::convertPubKeyToDer(*key);
+
+  // THEN
+  ASSERT_TRUE(pub);
+  EXPECT_EQ(data::rsa3072PubKeyDer, pub.value); 
+}
 
 }}} // so::ut::rsa
