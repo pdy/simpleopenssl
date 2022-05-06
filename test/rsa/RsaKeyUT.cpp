@@ -34,6 +34,22 @@ namespace so { namespace ut { namespace rsa {
 
 namespace rsa = ::so::rsa;
 
+TEST(RsaKeyUT, getPublic)
+{
+  // GIVEN
+  auto key = rsa::convertDerToPrivKey(data::rsa3072PrivKeyDer);
+  ASSERT_TRUE(key);
+
+  // WHEN
+  auto pub = rsa::getPublic(*key.value);
+  ASSERT_TRUE(pub);
+  const auto pubDer = rsa::convertPubKeyToDer(*pub.value);
+
+  // THEN
+  ASSERT_TRUE(pubDer);
+  EXPECT_EQ(data::rsa3072PubKeyDer, pubDer.value);
+}
+
 TEST(RsaKeyUT, extractPublicKeyOK)
 {
   // GIVEN
