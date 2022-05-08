@@ -209,7 +209,7 @@ TEST(RsaKeyConversionsUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
   EXPECT_FALSE(maybePrivKey_2);
 }
 
-TEST(RsaKeyConversionsUT, pubKey2DerConversion_ok)
+TEST(RsaKeyConversionsUT, pubKey2DerConversion_FromPemPub)
 {
   // GIVEN
   const auto pemPub = data::rsa3072PubKeyPem;
@@ -225,6 +225,21 @@ TEST(RsaKeyConversionsUT, pubKey2DerConversion_ok)
   // THEN
   ASSERT_TRUE(maybeDerPub);
   EXPECT_EQ(data::rsa3072PubKeyDer, maybeDerPub.value);
+}
+
+TEST(RsaKeyConversionsUT, pubKey2DerConversion_FromDerPriv)
+{
+  const auto derPriv = data::rsa3072PrivKeyDer;
+  const uint8_t *it = derPriv.data();
+  auto priv = make_unique(d2i_RSAPrivateKey(nullptr, &it, static_cast<long>(derPriv.size())));
+  ASSERT_TRUE(it);
+
+  // WHEN
+  auto pub = rsa::convertPubKeyToDer(*priv);
+
+  // THEN
+  ASSERT_TRUE(pub);
+  EXPECT_EQ(data::rsa3072PubKeyDer, pub.value);
 }
 
 TEST(RsaKeyConversionsUT, derToPubKeyConversion_ok)
