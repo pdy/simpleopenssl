@@ -330,7 +330,7 @@ TEST(X509UT, getSetPubKeyWithGeneratedKey)
   auto extractedPub = maybeExtractedPub.moveValue();
   
   // 4.
-  ::so::Bytes data(256);
+  ::so::VectorBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
   const auto signResult = ::so::evp::signSha1(data, *evpPrivKey);
   ASSERT_TRUE(signResult);
@@ -362,7 +362,7 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
   auto pub = maybePub.moveValue();
 
   // 2.
-  ::so::Bytes data(256);
+  ::so::VectorBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
   const auto signResult = ::so::evp::signSha1(data, *priv);
   ASSERT_TRUE(signResult);
@@ -652,7 +652,7 @@ TEST(X509UT, copyMinimalStruct)
   ASSERT_TRUE(rsa);
   auto evp = ::so::evp::create();
   ASSERT_TRUE(::so::evp::assign(*evp.value, *rsa.value));
-  auto serial = ::so::asn1::encodeInteger(::so::Bytes{0x01, 0x02, 0x03});
+  auto serial = ::so::asn1::encodeInteger(::so::VectorBuffer{0x01, 0x02, 0x03});
   ASSERT_TRUE(serial);
 
   auto cert = ::so::make_unique(X509_new());

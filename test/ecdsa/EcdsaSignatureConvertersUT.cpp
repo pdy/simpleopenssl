@@ -48,7 +48,7 @@ TEST(ecdsa, derSignatureBytesToSignatureStruct)
 TEST(ecdsa, signatureStructToDerBytes)
 {
   // GIVEN
-  const so::Bytes expected { data::signature_sha256 };
+  const so::VectorBuffer expected { data::signature_sha256 };
   const ecdsa::Signature sig { data::signature_sha256_R, data::signature_sha256_S };
 
   // WHEN

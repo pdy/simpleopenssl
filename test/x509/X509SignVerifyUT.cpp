@@ -56,7 +56,7 @@ protected:
     m_key = maybeKey.moveValue();
   }
 
-  so::X509_uptr getMinimalNotSigned(const so::Bytes &serial = so::Bytes{0x01, 0x02, 0x03}) const
+  so::X509_uptr getMinimalNotSigned(const so::VectorBuffer &serial = so::VectorBuffer{0x01, 0x02, 0x03}) const
   {
     auto ret = x509::create();
     X509_gmtime_adj(X509_get_notBefore(ret.value.get()), 0);

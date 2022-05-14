@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 - 2022 Pawel Drzycimski
+* Copyright (c) 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -25,28 +25,38 @@
 #include <simpleopenssl/simpleopenssl.h>
 #include <numeric>
 #include "utils.h"
-namespace so { namespace ut { namespace bignum {
 
-namespace bignum = ::so::bignum;
+namespace so { namespace ut { namespace bytebuffer {
 
-TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
+template<size_t SIZE>
+static bool equal(const uint8_t (&arr)[SIZE], const so::ByteBuffer &buff)
 {
-  constexpr size_t SIZE = 20;
+  if(buff && !arr)
+    return false;
 
-  std::vector<uint8_t> buffer(SIZE);
-  std::iota(buffer.begin(), buffer.end(), 0x7f);
+  if(!buff && arr)
+    return false;
 
-  auto maybeBignum = bignum::convertToBignum(buffer);
-  ASSERT_TRUE(maybeBignum);
-  auto bignum = maybeBignum.moveValue();
-  ASSERT_EQ(SIZE, bignum::getByteLen(*bignum).value);
+  for(size_t i = 0; i < SIZE; ++i)
+    if(buff.memory[i] != arr[i])
+      return false;
 
-  auto maybeReturnedBuffer = bignum::convertToVectorBuffer(*bignum);
-  ASSERT_TRUE(maybeReturnedBuffer);
-  auto returnedBuffer = maybeReturnedBuffer.value;
-  ASSERT_EQ(SIZE, returnedBuffer.size());
-
-  EXPECT_EQ(buffer, returnedBuffer);
+  return true;
 }
 
-}}} // namespace so { namespace ut { namespace bignum {
+TEST(ByteBuffer, create)
+{
+  // GIVEN
+  const uint8_t ARRAY[] = {0x01, 0x01, 0x03};
+
+  // WHEN
+  ByteBuffer buff = ByteBuffer::create(3);
+  ASSERT_TRUE(buff);
+  for(size_t i = 0; i < 3; ++i)
+    buff.memory[i] = ARRAY[i];
+
+  // THEN
+  EXPECT_TRUE(equal(ARRAY, buff));
+}
+
+}}} // so::ut::bytebuffer

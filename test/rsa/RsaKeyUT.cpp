@@ -60,7 +60,7 @@ TEST(RsaKeyUT, extractPublicKeyOK)
   auto maybePub = rsa::getPublic(*priv);
   ASSERT_TRUE(maybePub);
   auto pub = maybePub.moveValue();
-  ::so::Bytes data(256);
+  ::so::VectorBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
 
   // WHEN
@@ -94,7 +94,7 @@ TEST(RsaKeyUT, extractedPublicKeyCantBeUsedForSign)
   auto maybePub = rsa::getPublic(*priv);
   ASSERT_TRUE(maybePub);
   auto pub = maybePub.moveValue();
-  ::so::Bytes data(256);
+  ::so::VectorBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
 
   // WHEN

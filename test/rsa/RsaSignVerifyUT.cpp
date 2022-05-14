@@ -42,13 +42,13 @@ struct SignVerifyInput
   std::string shortDesc;
   std::string privKeyPem;
   std::string pubKeyPem;
-  ::so::Bytes privKeyDer;
-  ::so::Bytes pubKeyDer;
-  ::so::Bytes signedData;
-  ::so::Bytes signature;
-  std::function<::so::Result<::so::Bytes>(const ::so::Bytes&, RSA&)> signer;
-  std::function<::so::Result<bool>(const ::so::Bytes&,const ::so::Bytes&, RSA&)> verifier;
-  std::function<::so::Result<bool>(const ::so::Bytes&,const ::so::Bytes&, EVP_PKEY&)> evpVerifier;
+  ::so::VectorBuffer privKeyDer;
+  ::so::VectorBuffer pubKeyDer;
+  ::so::VectorBuffer signedData;
+  ::so::VectorBuffer signature;
+  std::function<::so::Result<::so::VectorBuffer>(const ::so::VectorBuffer&, RSA&)> signer;
+  std::function<::so::Result<bool>(const ::so::VectorBuffer&,const ::so::VectorBuffer&, RSA&)> verifier;
+  std::function<::so::Result<bool>(const ::so::VectorBuffer&,const ::so::VectorBuffer&, EVP_PKEY&)> evpVerifier;
 
   friend std::ostream& operator<<(std::ostream &oss, const SignVerifyInput &input);
 };

@@ -34,28 +34,28 @@ namespace so { namespace ut { namespace expected {
 TEST(ResultUT, okUsageWithBytes)
 {
   // WHEN
-  const auto expected = ::so::internal::ok(::so::Bytes{0x00, 0x01});
+  const auto expected = ::so::internal::ok(::so::VectorBuffer{0x00, 0x01});
  
   // THEN
   EXPECT_TRUE(expected);
   EXPECT_TRUE(expected.ok());
   EXPECT_EQ(0ul, expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
-  EXPECT_EQ((::so::Bytes{0x00, 0x01}), expected.value);
-  EXPECT_EQ((::so::Bytes{0x00, 0x01}), expected.value);
+  EXPECT_EQ((::so::VectorBuffer{0x00, 0x01}), expected.value);
+  EXPECT_EQ((::so::VectorBuffer{0x00, 0x01}), expected.value);
 }
 
 TEST(ResultUT, errUsageWithBytes)
 {
   // WHEN
-  const auto expected = ::so::internal::err<::so::Bytes>(5);
+  const auto expected = ::so::internal::err<::so::VectorBuffer>(5);
  
   // THEN
   EXPECT_FALSE(expected);
   EXPECT_FALSE(expected.ok());
   EXPECT_EQ(5ul, expected.opensslErrCode);
-  EXPECT_EQ((::so::Bytes{}), expected.value);
-  EXPECT_EQ((::so::Bytes{}), expected.value);
+  EXPECT_EQ((::so::VectorBuffer{}), expected.value);
+  EXPECT_EQ((::so::VectorBuffer{}), expected.value);
 }
 
 TEST(ResultUT, okUsageWithUptrs)

@@ -53,9 +53,69 @@
 
 namespace so {
 
-using Bytes = std::vector<uint8_t>;
-
 namespace internal {
+  template<typename T = void>
+  struct OSSLFreeDeleter
+  {
+    void operator()(T *ptr) const
+    {
+      if(ptr)
+        OPENSSL_free(ptr);
+    }
+  };
+
+  template<typename T>
+  struct Buffer
+  {
+    using MemType = std::unique_ptr<T[], OSSLFreeDeleter<T>>;
+    
+    MemType memory;
+    size_t size;
+
+    using iterator = T*;
+    using const_iterator = const T*;
+
+    iterator begin() { return memory.get(); }
+    const_iterator begin() const { return memory.get(); }
+
+    iterator end() { return begin() + size; }
+    const_iterator end() const { return begin() + size; }
+
+    explicit operator bool() const noexcept { return memory != nullptr; }
+
+    std::vector<T> toStdVector() const
+    {
+      std::vector<T> ret; ret.reserve(size);
+      std::copy(begin(), end(), std::back_inserter(ret));
+      return ret;
+    }
+
+    T* release()
+    {
+      size = 0;
+      return memory.release();
+    }
+
+    template<typename T_ = T>
+    static Buffer<T_> reset(T_ ptr[] = nullptr, size_t size = 0)
+    {
+      Buffer<T_> ret;
+      ret.memory.reset(ptr);
+      ret.size = size;
+
+      return ret;
+    }
+
+    template<typename T_ = T>
+    static Buffer<T_> create(size_t size)
+    {
+      return Buffer<T_>{
+        MemType{new T_[size]},
+        size
+      };
+    }
+  };
+    
   template<typename T>
   struct is_uptr : std::false_type {}; 
 
@@ -73,7 +133,10 @@ namespace internal {
   using CustomDeleterUniquePtr = std::unique_ptr<T, D>;
 
 } //namespace internal
-  
+ 
+using VectorBuffer = std::vector<uint8_t>;
+using ByteBuffer = internal::Buffer<uint8_t>;
+
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
 namespace internal {                                  \
 template<>                                          \
@@ -137,9 +200,13 @@ PDY_CUSTOM_DELETER_UPTR(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 namespace internal {
 
 namespace bytes {
-  std::string toString(const Bytes &bt);
-  std::string toString(const Bytes &bt, const Bytes::const_iterator &start);
-  Bytes fromString(const std::string &str);
+  std::string toString(const VectorBuffer &bt);
+  std::string toString(const VectorBuffer &bt, const VectorBuffer::const_iterator &start);
+  VectorBuffer fromStringVectorBuffer(const std::string &str);
+
+  std::string toString(const ByteBuffer &bt);
+  std::string toString(const ByteBuffer &bt, ByteBuffer::const_iterator start);
+  ByteBuffer fromStringByteBuffer(const std::string &str);
 } // namespace bytes
 
 
@@ -257,17 +324,17 @@ namespace asn1 {
   Result<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time);
   Result<std::string> convertToISO8601(const ASN1_TIME &asnTime);
 
-  Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
+  Result<ASN1_INTEGER_uptr> encodeInteger(const VectorBuffer &bt);
   Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
-  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const VectorBuffer &bt);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
 } // namepsace asn1
 
 namespace bignum {
   Result<BIGNUM_uptr> create();
 
-  Result<BIGNUM_uptr> convertToBignum(const Bytes &bt);
-  Result<Bytes> convertToBytes(const BIGNUM &bn);
+  Result<BIGNUM_uptr> convertToBignum(const VectorBuffer &bt);
+  Result<VectorBuffer> convertToVectorBuffer(const BIGNUM &bn);
   
   Result<size_t> getByteLen(const BIGNUM &bn);
 }
@@ -310,8 +377,8 @@ namespace ecdsa {
 
   struct Signature
   {
-    Bytes r;
-    Bytes s;
+    VectorBuffer r;
+    VectorBuffer s;
     
     bool operator ==(const Signature &other) const; 
     bool operator !=(const Signature &other) const; 
@@ -326,14 +393,14 @@ namespace ecdsa {
   Result<std::string> convertPrivKeyToPem(EC_KEY &ec);
   Result<std::string> convertPubKeyToPem(EC_KEY &ec);
 
-  Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der);
-  Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der);
-  Result<Bytes> convertPrivKeyToDer(EC_KEY &ec);
-  Result<Bytes> convertPubKeyToDer(EC_KEY &ec);
+  Result<EC_KEY_uptr> convertDerToPrivKey(const VectorBuffer &der);
+  Result<EC_KEY_uptr> convertDerToPubKey(const VectorBuffer &der);
+  Result<VectorBuffer> convertPrivKeyToDer(EC_KEY &ec);
+  Result<VectorBuffer> convertPubKeyToDer(EC_KEY &ec);
 
-  Result<Bytes> convertToDer(const Signature &signature); 
+  Result<VectorBuffer> convertToDer(const Signature &signature); 
   Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
-  Result<Signature> convertToSignature(const Bytes &derSigBytes);
+  Result<Signature> convertToSignature(const VectorBuffer &derSigVectorBuffer);
   Result<std::string> convertCurveToString(Curve curve);
 
   Result<bool> checkKey(const EC_KEY &ecKey);
@@ -342,17 +409,17 @@ namespace ecdsa {
   Result<EC_KEY_uptr> getPublic(const EC_KEY &key);
   Result<size_t> getKeySize(const EC_KEY &key);
  
-  Result<Bytes> signSha1(const Bytes &message, EC_KEY &key);
-  Result<Bytes> signSha224(const Bytes &message, EC_KEY &key);
-  Result<Bytes> signSha256(const Bytes &message, EC_KEY &key);
-  Result<Bytes> signSha384(const Bytes &message, EC_KEY &key);
-  Result<Bytes> signSha512(const Bytes &message, EC_KEY &key);
+  Result<VectorBuffer> signSha1(const VectorBuffer &message, EC_KEY &key);
+  Result<VectorBuffer> signSha224(const VectorBuffer &message, EC_KEY &key);
+  Result<VectorBuffer> signSha256(const VectorBuffer &message, EC_KEY &key);
+  Result<VectorBuffer> signSha384(const VectorBuffer &message, EC_KEY &key);
+  Result<VectorBuffer> signSha512(const VectorBuffer &message, EC_KEY &key);
   
-  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
-  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
-  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
-  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
-  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey);
+  Result<bool> verifySha1Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey);
+  Result<bool> verifySha224Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey);
+  Result<bool> verifySha256Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey);
+  Result<bool> verifySha384Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey);
+  Result<bool> verifySha512Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey);
 } // namespace ecdsa
 
 namespace evp {
@@ -373,11 +440,11 @@ namespace evp {
   Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
 
-  Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der);
-  Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const VectorBuffer &der);
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const VectorBuffer &der);
 
-  Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
-  Result<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
+  Result<VectorBuffer> convertPrivKeyToDer(EVP_PKEY &privKey);
+  Result<VectorBuffer> convertPubKeyToDer(EVP_PKEY &pubKey);
 
   Result<std::string> convertPrivKeyToPem(EVP_PKEY &privKey);
   Result<std::string> convertPubKeyToPem(EVP_PKEY &pubKey);
@@ -389,42 +456,42 @@ namespace evp {
 
   KeyType getKeyType(const EVP_PKEY &pubkey);
 
-  Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
-  Result<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
-  Result<Bytes> signSha256(const Bytes &msg, EVP_PKEY &privKey);
-  Result<Bytes> signSha384(const Bytes &msg, EVP_PKEY &privKey);
-  Result<Bytes> signSha512(const Bytes &msg, EVP_PKEY &privKey);
+  Result<VectorBuffer> signSha1(const VectorBuffer &message, EVP_PKEY &privateKey);
+  Result<VectorBuffer> signSha224(const VectorBuffer &msg, EVP_PKEY &privKey);
+  Result<VectorBuffer> signSha256(const VectorBuffer &msg, EVP_PKEY &privKey);
+  Result<VectorBuffer> signSha384(const VectorBuffer &msg, EVP_PKEY &privKey);
+  Result<VectorBuffer> signSha512(const VectorBuffer &msg, EVP_PKEY &privKey);
   
-  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
-  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
-  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
-  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
-  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha1Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha224Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha256Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha384Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey);
+  Result<bool> verifySha512Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey);
 } // namepsace evp
 
 namespace hash {
-  Result<Bytes> md4(const Bytes &data);
-  Result<Bytes> md4(const std::string &str);
-  Result<Bytes> md5(const Bytes &data);
-  Result<Bytes> md5(const std::string &str);
-  Result<Bytes> sha1(const Bytes &data);
-  Result<Bytes> sha1(const std::string &str);
-  Result<Bytes> sha224(const Bytes &data);
-  Result<Bytes> sha224(const std::string &str);
-  Result<Bytes> sha256(const Bytes &data);
-  Result<Bytes> sha256(const std::string &str);
-  Result<Bytes> sha384(const Bytes &data);
-  Result<Bytes> sha384(const std::string &str);
-  Result<Bytes> sha512(const Bytes &data);
-  Result<Bytes> sha512(const std::string &str);
+  Result<VectorBuffer> md4(const VectorBuffer &data);
+  Result<VectorBuffer> md4(const std::string &str);
+  Result<VectorBuffer> md5(const VectorBuffer &data);
+  Result<VectorBuffer> md5(const std::string &str);
+  Result<VectorBuffer> sha1(const VectorBuffer &data);
+  Result<VectorBuffer> sha1(const std::string &str);
+  Result<VectorBuffer> sha224(const VectorBuffer &data);
+  Result<VectorBuffer> sha224(const std::string &str);
+  Result<VectorBuffer> sha256(const VectorBuffer &data);
+  Result<VectorBuffer> sha256(const std::string &str);
+  Result<VectorBuffer> sha384(const VectorBuffer &data);
+  Result<VectorBuffer> sha384(const std::string &str);
+  Result<VectorBuffer> sha512(const VectorBuffer &data);
+  Result<VectorBuffer> sha512(const std::string &str);
 
-  Result<Bytes> fileMD4(const std::string &path);
-  Result<Bytes> fileMD5(const std::string &path);
-  Result<Bytes> fileSHA1(const std::string &path);
-  Result<Bytes> fileSHA224(const std::string &path);
-  Result<Bytes> fileSHA256(const std::string &path);
-  Result<Bytes> fileSHA384(const std::string &path);
-  Result<Bytes> fileSHA512(const std::string &path);
+  Result<VectorBuffer> fileMD4(const std::string &path);
+  Result<VectorBuffer> fileMD5(const std::string &path);
+  Result<VectorBuffer> fileSHA1(const std::string &path);
+  Result<VectorBuffer> fileSHA224(const std::string &path);
+  Result<VectorBuffer> fileSHA256(const std::string &path);
+  Result<VectorBuffer> fileSHA384(const std::string &path);
+  Result<VectorBuffer> fileSHA512(const std::string &path);
 } // namespace hash
 
 namespace nid {
@@ -1632,7 +1699,7 @@ namespace nid {
 } // namespace nid
   
 namespace rand {
-  Result<Bytes> bytes(unsigned short numOfBytes);
+  Result<VectorBuffer> bytes(unsigned short numOfVectorBuffer);
 } //namespace rand
   
 namespace rsa { 
@@ -1662,13 +1729,13 @@ namespace rsa {
   Result<std::string> convertPrivKeyToPem(RSA &rsa);
   Result<std::string> convertPubKeyToPem(RSA &rsa);
 
-  Result<RSA_uptr> convertDerToPrivKey(const Bytes &der);
+  Result<RSA_uptr> convertDerToPrivKey(const VectorBuffer &der);
   Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size);
-  Result<RSA_uptr> convertDerToPubKey(const Bytes &der);
+  Result<RSA_uptr> convertDerToPubKey(const VectorBuffer &der);
   Result<RSA_uptr> convertDerToPubKey(const uint8_t der[], size_t size);
   
-  Result<Bytes> convertPrivKeyToDer(RSA &rsa);
-  Result<Bytes> convertPubKeyToDer(RSA &rsa);
+  Result<VectorBuffer> convertPrivKeyToDer(RSA &rsa);
+  Result<VectorBuffer> convertPubKeyToDer(RSA &rsa);
 
   Result<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
   Result<bool> checkKey(RSA &rsa);
@@ -1676,17 +1743,17 @@ namespace rsa {
   Result<KeyBits> getKeyBits(RSA &rsa);
   Result<RSA_uptr> getPublic(RSA &rsa);
 
-  Result<Bytes> signSha1(const Bytes &message, RSA &privateKey);
-  Result<Bytes> signSha224(const Bytes &msg, RSA &privKey);
-  Result<Bytes> signSha256(const Bytes &msg, RSA &privKey);
-  Result<Bytes> signSha384(const Bytes &msg, RSA &privKey);
-  Result<Bytes> signSha512(const Bytes &msg, RSA &privKey);
+  Result<VectorBuffer> signSha1(const VectorBuffer &message, RSA &privateKey);
+  Result<VectorBuffer> signSha224(const VectorBuffer &msg, RSA &privKey);
+  Result<VectorBuffer> signSha256(const VectorBuffer &msg, RSA &privKey);
+  Result<VectorBuffer> signSha384(const VectorBuffer &msg, RSA &privKey);
+  Result<VectorBuffer> signSha512(const VectorBuffer &msg, RSA &privKey);
   
-  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
-  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey);
+  Result<bool> verifySha1Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey);
+  Result<bool> verifySha224Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey);
+  Result<bool> verifySha256Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey);
+  Result<bool> verifySha384Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey);
+  Result<bool> verifySha512Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey);
 } // namespace rsa
 
 namespace internal{
@@ -1697,7 +1764,7 @@ namespace internal{
     bool critical;
     std::string name;
     std::string oidNumerical;
-    Bytes data;
+    VectorBuffer data;
 
     nid::Nid nid() const { return static_cast<nid::Nid>(id); }
     int nidRaw() const { return static_cast<int>(nid()); }
@@ -1825,7 +1892,7 @@ namespace x509 {
   {
     std::string dateISO860;
     std::time_t date;
-    Bytes serialNumAsn1;
+    VectorBuffer serialNumAsn1;
     std::vector<CrlEntryExtension> extensions;
   };
 
@@ -1855,8 +1922,8 @@ namespace x509 {
   Result<std::string> getIssuerString(const X509 &cert); 
   Result<EVP_PKEY_uptr> getPubKey(X509 &cert);
   nid::Nid getPubKeyAlgorithm(X509 &cert);
-  Result<Bytes> getSerialNumber(X509 &cert);
-  Result<Bytes> getSignature(const X509 &cert);
+  Result<VectorBuffer> getSerialNumber(X509 &cert);
+  Result<VectorBuffer> getSignature(const X509 &cert);
   nid::Nid getSignatureAlgorithm(const X509 &cert);
   Result<Subject> getSubject(const X509 &cert);
   Result<std::string> getSubjectString(const X509 &cert);
@@ -1873,7 +1940,7 @@ namespace x509 {
   Result<void> setIssuer(X509 &cert, const X509 &rootCert);
   Result<void> setIssuer(X509 &cert, const Issuer &issuer);
   Result<void> setPubKey(X509 &cert, EVP_PKEY &pkey);
-  Result<void> setSerial(X509 &cert, const Bytes &bytes);
+  Result<void> setSerial(X509 &cert, const VectorBuffer &bytes);
   Result<void> setSubject(X509 &cert, const Subject &subject);
   Result<void> setValidity(X509 &cert, const Validity &validity);
   Result<void> setVersion(X509 &cert, Version version);
@@ -1906,7 +1973,7 @@ namespace x509 {
   Result<std::string> getIssuerString(X509_CRL &crl);
   size_t getRevokedCount(X509_CRL &crl);
   Result<std::vector<Revoked>> getRevoked(X509_CRL &crl);
-  Result<Bytes> getSignature(const X509_CRL &crl);
+  Result<VectorBuffer> getSignature(const X509_CRL &crl);
   nid::Nid getSignatureAlgorithm(const X509_CRL &crl);
   std::tuple<Version, long> getVersion(X509_CRL &crl);
  
@@ -1931,28 +1998,49 @@ namespace so {
 namespace internal {
 
 namespace bytes {
-  std::string toString(const Bytes &bt)
+  std::string toString(const VectorBuffer &bt)
   {
     std::ostringstream ss;
     std::copy(bt.begin(), bt.end(), std::ostream_iterator<char>(ss, ""));
     return ss.str();
   }
 
-  std::string toString(const Bytes &bt, const Bytes::const_iterator &start)
+  std::string toString(const VectorBuffer &bt, const VectorBuffer::const_iterator &start)
   {
     std::ostringstream ss;
     std::copy(start, bt.end(), std::ostream_iterator<char>(ss, ""));
     return ss.str();
   }
 
-  Bytes fromString(const std::string &str)
+  VectorBuffer fromStringVectorBuffer(const std::string &str)
   {
-    so::Bytes ret;
+    so::VectorBuffer ret;
     ret.reserve(str.size());
     std::transform(str.begin(), str.end(), std::back_inserter(ret), [](char chr){
         return static_cast<uint8_t>(chr);
     });
 
+    return ret;
+  }
+
+  std::string toString(const ByteBuffer &bt)
+  {
+    std::ostringstream ss;
+    std::copy(bt.begin(), bt.end(), std::ostream_iterator<char>(ss, ""));
+    return ss.str();
+  }
+  
+  std::string toString(const ByteBuffer &bt, ByteBuffer::const_iterator start)
+  {
+    std::ostringstream ss;
+    std::copy(start, bt.end(), std::ostream_iterator<char>(ss, ""));
+    return ss.str();
+  }
+
+  ByteBuffer fromStringByteBuffer(const std::string &str)
+  {
+    auto ret = ByteBuffer::create(str.size());
+    std::transform(str.begin(), str.end(), ret.begin(), [](char chr) { return static_cast<uint8_t>(chr); });
     return ret;
   }
 
@@ -2275,13 +2363,13 @@ namespace bytes {
     return internal::ok(static_cast<size_t>(sigLen));
   }
 
-  Result<Bytes> ecdsaSign(const Bytes &dg, EC_KEY &key)
+  Result<VectorBuffer> ecdsaSign(const VectorBuffer &dg, EC_KEY &key)
   {
     const int sigLen = ECDSA_size(&key);
     if(0 >= sigLen)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
-    Bytes tmpSig(static_cast<size_t>(sigLen));
+    VectorBuffer tmpSig(static_cast<size_t>(sigLen));
     unsigned int finalSigLen = 0;
     if(1 != ECDSA_sign(0,
           dg.data(),
@@ -2290,17 +2378,17 @@ namespace bytes {
           &finalSigLen,
           &key))
     {
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
     }
 
     if(finalSigLen == static_cast<unsigned>(sigLen))
       return internal::ok(std::move(tmpSig));
 
-    Bytes signature(tmpSig.begin(), std::next(tmpSig.begin(), finalSigLen));
+    VectorBuffer signature(tmpSig.begin(), std::next(tmpSig.begin(), finalSigLen));
     return internal::ok(std::move(signature));
   }
 
-  Result<bool> ecdsaVerify(const Bytes &signature, const Bytes &dg, EC_KEY &publicKey)
+  Result<bool> ecdsaVerify(const VectorBuffer &signature, const VectorBuffer &dg, EC_KEY &publicKey)
   {
     if(1 != ECDSA_verify(0,
           dg.data(),
@@ -2315,35 +2403,35 @@ namespace bytes {
     return internal::ok(true);
   }
   
-  Result<Bytes> evpSign(const Bytes &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
+  Result<VectorBuffer> evpSign(const VectorBuffer &message, const EVP_MD *evpMd,  EVP_PKEY &privateKey)
   {
     auto mdCtx = make_unique(EVP_MD_CTX_new());
     if(!mdCtx)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
     
     const int initStatus = EVP_DigestSignInit(mdCtx.get(), nullptr, evpMd, nullptr, &privateKey);
     if(1 != initStatus)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
  
     const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
     if(1 != updateStatus)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
     
     size_t sigLen = 0;
     int signStatus = EVP_DigestSignFinal(mdCtx.get(), nullptr, &sigLen);
     if(1 != signStatus)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
  
-    Bytes tmp(sigLen);
+    VectorBuffer tmp(sigLen);
     signStatus = EVP_DigestSignFinal(mdCtx.get(), tmp.data(), &sigLen);
     if(1 != signStatus)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
         
-    Bytes signature(tmp.begin(), std::next(tmp.begin(), static_cast<long>(sigLen))); 
+    VectorBuffer signature(tmp.begin(), std::next(tmp.begin(), static_cast<long>(sigLen))); 
     return internal::ok(std::move(signature));
   }
 
-  Result<bool> evpVerify(const Bytes &sig, const Bytes &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
+  Result<bool> evpVerify(const VectorBuffer &sig, const VectorBuffer &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
   {
     auto ctx = make_unique(EVP_MD_CTX_new());
     if (!ctx)
@@ -2359,16 +2447,16 @@ namespace bytes {
     return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err<bool>();
   }
 
-  Result<Bytes> rsaSign(int digestNid, const Bytes &digest, RSA &privKey)
+  Result<VectorBuffer> rsaSign(int digestNid, const VectorBuffer &digest, RSA &privKey)
   {
     if(1 != RSA_check_key_ex(&privKey, nullptr))
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
        
     const int sz = RSA_size(&privKey);
     if(0 > sz)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
-    Bytes firstSignature(static_cast<size_t>(sz));
+    VectorBuffer firstSignature(static_cast<size_t>(sz));
     unsigned finalSigLen = 0;
     if(1 != RSA_sign(digestNid,
           digest.data(),
@@ -2377,17 +2465,17 @@ namespace bytes {
           &finalSigLen,
           &privKey))
     {
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
     }
 
     if(finalSigLen == static_cast<unsigned>(sz))
       return internal::ok(std::move(firstSignature));
 
-    Bytes finalSig(firstSignature.begin(), std::next(firstSignature.begin(), finalSigLen));
+    VectorBuffer finalSig(firstSignature.begin(), std::next(firstSignature.begin(), finalSigLen));
     return internal::ok(std::move(finalSig));
   }
 
-  Result<bool> rsaVerify(int hashNid, const Bytes &signature, const Bytes &digest, RSA &pubKey)
+  Result<bool> rsaVerify(int hashNid, const VectorBuffer &signature, const VectorBuffer &digest, RSA &pubKey)
   {
     if(1 != RSA_verify(hashNid,
           digest.data(),
@@ -2418,7 +2506,7 @@ namespace bytes {
       // most likely custom extension
       const auto val = X509_EXTENSION_get_data(&ex);
 
-      Bytes data;
+      VectorBuffer data;
       data.reserve(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, std::back_inserter(data));
        
@@ -2436,7 +2524,7 @@ namespace bytes {
     {
       const auto val = X509_EXTENSION_get_data(&ex);
 
-      Bytes data;
+      VectorBuffer data;
       data.reserve(static_cast<size_t>(val->length));
       std::copy_n(val->data, val->length, std::back_inserter(data));
 
@@ -2452,7 +2540,7 @@ namespace bytes {
     BUF_MEM *bptr; // will be freed when bio will be closed
     BIO_get_mem_ptr(bio.get(), &bptr);
 
-    Bytes data;
+    VectorBuffer data;
     data.reserve(static_cast<size_t>(bptr->length));
     std::copy_n(bptr->data, bptr->length, std::back_inserter(data));
 
@@ -2466,32 +2554,32 @@ namespace bytes {
   }
 
   template<typename CTX, typename DATA, typename INIT, typename UPDATE, typename FINAL>
-  Result<Bytes> doHash(const DATA &data, unsigned long digestLen, INIT init, UPDATE update, FINAL final)
+  Result<VectorBuffer> doHash(const DATA &data, unsigned long digestLen, INIT init, UPDATE update, FINAL final)
   {
-    Bytes hash(digestLen);
+    VectorBuffer hash(digestLen);
     CTX ctx;
     if(1 != init(&ctx))
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     if(1 != update(&ctx, data.data(), data.size()))
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     if(1 != final(hash.data(), &ctx))
-      return internal::err<Bytes>(); 
+      return internal::err<VectorBuffer>(); 
 
     return internal::ok(std::move(hash));
   }
 
-  Result<Bytes> doHashFile(const std::string &path, const EVP_MD *evpMd)
+  Result<VectorBuffer> doHashFile(const std::string &path, const EVP_MD *evpMd)
   {    
     auto bioRaw = make_unique(BIO_new_file(path.c_str(), "rb"));
     if(!bioRaw)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     // mdtmp will be freed with bio
     BIO *mdtmp = BIO_new(BIO_f_md());
     if(!mdtmp)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     // WTF OpenSSL?
     // Every EVP_<digest>() function returns const pointer, but
@@ -2500,7 +2588,7 @@ namespace bytes {
     BIO_set_md(mdtmp, const_cast<EVP_MD*>(evpMd));
     auto bio = make_unique(BIO_push(mdtmp, bioRaw.release()));
     if(!bio)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     {
       char buf[10240];
@@ -2514,7 +2602,7 @@ namespace bytes {
     uint8_t mdbuf[EVP_MAX_MD_SIZE];
     const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
 
-    return internal::ok(Bytes(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen)));
+    return internal::ok(VectorBuffer(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen)));
   }
 
   template<typename FUNC, typename ... Types>
@@ -2561,16 +2649,16 @@ namespace bytes {
   }
 
   template<typename Key, typename FUNC>
-  Result<Bytes> convertKeyToDer(Key &key, FUNC i2dFunction)
+  Result<VectorBuffer> convertKeyToDer(Key &key, FUNC i2dFunction)
   {
     const auto freeOpenssl = [](uint8_t *ptr) { OPENSSL_free(ptr);};
     uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
     const int len = i2dFunction(&key, &ptr);
     if (0 > len)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     std::unique_ptr<uint8_t[], decltype(freeOpenssl)> buf(ptr, freeOpenssl);
-    Bytes ret;
+    VectorBuffer ret;
     ret.reserve(static_cast<size_t>(len));
     std::copy_n(buf.get(), len, std::back_inserter(ret));
     return internal::ok(std::move(ret));
@@ -2610,7 +2698,7 @@ namespace bytes {
     const auto timeStr = asn1::convertToISO8601(*time);
     const auto date = asn1::convertToStdTime(*time);
 
-    Bytes retSerial;
+    VectorBuffer retSerial;
     retSerial.reserve(static_cast<size_t>(serial->length));
     std::copy_n(serial->data, serial->length, std::back_inserter(retSerial));
 
@@ -2716,7 +2804,7 @@ namespace asn1 {
     return internal::ok(std::string(buff));
   }
 
-  Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
+  Result<ASN1_INTEGER_uptr> encodeInteger(const VectorBuffer &bt)
   {
     auto bn = bignum::convertToBignum(bt);
     if(!bn)
@@ -2738,7 +2826,7 @@ namespace asn1 {
     return internal::ok(std::move(ret));
   }
 
-  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const VectorBuffer &bt)
   {
     auto ret = make_unique(ASN1_OCTET_STRING_new());
     if(!ret)
@@ -2752,7 +2840,7 @@ namespace asn1 {
   
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
   {
-    return encodeOctet(internal::bytes::fromString(str));
+    return encodeOctet(internal::bytes::fromStringVectorBuffer(str));
   } 
 } // namespace asn1
 
@@ -2766,18 +2854,18 @@ namespace bignum {
     return internal::ok(std::move(ret));
   }
 
-  Result<Bytes> convertToBytes(const BIGNUM &bn)
+  Result<VectorBuffer> convertToVectorBuffer(const BIGNUM &bn)
   {
     const auto sz = getByteLen(bn);
     if(!sz)
-      return internal::err<Bytes>(sz.opensslErrCode);
+      return internal::err<VectorBuffer>(sz.opensslErrCode);
 
-    Bytes ret(sz.value);
+    VectorBuffer ret(sz.value);
     BN_bn2bin(&bn, ret.data());
     return internal::ok(std::move(ret));
   }
 
-  Result<BIGNUM_uptr> convertToBignum(const Bytes &bt)
+  Result<BIGNUM_uptr> convertToBignum(const VectorBuffer &bt)
   {
     auto ret = make_unique(BN_bin2bn(bt.data(), static_cast<int>(bt.size()), nullptr));
     if(!ret)
@@ -2834,26 +2922,26 @@ namespace ecdsa {
     return internal::convertToPem(PEM_write_bio_EC_PUBKEY, &pubKey);
   }
 
-  Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<EC_KEY_uptr> convertDerToPrivKey(const VectorBuffer &der)
   {
     return internal::convertDerToKey<EC_KEY_uptr>(d2i_ECPrivateKey, der.data(), der.size());
   }
 
-  Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der)
+  Result<EC_KEY_uptr> convertDerToPubKey(const VectorBuffer &der)
   {
     return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der.data(), der.size());
   } 
   
-  Result<Bytes> convertPrivKeyToDer(EC_KEY &ec)
+  Result<VectorBuffer> convertPrivKeyToDer(EC_KEY &ec)
   {
     const auto check = ecdsa::checkKey(ec);
     if(!check)
-      return internal::err<Bytes>(check.opensslErrCode);
+      return internal::err<VectorBuffer>(check.opensslErrCode);
 
     return internal::convertKeyToDer(ec, i2d_ECPrivateKey);
   }
 
-  Result<Bytes> convertPubKeyToDer(EC_KEY &ec)
+  Result<VectorBuffer> convertPubKeyToDer(EC_KEY &ec)
   {
     return internal::convertKeyToDer(ec, i2d_EC_PUBKEY);
   }
@@ -2888,50 +2976,50 @@ namespace ecdsa {
     return internal::ok(static_cast<Curve>(nid)); 
   }
 
-  Result<Bytes> convertToDer(const Signature &signature)
+  Result<VectorBuffer> convertToDer(const Signature &signature)
   {
     auto r = bignum::convertToBignum(signature.r);
     if(!r)
-      return internal::err<Bytes>(r.opensslErrCode);
+      return internal::err<VectorBuffer>(r.opensslErrCode);
 
     auto s = bignum::convertToBignum(signature.s);
     if(!s)
-      return internal::err<Bytes>(s.opensslErrCode);
+      return internal::err<VectorBuffer>(s.opensslErrCode);
  
     auto sig = make_unique(ECDSA_SIG_new()); 
     if(!sig)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     if(1 != ECDSA_SIG_set0(sig.get(), r.value.release(), s.value.release()))
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     const int derLen = i2d_ECDSA_SIG(sig.get(), nullptr); 
     if(0 == derLen)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
  
-    Bytes ret(static_cast<size_t>(derLen));
+    VectorBuffer ret(static_cast<size_t>(derLen));
     auto *derIt = ret.data();
     if(!i2d_ECDSA_SIG(sig.get(), &derIt))
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     return internal::ok(std::move(ret));
   }
 
-  Result<Signature> convertToSignature(const Bytes &derSigBytes)
+  Result<Signature> convertToSignature(const VectorBuffer &derSigVectorBuffer)
   {
-    auto *derIt = derSigBytes.data();
-    auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigBytes.size())));
+    auto *derIt = derSigVectorBuffer.data();
+    auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigVectorBuffer.size())));
     if(!sig)
       return internal::err<Signature>();
 
     const BIGNUM *rPtr,*sPtr;
     ECDSA_SIG_get0(sig.get(), &rPtr, &sPtr);
 
-    auto r = bignum::convertToBytes(*rPtr);
+    auto r = bignum::convertToVectorBuffer(*rPtr);
     if(!r)
       return internal::err<Signature>();
 
-    auto s = bignum::convertToBytes(*sPtr);
+    auto s = bignum::convertToVectorBuffer(*sPtr);
     if(!s)
       return internal::err<Signature>();
  
@@ -3012,7 +3100,7 @@ namespace ecdsa {
     return internal::ok(std::move(key));
   }
 
-  Result<Bytes> signSha1(const Bytes &message, EC_KEY &key)
+  Result<VectorBuffer> signSha1(const VectorBuffer &message, EC_KEY &key)
   {
     const auto digest = hash::sha1(message);
     if(!digest)
@@ -3021,7 +3109,7 @@ namespace ecdsa {
     return internal::ecdsaSign(digest.value, key);
   }
 
-  Result<Bytes> signSha224(const Bytes &message, EC_KEY &key)
+  Result<VectorBuffer> signSha224(const VectorBuffer &message, EC_KEY &key)
   {
     const auto digest = hash::sha224(message);
     if(!digest)
@@ -3030,7 +3118,7 @@ namespace ecdsa {
     return internal::ecdsaSign(digest.value, key);
   }
 
-  Result<Bytes> signSha256(const Bytes &message, EC_KEY &key)
+  Result<VectorBuffer> signSha256(const VectorBuffer &message, EC_KEY &key)
   {
     const auto digest = hash::sha256(message);
     if(!digest)
@@ -3039,7 +3127,7 @@ namespace ecdsa {
     return internal::ecdsaSign(digest.value, key);
   }
 
-  Result<Bytes> signSha384(const Bytes &message, EC_KEY &key)
+  Result<VectorBuffer> signSha384(const VectorBuffer &message, EC_KEY &key)
   {
     const auto digest = hash::sha384(message);
     if(!digest)
@@ -3048,7 +3136,7 @@ namespace ecdsa {
     return internal::ecdsaSign(digest.value, key);
   }
   
-  Result<Bytes> signSha512(const Bytes &message, EC_KEY &key)
+  Result<VectorBuffer> signSha512(const VectorBuffer &message, EC_KEY &key)
   {
     const auto digest = hash::sha512(message);
     if(!digest)
@@ -3057,7 +3145,7 @@ namespace ecdsa {
     return internal::ecdsaSign(digest.value, key);
   }
 
-  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha1Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha1(message);
     if(!digest)
@@ -3066,7 +3154,7 @@ namespace ecdsa {
     return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
-  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha224Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha224(message);
     if(!digest)
@@ -3075,7 +3163,7 @@ namespace ecdsa {
     return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
-  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha256Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha256(message);
     if(!digest)
@@ -3084,7 +3172,7 @@ namespace ecdsa {
     return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
-  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha384Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha384(message);
     if(!digest)
@@ -3093,7 +3181,7 @@ namespace ecdsa {
     return internal::ecdsaVerify(signature, digest.value, publicKey);
   }
 
-  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EC_KEY &publicKey)
+  Result<bool> verifySha512Signature(const VectorBuffer &signature, const VectorBuffer &message, EC_KEY &publicKey)
   {
     const auto digest = hash::sha512(message);
     if(!digest)
@@ -3167,22 +3255,22 @@ namespace evp {
     return internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
   }
 
-  Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const VectorBuffer &der)
   {
     return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_AutoPrivateKey, der.data(), der.size());
   }
 
-  Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der)
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const VectorBuffer &der)
   {
     return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der.data(), der.size());
   }
 
-  Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey)
+  Result<VectorBuffer> convertPrivKeyToDer(EVP_PKEY &privKey)
   {
     return internal::convertKeyToDer(privKey, i2d_PrivateKey);
   }
 
-  Result<Bytes> convertPubKeyToDer(EVP_PKEY &pkey)
+  Result<VectorBuffer> convertPubKeyToDer(EVP_PKEY &pkey)
   {
     return internal::convertKeyToDer(pkey, i2d_PUBKEY);
   }
@@ -3225,159 +3313,159 @@ namespace evp {
     return static_cast<KeyType>(EVP_PKEY_base_id(&pubkey));
   }
   
-  Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
+  Result<VectorBuffer> signSha1(const VectorBuffer &message, EVP_PKEY &privateKey)
   { 
     return internal::evpSign(message, EVP_sha1(), privateKey);
   }
 
-  Result<Bytes> signSha224(const Bytes &message, EVP_PKEY &privateKey)
+  Result<VectorBuffer> signSha224(const VectorBuffer &message, EVP_PKEY &privateKey)
   { 
     return internal::evpSign(message, EVP_sha224(), privateKey);
   }
 
-  Result<Bytes> signSha256(const Bytes &message, EVP_PKEY &privateKey)
+  Result<VectorBuffer> signSha256(const VectorBuffer &message, EVP_PKEY &privateKey)
   { 
     return internal::evpSign(message, EVP_sha256(), privateKey);
   }
 
-  Result<Bytes> signSha384(const Bytes &message, EVP_PKEY &privateKey)
+  Result<VectorBuffer> signSha384(const VectorBuffer &message, EVP_PKEY &privateKey)
   { 
     return internal::evpSign(message, EVP_sha384(), privateKey);
   }
 
-  Result<Bytes> signSha512(const Bytes &message, EVP_PKEY &privateKey)
+  Result<VectorBuffer> signSha512(const VectorBuffer &message, EVP_PKEY &privateKey)
   { 
     return internal::evpSign(message, EVP_sha512(), privateKey);
   }
 
-  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha1Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey)
   {
     return internal::evpVerify(signature, message, EVP_sha1(), pubKey); 
   }
 
-  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha224Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey)
   {
     return internal::evpVerify(signature, message, EVP_sha224(), pubKey); 
   }
 
-  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha256Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey)
   {
     return internal::evpVerify(signature, message, EVP_sha256(), pubKey); 
   }
 
-  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha384Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey)
   {
     return internal::evpVerify(signature, message, EVP_sha384(), pubKey); 
   }
 
-  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, EVP_PKEY &pubKey)
+  Result<bool> verifySha512Signature(const VectorBuffer &signature, const VectorBuffer &message, EVP_PKEY &pubKey)
   {
     return internal::evpVerify(signature, message, EVP_sha512(), pubKey); 
   }
 } //namespace evp
 
 namespace hash {
-  Result<Bytes> md4(const Bytes &data)
+  Result<VectorBuffer> md4(const VectorBuffer &data)
   {  
     return internal::doHash<MD4_CTX>(data, MD4_DIGEST_LENGTH, MD4_Init, MD4_Update, MD4_Final);
   }
 
-  Result<Bytes> md4(const std::string &data)
+  Result<VectorBuffer> md4(const std::string &data)
   {    
     return internal::doHash<MD4_CTX>(data, MD4_DIGEST_LENGTH, MD4_Init, MD4_Update, MD4_Final);
   }
 
-  Result<Bytes> md5(const Bytes &data)
+  Result<VectorBuffer> md5(const VectorBuffer &data)
   {
     return internal::doHash<MD5_CTX>(data, MD5_DIGEST_LENGTH, MD5_Init, MD5_Update, MD5_Final);
   }
 
-  Result<Bytes> md5(const std::string &data)
+  Result<VectorBuffer> md5(const std::string &data)
   {
     return internal::doHash<MD5_CTX>(data, MD5_DIGEST_LENGTH, MD5_Init, MD5_Update, MD5_Final);
   }
 
-  Result<Bytes> sha1(const Bytes &data)
+  Result<VectorBuffer> sha1(const VectorBuffer &data)
   {    
     return internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
   }
 
-  Result<Bytes> sha1(const std::string &data)
+  Result<VectorBuffer> sha1(const std::string &data)
   {    
     return internal::doHash<SHA_CTX>(data, SHA_DIGEST_LENGTH, SHA1_Init, SHA1_Update, SHA1_Final);
   }
   
-  Result<Bytes> sha224(const Bytes &data)
+  Result<VectorBuffer> sha224(const VectorBuffer &data)
   {
     return internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
   }
 
-  Result<Bytes> sha224(const std::string &data)
+  Result<VectorBuffer> sha224(const std::string &data)
   {
     return internal::doHash<SHA256_CTX>(data, SHA224_DIGEST_LENGTH, SHA224_Init, SHA224_Update, SHA224_Final);
   }
 
-  Result<Bytes> sha256(const Bytes &data)
+  Result<VectorBuffer> sha256(const VectorBuffer &data)
   {
     return internal::doHash<SHA256_CTX>(data, SHA256_DIGEST_LENGTH, SHA256_Init, SHA256_Update, SHA256_Final);
   }
 
-  Result<Bytes> sha256(const std::string &data)
+  Result<VectorBuffer> sha256(const std::string &data)
   {
     return internal::doHash<SHA256_CTX>(data, SHA256_DIGEST_LENGTH, SHA256_Init, SHA256_Update, SHA256_Final);
   }
 
-  Result<Bytes> sha384(const Bytes &data)
+  Result<VectorBuffer> sha384(const VectorBuffer &data)
   {
     return internal::doHash<SHA512_CTX>(data, SHA384_DIGEST_LENGTH, SHA384_Init, SHA384_Update, SHA384_Final);
   }
 
-  Result<Bytes> sha384(const std::string &data)
+  Result<VectorBuffer> sha384(const std::string &data)
   {
     return internal::doHash<SHA512_CTX>(data, SHA384_DIGEST_LENGTH, SHA384_Init, SHA384_Update, SHA384_Final);
   }
 
-  Result<Bytes> sha512(const Bytes &data)
+  Result<VectorBuffer> sha512(const VectorBuffer &data)
   {
     return internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
   }
 
-  Result<Bytes> sha512(const std::string &data)
+  Result<VectorBuffer> sha512(const std::string &data)
   {
     return internal::doHash<SHA512_CTX>(data, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
   }
   
-  Result<Bytes> fileMD4(const std::string &path)
+  Result<VectorBuffer> fileMD4(const std::string &path)
   {
     return internal::doHashFile(path, EVP_md4());
   }
   
-  Result<Bytes> fileMD5(const std::string &path)
+  Result<VectorBuffer> fileMD5(const std::string &path)
   {
     return internal::doHashFile(path, EVP_md5());
   }
   
-  Result<Bytes> fileSHA1(const std::string &path)
+  Result<VectorBuffer> fileSHA1(const std::string &path)
   {
     return internal::doHashFile(path, EVP_sha1());
   }
 
-  Result<Bytes> fileSHA224(const std::string &path)
+  Result<VectorBuffer> fileSHA224(const std::string &path)
   {
     return internal::doHashFile(path, EVP_sha224());
   }
 
-  Result<Bytes> fileSHA256(const std::string &path)
+  Result<VectorBuffer> fileSHA256(const std::string &path)
   {
     return internal::doHashFile(path, EVP_sha256());
   }
 
-  Result<Bytes> fileSHA384(const std::string &path)
+  Result<VectorBuffer> fileSHA384(const std::string &path)
   {
     return internal::doHashFile(path, EVP_sha384());
   }
 
-  Result<Bytes> fileSHA512(const std::string &path)
+  Result<VectorBuffer> fileSHA512(const std::string &path)
   {
     return internal::doHashFile(path, EVP_sha512());
   }
@@ -3441,11 +3529,11 @@ namespace nid {
 } // namespace nid
 
 namespace rand {
-  Result<Bytes> bytes(unsigned short numOfBytes)
+  Result<VectorBuffer> bytes(unsigned short numOfVectorBuffer)
   {
-    Bytes ret(static_cast<size_t>(numOfBytes));
-    if(1 != RAND_bytes(ret.data(), static_cast<int>(numOfBytes)))
-      return internal::err<Bytes>();
+    VectorBuffer ret(static_cast<size_t>(numOfVectorBuffer));
+    if(1 != RAND_bytes(ret.data(), static_cast<int>(numOfVectorBuffer)))
+      return internal::err<VectorBuffer>();
 
     return internal::ok(std::move(ret));
   }
@@ -3476,12 +3564,12 @@ namespace rsa {
     return internal::convertToPem(PEM_write_bio_RSA_PUBKEY, &pubKey);
   }
  
-  Result<RSA_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<RSA_uptr> convertDerToPrivKey(const VectorBuffer &der)
   {
     return internal::convertDerToKey<RSA_uptr>(d2i_RSAPrivateKey, der.data(), der.size());
   }
 
-  Result<RSA_uptr> convertDerToPubKey(const Bytes &der)
+  Result<RSA_uptr> convertDerToPubKey(const VectorBuffer &der)
   {
     return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der.data(), der.size());
   }
@@ -3496,16 +3584,16 @@ namespace rsa {
     return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der, size);
   }
 
-  Result<Bytes> convertPrivKeyToDer(RSA &rsa)
+  Result<VectorBuffer> convertPrivKeyToDer(RSA &rsa)
   {
     const auto check = rsa::checkKey(rsa);
     if(!check)
-      return internal::err<Bytes>(check.opensslErrCode);
+      return internal::err<VectorBuffer>(check.opensslErrCode);
 
     return internal::convertKeyToDer(rsa, i2d_RSAPrivateKey);
   }
 
-  Result<Bytes> convertPubKeyToDer(RSA &rsa)
+  Result<VectorBuffer> convertPubKeyToDer(RSA &rsa)
   {
     return internal::convertKeyToDer(rsa, i2d_RSA_PUBKEY);
   }
@@ -3568,7 +3656,7 @@ namespace rsa {
     return internal::ok(std::move(retRsa));
   }
  
-  Result<Bytes> signSha1(const Bytes &msg, RSA &privKey)
+  Result<VectorBuffer> signSha1(const VectorBuffer &msg, RSA &privKey)
   {
     const auto digest = hash::sha1(msg);
     if(!digest)
@@ -3577,7 +3665,7 @@ namespace rsa {
     return internal::rsaSign(NID_sha1, digest.value, privKey); 
   }
 
-  Result<Bytes> signSha224(const Bytes &msg, RSA &privKey)
+  Result<VectorBuffer> signSha224(const VectorBuffer &msg, RSA &privKey)
   {
     const auto digest = hash::sha224(msg);
     if(!digest)
@@ -3586,7 +3674,7 @@ namespace rsa {
     return internal::rsaSign(NID_sha224, digest.value, privKey); 
   }
 
-  Result<Bytes> signSha256(const Bytes &msg, RSA &privKey)
+  Result<VectorBuffer> signSha256(const VectorBuffer &msg, RSA &privKey)
   {
     const auto digest = hash::sha256(msg);
     if(!digest)
@@ -3595,7 +3683,7 @@ namespace rsa {
     return internal::rsaSign(NID_sha256, digest.value, privKey); 
   }
 
-  Result<Bytes> signSha384(const Bytes &msg, RSA &privKey)
+  Result<VectorBuffer> signSha384(const VectorBuffer &msg, RSA &privKey)
   {
     const auto digest = hash::sha384(msg);
     if(!digest)
@@ -3604,7 +3692,7 @@ namespace rsa {
     return internal::rsaSign(NID_sha384, digest.value, privKey); 
   }
   
-  Result<Bytes> signSha512(const Bytes &msg, RSA &privKey)
+  Result<VectorBuffer> signSha512(const VectorBuffer &msg, RSA &privKey)
   {
     const auto digest = hash::sha512(msg);
     if(!digest)
@@ -3613,7 +3701,7 @@ namespace rsa {
     return internal::rsaSign(NID_sha512, digest.value, privKey); 
   }
   
-  Result<bool> verifySha1Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha1Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey)
   {
     const auto digest = hash::sha1(message);
     if(!digest)
@@ -3622,7 +3710,7 @@ namespace rsa {
     return internal::rsaVerify(NID_sha1, signature, digest.value, pubKey); 
   }
   
-  Result<bool> verifySha224Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha224Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey)
   {
     const auto digest = hash::sha224(message);
     if(!digest)
@@ -3631,7 +3719,7 @@ namespace rsa {
     return internal::rsaVerify(NID_sha224, signature, digest.value, pubKey); 
   }
 
-  Result<bool> verifySha256Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha256Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey)
   {
     const auto digest = hash::sha256(message);
     if(!digest)
@@ -3640,7 +3728,7 @@ namespace rsa {
     return internal::rsaVerify(NID_sha256, signature, digest.value, pubKey); 
   }
 
-  Result<bool> verifySha384Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha384Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey)
   {
     const auto digest = hash::sha384(message);
     if(!digest)
@@ -3649,7 +3737,7 @@ namespace rsa {
     return internal::rsaVerify(NID_sha384, signature, digest.value, pubKey); 
   }
 
-  Result<bool> verifySha512Signature(const Bytes &signature, const Bytes &message, RSA &pubKey)
+  Result<bool> verifySha512Signature(const VectorBuffer &signature, const VectorBuffer &message, RSA &pubKey)
   {
     const auto digest = hash::sha512(message);
     if(!digest)
@@ -3856,18 +3944,18 @@ namespace x509 {
     return static_cast<nid::Nid>(EVP_PKEY_base_id(pkey)); 
   }
 
-  Result<Bytes> getSerialNumber(X509 &cert)
+  Result<VectorBuffer> getSerialNumber(X509 &cert)
   {
     // both internal pointers, must not be freed
     const ASN1_INTEGER *serialNumber = X509_get_serialNumber(&cert);
     if(!serialNumber)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
     const BIGNUM_uptr bn = make_unique(ASN1_INTEGER_to_BN(serialNumber, nullptr));
     if(!bn)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
-    return bignum::convertToBytes(*bn);
+    return bignum::convertToVectorBuffer(*bn);
   }
 
   Result<size_t> signSha1(X509 &cert, EVP_PKEY &pkey)
@@ -3890,16 +3978,16 @@ namespace x509 {
     return internal::signCert(cert, pkey, EVP_sha512());  
   }
 
-  Result<Bytes> getSignature(const X509 &cert)
+  Result<VectorBuffer> getSignature(const X509 &cert)
   {
     // both internal pointers and must not be freed
     const ASN1_BIT_STRING *psig = nullptr;
     const X509_ALGOR *palg = nullptr;
     X509_get0_signature(&psig, &palg, &cert);
     if(!palg || !psig)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
-    Bytes rawDerSequence(static_cast<size_t>(psig->length));
+    VectorBuffer rawDerSequence(static_cast<size_t>(psig->length));
     std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
 
     return internal::ok(std::move(rawDerSequence));
@@ -3927,7 +4015,7 @@ namespace x509 {
     // internal pointers
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
-    return internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
+    return internal::ok(ecdsa::Signature{ bignum::convertToVectorBuffer(*r).value, bignum::convertToVectorBuffer(*s).value });
   }
 
   Result<CertExtension> getExtension(const X509 &cert, CertExtensionId getExtensionId)
@@ -4141,7 +4229,7 @@ namespace x509 {
     return internal::okVoid();
   }
  
-  Result<void> setSerial(X509 &cert, const Bytes &bytes)
+  Result<void> setSerial(X509 &cert, const VectorBuffer &bytes)
   {
     auto integer = asn1::encodeInteger(bytes);
     if(!integer)
@@ -4291,7 +4379,7 @@ namespace x509 {
     // internal pointers
     const BIGNUM *r,*s;
     ECDSA_SIG_get0(sig.get(), &r, &s);
-    return internal::ok(ecdsa::Signature{ bignum::convertToBytes(*r).value, bignum::convertToBytes(*s).value });
+    return internal::ok(ecdsa::Signature{ bignum::convertToVectorBuffer(*r).value, bignum::convertToVectorBuffer(*s).value });
   }
   
   Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl)
@@ -4374,16 +4462,16 @@ namespace x509 {
     return internal::ok(std::move(ret));
   }
   
-  Result<Bytes> getSignature(const X509_CRL &crl)
+  Result<VectorBuffer> getSignature(const X509_CRL &crl)
   {
     // both internal pointers and must not be freed
     const ASN1_BIT_STRING *psig = nullptr;
     const X509_ALGOR *palg = nullptr;
     X509_CRL_get0_signature(&crl, &psig, &palg);
     if(!palg || !psig)
-      return internal::err<Bytes>();
+      return internal::err<VectorBuffer>();
 
-    Bytes rawDerSequence(static_cast<size_t>(psig->length));
+    VectorBuffer rawDerSequence(static_cast<size_t>(psig->length));
     std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
 
     return internal::ok(std::move(rawDerSequence));

@@ -40,10 +40,10 @@ struct EvpSignVerifyInput
   std::string shortDesc;
   std::string privKeyPem;
   std::string pubKeyPem;
-  ::so::Bytes signedData;
-  ::so::Bytes signature;
-  std::function<::so::Result<::so::Bytes>(const ::so::Bytes&, EVP_PKEY&)> signer;
-  std::function<::so::Result<bool>(const ::so::Bytes&,const ::so::Bytes&, EVP_PKEY&)> verifier;
+  ::so::VectorBuffer signedData;
+  ::so::VectorBuffer signature;
+  std::function<::so::Result<::so::VectorBuffer>(const ::so::VectorBuffer&, EVP_PKEY&)> signer;
+  std::function<::so::Result<bool>(const ::so::VectorBuffer&,const ::so::VectorBuffer&, EVP_PKEY&)> verifier;
 };
 
 // so that gtest failure log would be more descriptive
