@@ -51,6 +51,7 @@
 #include <iterator>
 #include <sstream>
 #include <initializer_list>
+//#include <iostream>
 
 namespace so {
 
@@ -61,14 +62,17 @@ namespace internal {
     void operator()(T *ptr) const
     {
       if(ptr)
+      {
+//        std::cout << "OPENSSL_free\n";
         OPENSSL_free(ptr);
+      }
     }
   };
 
-  template<typename T>
+  template<typename T, typename Deleter>
   struct Buffer
   {
-    using memory_type = std::unique_ptr<T[], OSSLFreeDeleter<T>>;
+    using memory_type = std::unique_ptr<T[], Deleter>;
 
     memory_type memory{ nullptr } ;
     size_t size{ 0 };
@@ -77,15 +81,26 @@ namespace internal {
     using const_iterator = const T*;
 
     Buffer() = default;
+    Buffer(Buffer<T, Deleter>&&) = default; // TODO will need to make noexcept later
 
     Buffer(T *ptr, size_t size_)
       : memory(ptr), size{size_}
     {}
 
+    template
+    <
+      typename T_ = T,
+      typename std::enable_if<!std::is_same<Deleter, OSSLFreeDeleter<T_>>::value, int>::type = 0
+    >
     Buffer(size_t size_)
       : memory(new T[size_]), size{size_}
     {}
 
+    template
+    <
+      typename T_ = T,
+      typename std::enable_if<!std::is_same<Deleter, OSSLFreeDeleter<T_>>::value, int>::type = 0
+    >
     Buffer(std::initializer_list<T> list)
       : size{list.size()}
     {
@@ -93,7 +108,12 @@ namespace internal {
       std::copy(list.begin(), list.end(), begin());
     }
 
-    Buffer(Buffer<T>::const_iterator start, Buffer<T>::const_iterator end)
+    template
+    <
+      typename T_ = T,
+      typename std::enable_if<!std::is_same<Deleter, OSSLFreeDeleter<T_>>::value, int>::type = 0
+    >
+    Buffer(Buffer<T, Deleter>::const_iterator start, Buffer<T, Deleter>::const_iterator end)
     {
       size = static_cast<size_t>(std::distance(start, end));
       if(size)
@@ -111,12 +131,12 @@ namespace internal {
 
     explicit operator bool() const noexcept { return memory != nullptr; }
 
-    bool operator==(const Buffer<T> &other) const
+    bool operator==(const Buffer<T, Deleter> &other) const
     {
       return size == other.size && std::equal(begin(), end(), other.begin());
     }
 
-    bool operator!=(const Buffer<T> &other) const
+    bool operator!=(const Buffer<T, Deleter> &other) const
     {
       return !(*this == other);
     }
@@ -144,9 +164,9 @@ namespace internal {
       typename U,
       typename std::enable_if<std::is_same<U, uint8_t>::value || std::is_same<U, char>::value, int>::type = 0
     >
-    static Buffer<U> copy(const U *ptr, size_t size)
+    static Buffer<U, std::default_delete<U[]>> copy(const U *ptr, size_t size)
     {
-      Buffer<U> ret(size);
+      Buffer<U, std::default_delete<U[]>> ret(size);
       std::memcpy(ret.get(), ptr, size);
       return ret;
     }
@@ -171,7 +191,8 @@ namespace internal {
 
 } //namespace internal
  
-using ByteBuffer = internal::Buffer<uint8_t>;
+using ByteBuffer = internal::Buffer<uint8_t, std::default_delete<uint8_t[]>>;
+using OsslByteBuffer = internal::Buffer<uint8_t, internal::OSSLFreeDeleter<uint8_t>>;
 
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
 namespace internal {                                  \
@@ -2683,9 +2704,9 @@ namespace bytes {
   x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
   {
     // TODO:
-    // I should do proper error handling heere and get rid off
-    // std::generate_n in calling function.
+    // I should do proper error handling heere 
     // However I should not block user from setting garbage in his CRL
+    
     const X509_REVOKED *revoked = sk_X509_REVOKED_value(revStack, index);
     if(!revoked)
       return {};
@@ -4464,10 +4485,10 @@ namespace x509 {
     if(!revokedStack)
         return internal::err<RetType>();
 
-    RetType ret(sz);
-    int index = 0;
-    std::generate_n(ret.begin(), sz, [&revokedStack, &index]{return internal::getRevoked(revokedStack, index++);});
-
+    RetType ret; ret.reserve(sz);
+    for(int index = 0; index < static_cast<int>(sz); ++index)
+      ret.push_back(internal::getRevoked(revokedStack, index));
+    
     return internal::ok(std::move(ret));
   }
   

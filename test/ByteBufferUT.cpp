@@ -44,6 +44,21 @@ static bool equal(const uint8_t (&arr)[SIZE], const so::ByteBuffer &buff)
   return true;
 }
 
+TEST(ByteBuffer, osslByteBuffer)
+{
+  uint8_t *rc = reinterpret_cast<uint8_t*>(OPENSSL_malloc(3));
+  rc[0] = 0x01;
+  rc[1] = 0x02;
+  rc[2] = 0x03;
+
+  ::so::OsslByteBuffer bt(rc, 3);
+
+  ASSERT_EQ(3, bt.size);
+  EXPECT_EQ(0x01, bt.memory[0]);
+  EXPECT_EQ(0x02, bt.memory[1]);
+  EXPECT_EQ(0x03, bt.memory[2]);
+}
+
 TEST(ByteBuffer, create)
 {
   // GIVEN
