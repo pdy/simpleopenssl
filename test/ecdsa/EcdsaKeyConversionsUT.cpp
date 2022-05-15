@@ -162,7 +162,7 @@ TEST(EcdsaKeyConversionsUT, privKey2DerConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybeDerPriv);
-  EXPECT_EQ(data::secp256k1PrivKeyDer, maybeDerPriv.value);
+  EXPECT_TRUE(utils::equals(data::secp256k1PrivKeyDer, maybeDerPriv.value));
 }
 
 TEST(EcdsaKeyConversionsUT, derToPrivKeyConversion_ok)
@@ -200,7 +200,7 @@ TEST(EcdsaKeyConversionsUT, pubKey2DerConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybeDerPub);
-  EXPECT_EQ(data::secp256PubKeyDer, maybeDerPub.value);
+  EXPECT_TRUE(utils::equals(data::secp256PubKeyDer, maybeDerPub.value));
 }
 
 TEST(EcdsaKeyConversionsUT, derToPubKeyConversion_ok)
@@ -227,7 +227,7 @@ TEST(EcdsaKeyConversionsUT, pubKeyDerFromPrivDer)
 
   // THEN
   ASSERT_TRUE(pub);
-  EXPECT_EQ(data::secp256PubKeyDer, pub.value);
+  EXPECT_TRUE(utils::equals(data::secp256PubKeyDer, pub.value));
 }
 
 }}} // so::ut::ecdsa

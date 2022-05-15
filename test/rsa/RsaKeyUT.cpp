@@ -47,7 +47,7 @@ TEST(RsaKeyUT, getPublic)
 
   // THEN
   ASSERT_TRUE(pubDer);
-  EXPECT_EQ(data::rsa3072PubKeyDer, pubDer.value);
+  EXPECT_TRUE(utils::equals(data::rsa3072PubKeyDer, pubDer.value));
 }
 
 TEST(RsaKeyUT, extractPublicKeyOK)

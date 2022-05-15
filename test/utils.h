@@ -79,6 +79,16 @@ inline std::vector<uint8_t> doHashFile(const std::string &path, const EVP_MD *ev
 
 } // namespace internal
 
+inline bool equals(const ::so::ByteBuffer &buff, const ::so::OsslByteBuffer &osslBuffer)
+{
+  return osslBuffer.size == buff.size && std::equal(osslBuffer.begin(), osslBuffer.end(), buff.begin());
+}
+
+inline bool equals(const ::so::OsslByteBuffer &osslBuffer, const ::so::ByteBuffer &buff)
+{
+  return osslBuffer.size == buff.size && std::equal(osslBuffer.begin(), osslBuffer.end(), buff.begin());
+}
+
 template <typename T>
 void add_to_vector(std::vector<T>* /*vec*/) {}
 

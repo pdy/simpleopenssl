@@ -448,8 +448,11 @@ namespace ecdsa {
 
   Result<EC_KEY_uptr> convertDerToPrivKey(const ByteBuffer &der);
   Result<EC_KEY_uptr> convertDerToPubKey(const ByteBuffer &der);
-  Result<ByteBuffer> convertPrivKeyToDer(EC_KEY &ec);
-  Result<ByteBuffer> convertPubKeyToDer(EC_KEY &ec);
+  Result<EC_KEY_uptr> convertDerToPrivKey(const OsslByteBuffer &der);
+  Result<EC_KEY_uptr> convertDerToPubKey(const OsslByteBuffer &der);
+
+  Result<OsslByteBuffer> convertPrivKeyToDer(EC_KEY &ec);
+  Result<OsslByteBuffer> convertPubKeyToDer(EC_KEY &ec);
 
   Result<ByteBuffer> convertToDer(const Signature &signature); 
   Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
@@ -495,9 +498,11 @@ namespace evp {
 
   Result<EVP_PKEY_uptr> convertDerToPrivKey(const ByteBuffer &der);
   Result<EVP_PKEY_uptr> convertDerToPubKey(const ByteBuffer &der);
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const OsslByteBuffer &der);
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const OsslByteBuffer &der);
 
-  Result<ByteBuffer> convertPrivKeyToDer(EVP_PKEY &privKey);
-  Result<ByteBuffer> convertPubKeyToDer(EVP_PKEY &pubKey);
+  Result<OsslByteBuffer> convertPrivKeyToDer(EVP_PKEY &privKey);
+  Result<OsslByteBuffer> convertPubKeyToDer(EVP_PKEY &pubKey);
 
   Result<std::string> convertPrivKeyToPem(EVP_PKEY &privKey);
   Result<std::string> convertPubKeyToPem(EVP_PKEY &pubKey);
@@ -1783,12 +1788,14 @@ namespace rsa {
   Result<std::string> convertPubKeyToPem(RSA &rsa);
 
   Result<RSA_uptr> convertDerToPrivKey(const ByteBuffer &der);
-  Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size);
   Result<RSA_uptr> convertDerToPubKey(const ByteBuffer &der);
+  Result<RSA_uptr> convertDerToPrivKey(const OsslByteBuffer &der);
+  Result<RSA_uptr> convertDerToPubKey(const OsslByteBuffer &der);
+  Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size);
   Result<RSA_uptr> convertDerToPubKey(const uint8_t der[], size_t size);
   
-  Result<ByteBuffer> convertPrivKeyToDer(RSA &rsa);
-  Result<ByteBuffer> convertPubKeyToDer(RSA &rsa);
+  Result<OsslByteBuffer> convertPrivKeyToDer(RSA &rsa);
+  Result<OsslByteBuffer> convertPubKeyToDer(RSA &rsa);
 
   Result<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
   Result<bool> checkKey(RSA &rsa);
@@ -2691,14 +2698,14 @@ namespace bytes {
   }
 
   template<typename Key, typename FUNC>
-  Result<ByteBuffer> convertKeyToDer(Key &key, FUNC i2dFunction)
+  Result<OsslByteBuffer> convertKeyToDer(Key &key, FUNC i2dFunction)
   {
     uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
     const int len = i2dFunction(&key, &ptr);
     if (0 > len)
-      return internal::err<ByteBuffer>();
+      return internal::err<OsslByteBuffer>();
 
-    return internal::ok(ByteBuffer(ptr, static_cast<size_t>(len)));
+    return internal::ok(OsslByteBuffer(ptr, static_cast<size_t>(len)));
   }
 
   x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
@@ -2964,17 +2971,27 @@ namespace ecdsa {
   {
     return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der.get(), der.size);
   } 
-  
-  Result<ByteBuffer> convertPrivKeyToDer(EC_KEY &ec)
+ 
+  Result<EC_KEY_uptr> convertDerToPrivKey(const OsslByteBuffer &der)
+  {
+    return internal::convertDerToKey<EC_KEY_uptr>(d2i_ECPrivateKey, der.get(), der.size);
+  }
+
+  Result<EC_KEY_uptr> convertDerToPubKey(const OsslByteBuffer &der)
+  {
+    return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der.get(), der.size);
+  }
+
+  Result<OsslByteBuffer> convertPrivKeyToDer(EC_KEY &ec)
   {
     const auto check = ecdsa::checkKey(ec);
     if(!check)
-      return internal::err<ByteBuffer>(check.opensslErrCode);
+      return internal::err<OsslByteBuffer>(check.opensslErrCode);
 
     return internal::convertKeyToDer(ec, i2d_ECPrivateKey);
   }
 
-  Result<ByteBuffer> convertPubKeyToDer(EC_KEY &ec)
+  Result<OsslByteBuffer> convertPubKeyToDer(EC_KEY &ec)
   {
     return internal::convertKeyToDer(ec, i2d_EC_PUBKEY);
   }
@@ -3298,12 +3315,22 @@ namespace evp {
     return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der.get(), der.size);
   }
 
-  Result<ByteBuffer> convertPrivKeyToDer(EVP_PKEY &privKey)
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const OsslByteBuffer &der)
+  {
+    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_AutoPrivateKey, der.get(), der.size);
+  }
+
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const OsslByteBuffer &der)
+  {
+    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der.get(), der.size);
+  }
+
+  Result<OsslByteBuffer> convertPrivKeyToDer(EVP_PKEY &privKey)
   {
     return internal::convertKeyToDer(privKey, i2d_PrivateKey);
   }
 
-  Result<ByteBuffer> convertPubKeyToDer(EVP_PKEY &pkey)
+  Result<OsslByteBuffer> convertPubKeyToDer(EVP_PKEY &pkey)
   {
     return internal::convertKeyToDer(pkey, i2d_PUBKEY);
   }
@@ -3606,7 +3633,17 @@ namespace rsa {
   {
     return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der.get(), der.size);
   }
-  
+ 
+  Result<RSA_uptr> convertDerToPrivKey(const OsslByteBuffer &der)
+  {
+    return internal::convertDerToKey<RSA_uptr>(d2i_RSAPrivateKey, der.get(), der.size);
+  }
+
+  Result<RSA_uptr> convertDerToPubKey(const OsslByteBuffer &der)
+  {
+    return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der.get(), der.size);
+  }
+
   Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size)
   {
     return internal::convertDerToKey<RSA_uptr>(d2i_RSAPrivateKey, der, size);
@@ -3617,16 +3654,16 @@ namespace rsa {
     return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der, size);
   }
 
-  Result<ByteBuffer> convertPrivKeyToDer(RSA &rsa)
+  Result<OsslByteBuffer> convertPrivKeyToDer(RSA &rsa)
   {
     const auto check = rsa::checkKey(rsa);
     if(!check)
-      return internal::err<ByteBuffer>(check.opensslErrCode);
+      return internal::err<OsslByteBuffer>(check.opensslErrCode);
 
     return internal::convertKeyToDer(rsa, i2d_RSAPrivateKey);
   }
 
-  Result<ByteBuffer> convertPubKeyToDer(RSA &rsa)
+  Result<OsslByteBuffer> convertPubKeyToDer(RSA &rsa)
   {
     return internal::convertKeyToDer(rsa, i2d_RSA_PUBKEY);
   }
