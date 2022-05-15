@@ -76,32 +76,33 @@ TEST(X509CertExtensionsUT, getExtensionsCountShouldEqualToThree)
   EXPECT_EQ(3, extCount.value);
 }
 
+
 TEST(X509CertExtensionsUT, getExtensions)
 {
   // GIVEN
-  const std::vector<x509::CertExtension> expected {
-    {
+  const std::vector<x509::CertExtension> expected = utils::make_vector<x509::CertExtension>(
+    x509::CertExtension{
       x509::CertExtensionId::SUBJECT_KEY_IDENTIFIER,
       false,
       "X509v3 Subject Key Identifier",
       "2.5.29.14",
       internal::bytes::fromString("75:71:A7:19:48:19:BC:9D:9D:EA:41:47:DF:94:C4:48:77:99:D3:79")
     },
-    {
+    x509::CertExtension{
       x509::CertExtensionId::KEY_USAGE,
       true,
       "X509v3 Key Usage",
       "2.5.29.15",
       internal::bytes::fromString("Certificate Sign, CRL Sign")
     },
-    {
+    x509::CertExtension{
       x509::CertExtensionId::BASIC_CONSTRAINTS,
       true,
       "X509v3 Basic Constraints",
       "2.5.29.19",
       internal::bytes::fromString("CA:TRUE")
     } 
-  };
+  );
   
   auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
@@ -112,12 +113,18 @@ TEST(X509CertExtensionsUT, getExtensions)
   const auto extensions = x509::getExtensions(*cert);
   
 
+  //const auto eq = [](const std::vector<x509::CertExtension> &lhs, const std::vector<x509::CertExtension> &rhs)
+  //{
+  //  return lhs.size() == rhs.size() && std::equal(lhs.begin(), lhs.end(), rhs.begin());
+  //};
+
   // THEN
   ASSERT_TRUE(extCount);
   ASSERT_TRUE(extensions);
-  ASSERT_EQ(extCount.value, (extensions.value).size());
-  ASSERT_EQ(expected.size(), (extensions.value).size());
+  ASSERT_EQ(extCount.value, extensions->size());
+  ASSERT_EQ(expected.size(), extensions->size());
   ASSERT_EQ(expected, (extensions.value));
+  //EXPECT_TRUE(eq(expected, extensions.value));
 }
 
 TEST(X509CertExtensionsUT, getExtensionKeyUsage)

@@ -392,7 +392,7 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
 TEST(X509UT, getSerialNumberWithPrecalculatedData)
 {
   // GIVEN
-  const std::vector<uint8_t> expected {0x1f, 0x47, 0xaf, 0xaa, 0x62, 0x00, 0x70, 0x50, 0x54, 0x4c, 0x01, 0x9e, 0x9b, 0x63, 0x99, 0x2a};
+  const ::so::ByteBuffer expected {0x1f, 0x47, 0xaf, 0xaa, 0x62, 0x00, 0x70, 0x50, 0x54, 0x4c, 0x01, 0x9e, 0x9b, 0x63, 0x99, 0x2a};
 
   auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
@@ -410,7 +410,7 @@ TEST(X509UT, getSerialNumberWithPrecalculatedData)
 TEST(X509UT, getSerialNumberFromPEMFile)
 {
   // GIVEN
-  const std::vector<uint8_t> expected {0x1f, 0x47, 0xaf, 0xaa, 0x62, 0x00, 0x70, 0x50, 0x54, 0x4c, 0x01, 0x9e, 0x9b, 0x63, 0x99, 0x2a};
+  const ::so::ByteBuffer expected {0x1f, 0x47, 0xaf, 0xaa, 0x62, 0x00, 0x70, 0x50, 0x54, 0x4c, 0x01, 0x9e, 0x9b, 0x63, 0x99, 0x2a};
  
   // WHEN
   auto maybeCert = x509::convertPemFileToX509("data/validpemcert.pem");
@@ -429,7 +429,7 @@ TEST(X509UT, getSerialNumber)
 {
   // GIVEN
   const long expectedSerialNumber = 10810;
-  const std::vector<uint8_t> expectedSerialArray {0x2a, 0x3a};
+  const ::so::ByteBuffer expectedSerialArray {0x2a, 0x3a};
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
   ASSERT_TRUE(ASN1_INTEGER_set(X509_get_serialNumber(cert.get()), expectedSerialNumber));
@@ -469,7 +469,7 @@ TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
   std::iota(data.begin(), data.end(), 0x00);
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-  const std::vector<uint8_t> expected(std::next(data.begin()), data.end());
+  const ::so::ByteBuffer expected(std::next(data.begin()), data.end());
 
   // WHEN
   const auto setResult = x509::setSerial(*cert, data);

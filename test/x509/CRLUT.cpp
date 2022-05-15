@@ -188,7 +188,7 @@ TEST(CRLUT, getRevokedFromPrecalculated)
       "Feb 18 10:22:12 2013 GMT",
       std::time_t{}, 
       so::ByteBuffer({0x14, 0x79, 0x47}),
-      {
+      utils::make_vector<x509::CrlEntryExtension>(
         x509::CrlEntryExtension{
           x509::CrlEntryExtensionId::REASON,
           false,
@@ -201,13 +201,13 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           "", "",
           utils::toBytes(btTime)
         }
-      }
+      )
     },
     x509::Revoked{
       "Feb 18 10:22:22 2013 GMT",
       std::time_t{},
       so::ByteBuffer{0x14, 0x79, 0x48},
-      {
+      utils::make_vector<x509::CrlEntryExtension>(
         x509::CrlEntryExtension{
           x509::CrlEntryExtensionId::REASON,
           false,
@@ -220,13 +220,13 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           "", "",
           utils::toBytes(btTime)
         }
-      }
+      )
     },
     x509::Revoked{
       "Feb 18 10:22:32 2013 GMT",
       std::time_t{},
       so::ByteBuffer{0x14, 0x79, 0x49},
-      {
+      utils::make_vector<x509::CrlEntryExtension>(
         x509::CrlEntryExtension{
           x509::CrlEntryExtensionId::REASON,
           false,
@@ -239,13 +239,13 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           "", "",
           utils::toBytes(btTime)
         }
-      }
+      )
     },
     x509::Revoked{
       "Feb 18 10:22:42 2013 GMT",
       std::time_t{},
       so::ByteBuffer{0x14, 0x79, 0x4A},
-      {
+      utils::make_vector<x509::CrlEntryExtension>(
         x509::CrlEntryExtension{
           x509::CrlEntryExtensionId::REASON,
           false,
@@ -258,13 +258,13 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           "", "",
           utils::toBytes(btTime)
         }
-      }
+      )
     },
     x509::Revoked{
       "Feb 18 10:22:51 2013 GMT",
       std::time_t{},
       so::ByteBuffer{0x14, 0x79, 0x4B},
-      {
+      utils::make_vector<x509::CrlEntryExtension>(
         x509::CrlEntryExtension{
           x509::CrlEntryExtensionId::REASON,
           false,
@@ -277,7 +277,7 @@ TEST(CRLUT, getRevokedFromPrecalculated)
           "", "",
           utils::toBytes(btTime)
         }
-      }
+      )
     },
   };
     

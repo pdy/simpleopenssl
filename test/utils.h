@@ -79,6 +79,22 @@ inline std::vector<uint8_t> doHashFile(const std::string &path, const EVP_MD *ev
 
 } // namespace internal
 
+template <typename T>
+void add_to_vector(std::vector<T>* /*vec*/) {}
+
+template <typename T, typename... Args>
+void add_to_vector(std::vector<T>* vec, T&& car, Args&&... cdr) {
+  vec->push_back(std::forward<T>(car));
+  add_to_vector(vec, std::forward<Args>(cdr)...);
+}
+
+template <typename T, typename... Args>
+std::vector<T> make_vector(Args&&... args) {
+  std::vector<T> result;
+  add_to_vector(&result, std::forward<Args>(args)...);
+  return result;
+}
+
 inline ::so::ByteBuffer copy(const ::so::ByteBuffer &buff)
 {
   ::so::ByteBuffer ret(buff.size);

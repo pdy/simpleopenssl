@@ -93,6 +93,16 @@ namespace internal {
       std::copy(list.begin(), list.end(), begin());
     }
 
+    Buffer(Buffer<T>::const_iterator start, Buffer<T>::const_iterator end)
+    {
+      size = static_cast<size_t>(std::distance(start, end));
+      if(size)
+      {
+        memory = memory_type(new T[size]);
+        std::copy(start, end, begin());
+      }
+    }
+
     iterator begin() { return memory.get(); }
     const_iterator begin() const { return memory.get(); }
 
@@ -104,6 +114,11 @@ namespace internal {
     bool operator==(const Buffer<T> &other) const
     {
       return size == other.size && std::equal(begin(), end(), other.begin());
+    }
+
+    bool operator!=(const Buffer<T> &other) const
+    {
+      return !(*this == other);
     }
 
     bool empty() const noexcept { return size == 0 || !memory; }
@@ -1788,8 +1803,17 @@ namespace internal{
 
     bool operator==(const X509Extension<ID> &other) const
     {
+      return 
+        id == other.id
+        && critical == other.critical
+        && name == other.name
+        && oidNumerical == other.oidNumerical
+        && data == other.data;
+
+      /*
       return std::tie(id, critical, name, oidNumerical, data)
           == std::tie(other.id, other.critical, other.name, other.oidNumerical, other.data);
+      */
     }
 
     bool operator!=(const X509Extension<ID> &other) const
@@ -2682,7 +2706,7 @@ namespace bytes {
         {
           auto getExtension = internal::getExtension<x509::CrlEntryExtensionId>(*X509_REVOKED_get_ext(revoked, i));
           if(getExtension)
-            retExtensions.push_back(getExtension.value);
+            retExtensions.push_back(getExtension.moveValue());
         }
       }
     }
