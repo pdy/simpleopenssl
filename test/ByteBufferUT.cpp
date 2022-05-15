@@ -50,8 +50,9 @@ TEST(ByteBuffer, create)
   const uint8_t ARRAY[] = {0x01, 0x01, 0x03};
 
   // WHEN
-  ByteBuffer buff = ByteBuffer::create(3);
+  ByteBuffer buff(3);
   ASSERT_TRUE(buff);
+  ASSERT_EQ(3, buff.size);
   for(size_t i = 0; i < 3; ++i)
     buff.memory[i] = ARRAY[i];
 

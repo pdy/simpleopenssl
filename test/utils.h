@@ -96,6 +96,15 @@ inline bool equal(const ::so::VectorBuffer &lhs, unsigned char *rhs, int rhsLen)
   return true;
 }
 
+inline std::string bin2Hex(const so::ByteBuffer &buff)
+{
+  std::ostringstream oss;
+  for(const auto bt : buff){
+    oss << std::setfill('0') << std::setw(2) << std::hex << +bt;
+  }
+  return oss.str(); 
+}
+
 inline std::string bin2Hex(const so::VectorBuffer &buff)
 {
   std::ostringstream oss;
@@ -120,6 +129,13 @@ inline so::VectorBuffer toBytes(const std::string &str)
       return static_cast<uint8_t>(chr);
   });
 
+  return ret;
+}
+
+inline ::so::ByteBuffer toByteBuffer(const ::so::VectorBuffer &vbt)
+{
+  ::so::ByteBuffer ret(vbt.size());
+  std::copy(vbt.begin(), vbt.end(), ret.begin());
   return ret;
 }
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -29,28 +29,26 @@
 
 #include "../precalculated.h"
 
-
 namespace so { namespace ut { namespace ecdsa {
 
 namespace ecdsa = ::so::ecdsa;
-namespace evp = ::so::evp;
 
 struct SignVerifyInput
 {
   std::string shortDesc;
   std::string privKeyPem;
   std::string pubKeyPem;
-  ::so::VectorBuffer privKeyDer;
-  ::so::VectorBuffer pubKeyDer;
-  ::so::VectorBuffer signedData;
-  ::so::VectorBuffer signature;
-  std::function<::so::Result<::so::VectorBuffer>(const ::so::VectorBuffer&, EC_KEY&)> signer;
-  std::function<::so::Result<bool>(const ::so::VectorBuffer&,const ::so::VectorBuffer&, EC_KEY&)> verifier;
-  std::function<::so::Result<bool>(const ::so::VectorBuffer&,const ::so::VectorBuffer&, EVP_PKEY&)> evpVerifier;
+  const ::so::ByteBuffer &privKeyDer;
+  const ::so::ByteBuffer &pubKeyDer;
+  const ::so::ByteBuffer &signedData;
+  const ::so::ByteBuffer &signature;
+  std::function<::so::Result<::so::ByteBuffer>(const ::so::ByteBuffer&, EC_KEY&)> signer;
+  std::function<::so::Result<bool>(const ::so::ByteBuffer&,const ::so::ByteBuffer&, EC_KEY&)> verifier;
+  std::function<::so::Result<bool>(const ::so::ByteBuffer&,const ::so::ByteBuffer&, EVP_PKEY&)> evpVerifier;
 };
 
 // so that gtest failure log would be more descriptive
-std::ostream& operator<<(std::ostream &s, const SignVerifyInput &input)
+inline std::ostream& operator<<(std::ostream &s, const SignVerifyInput &input)
 {
   return s << input.shortDesc;
 }
