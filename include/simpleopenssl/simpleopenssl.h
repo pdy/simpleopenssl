@@ -2437,12 +2437,15 @@ namespace bytes {
     if(1 != signStatus)
       return internal::err<ByteBuffer>();
  
-    ByteBuffer signature(sigLen);
-    signStatus = EVP_DigestSignFinal(mdCtx.get(), signature.get(), &sigLen);
+    ByteBuffer firstSig(sigLen);
+    signStatus = EVP_DigestSignFinal(mdCtx.get(), firstSig.get(), &sigLen);
     if(1 != signStatus)
       return internal::err<ByteBuffer>();
-        
-    return internal::ok(std::move(signature));
+    
+    if(sigLen == firstSig.size)
+      return internal::ok(std::move(firstSig));
+
+    return internal::ok(ByteBuffer(firstSig.begin(), firstSig.begin() + sigLen));
   }
 
   Result<bool> evpVerify(const ByteBuffer &sig, const ByteBuffer &msg, const EVP_MD *evpMd, EVP_PKEY &pubKey)
@@ -2545,15 +2548,12 @@ namespace bytes {
     BUF_MEM *bptr; // will be freed when bio will be closed
     BIO_get_mem_ptr(bio.get(), &bptr);
 
-    ByteBuffer retData(bptr->length);
-    std::transform(retData.begin(), retData.end(), retData.begin(), [](char chr) { return static_cast<uint8_t>(chr);});
-
     return internal::ok(RetType{
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         oidStr.moveValue(),
-        std::move(retData)
+        ByteBuffer::copy(reinterpret_cast<uint8_t*>(bptr->data), bptr->length)
     }); 
   }
 
