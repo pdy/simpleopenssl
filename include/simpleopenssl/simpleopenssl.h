@@ -68,9 +68,9 @@ namespace internal {
   template<typename T>
   struct Buffer
   {
-    using MemType = std::unique_ptr<T[], OSSLFreeDeleter<T>>;
-    
-    MemType memory{ nullptr } ;
+    using memory_type = std::unique_ptr<T[], OSSLFreeDeleter<T>>;
+
+    memory_type memory{ nullptr } ;
     size_t size{ 0 };
 
     using iterator = T*;
@@ -87,9 +87,9 @@ namespace internal {
     {}
 
     Buffer(std::initializer_list<T> list)
-      : size{list.size}
+      : size{list.size()}
     {
-      memory = new T[list.size()];
+      memory = memory_type{new T[list.size()]};
       std::copy(list.begin(), list.end(), begin());
     }
 
@@ -100,6 +100,13 @@ namespace internal {
     const_iterator end() const { return begin() + size; }
 
     explicit operator bool() const noexcept { return memory != nullptr; }
+
+    bool operator==(const Buffer<T> &other) const
+    {
+      return size == other.size && std::equal(begin(), end(), other.begin());
+    }
+
+    bool empty() const noexcept { return size == 0 || !memory; }
 
     std::vector<T> toStdVector() const
     {
@@ -2108,17 +2115,17 @@ namespace bytes {
     return Result<T>{ std::move(val), internal::OSSL_NO_ERR_CODE };
   }
 
-  Result<void> errVoid()
+  inline Result<void> errVoid()
   {
     return Result<void>{ ERR_get_error() };
   }
 
-  Result<void> errVoid(unsigned long errCode)
+  inline Result<void> errVoid(unsigned long errCode)
   {
     return Result<void>{ errCode };
   }
 
-  Result<void> okVoid()
+  inline Result<void> okVoid()
   {
     return Result<void>{ internal::OSSL_NO_ERR_CODE };
   }
@@ -2358,7 +2365,7 @@ namespace bytes {
     unsigned int finalSigLen = 0;
     if(1 != ECDSA_sign(0,
           dg.get(),
-          static_cast<int>(dg.size()),
+          static_cast<int>(dg.size),
           tmpSig.get(),
           &finalSigLen,
           &key))
@@ -2369,14 +2376,14 @@ namespace bytes {
     if(finalSigLen == static_cast<unsigned>(sigLen))
       return internal::ok(std::move(tmpSig));
 
-    return internal::ok(ByteBuffer::copy(tmpSig.get(), static_cast<size_t>(finalSigLen));
+    return internal::ok(ByteBuffer::copy(tmpSig.get(), static_cast<size_t>(finalSigLen)));
   }
 
   Result<bool> ecdsaVerify(const ByteBuffer &signature, const ByteBuffer &dg, EC_KEY &publicKey)
   {
     if(1 != ECDSA_verify(0,
           dg.get(),
-          static_cast<int>(dg.size()),
+          static_cast<int>(dg.size),
           signature.get(),
           static_cast<int>(signature.size),
           &publicKey))
@@ -2397,7 +2404,7 @@ namespace bytes {
     if(1 != initStatus)
       return internal::err<ByteBuffer>();
  
-    const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
+    const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.get(), message.size);
     if(1 != updateStatus)
       return internal::err<ByteBuffer>();
     
@@ -2407,7 +2414,7 @@ namespace bytes {
       return internal::err<ByteBuffer>();
  
     ByteBuffer signature(sigLen);
-    signStatus = EVP_DigestSignFinal(mdCtx.get(), tmp.get(), &sigLen);
+    signStatus = EVP_DigestSignFinal(mdCtx.get(), signature.get(), &sigLen);
     if(1 != signStatus)
       return internal::err<ByteBuffer>();
         
@@ -2423,10 +2430,10 @@ namespace bytes {
     if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey))
       return internal::err(false);
     
-    if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.get(), msg.size()))
+    if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.get(), msg.size))
       return internal::err(false); 
    
-    const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
+    const int result = EVP_DigestVerifyFinal(ctx.get(), sig.get(), sig.size);
     return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err<bool>();
   }
 
@@ -2443,8 +2450,8 @@ namespace bytes {
     unsigned finalSigLen = 0;
     if(1 != RSA_sign(digestNid,
           digest.get(),
-          static_cast<unsigned>(digest.size()),
-          firstSignature.data(),
+          static_cast<unsigned>(digest.size),
+          firstSignature.get(),
           &finalSigLen,
           &privKey))
     {
@@ -2454,16 +2461,16 @@ namespace bytes {
     if(finalSigLen == static_cast<unsigned>(sz))
       return internal::ok(std::move(firstSignature));
 
-    return internal::ok(ByteBuffer::copy(firstSignature.get(), static_cast<size_t>(finalSigLen));
+    return internal::ok(ByteBuffer::copy(firstSignature.get(), static_cast<size_t>(finalSigLen)));
   }
 
   Result<bool> rsaVerify(int hashNid, const ByteBuffer &signature, const ByteBuffer &digest, RSA &pubKey)
   {
     if(1 != RSA_verify(hashNid,
-          digest.data(),
-          static_cast<unsigned int>(digest.size()),
-          signature.data(),
-          static_cast<unsigned int>(signature.size()),
+          digest.get(),
+          static_cast<unsigned int>(digest.size),
+          signature.get(),
+          static_cast<unsigned int>(signature.size),
           &pubKey))
     {
       return internal::err(false);
@@ -2514,17 +2521,20 @@ namespace bytes {
     BUF_MEM *bptr; // will be freed when bio will be closed
     BIO_get_mem_ptr(bio.get(), &bptr);
 
+    ByteBuffer retData(bptr->length);
+    std::transform(retData.begin(), retData.end(), retData.begin(), [](char chr) { return static_cast<uint8_t>(chr);});
+
     return internal::ok(RetType{
         static_cast<ID>(nid),
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         oidStr.moveValue(),
-        ByteBuffer::copy(bptr->data, static_cast<size_t>(bptr->length))
-      }); 
+        std::move(retData)
+    }); 
   }
 
-  template<typename CTX, typename DATA, typename INIT, typename UPDATE, typename FINAL>
-  Result<ByteBuffer> doHash(const DATA &data, unsigned long digestLen, INIT init, UPDATE update, FINAL finalFunc)
+  template<typename CTX, typename INIT, typename UPDATE, typename FINAL>
+  Result<ByteBuffer> doHash(const ByteBuffer &data, unsigned long digestLen, INIT init, UPDATE update, FINAL finalFunc)
   {
     ByteBuffer hash(static_cast<size_t>(digestLen));
     CTX ctx;
@@ -2539,7 +2549,24 @@ namespace bytes {
 
     return internal::ok(std::move(hash));
   }
+  
+  template<typename CTX, typename INIT, typename UPDATE, typename FINAL>
+  Result<ByteBuffer> doHash(const std::string &data, unsigned long digestLen, INIT init, UPDATE update, FINAL finalFunc)
+  {
+    ByteBuffer hash(static_cast<size_t>(digestLen));
+    CTX ctx;
+    if(1 != init(&ctx))
+      return internal::err<ByteBuffer>();
 
+    if(1 != update(&ctx, data.data(), data.size()))
+      return internal::err<ByteBuffer>();
+
+    if(1 != finalFunc(hash.get(), &ctx))
+      return internal::err<ByteBuffer>(); 
+
+    return internal::ok(std::move(hash));
+  }
+  
   Result<ByteBuffer> doHashFile(const std::string &path, const EVP_MD *evpMd)
   {    
     auto bioRaw = make_unique(BIO_new_file(path.c_str(), "rb"));
@@ -2626,7 +2653,7 @@ namespace bytes {
     if (0 > len)
       return internal::err<ByteBuffer>();
 
-    return internal::ok(ByteBuffer(ptr, static_cast<size_t>(len));
+    return internal::ok(ByteBuffer(ptr, static_cast<size_t>(len)));
   }
 
   x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
@@ -2663,14 +2690,10 @@ namespace bytes {
     const auto timeStr = asn1::convertToISO8601(*time);
     const auto date = asn1::convertToStdTime(*time);
 
-    ByteBuffer retSerial;
-    retSerial.reserve(static_cast<size_t>(serial->length));
-    std::copy_n(serial->data, serial->length, std::back_inserter(retSerial));
-
     return x509::Revoked{
       (timeStr ? timeStr.value : ""),
       (date ? date.value : std::time_t{}),
-      ByteBuffer::create(serial->data, static_cast<size_t>(serial->length)),
+      ByteBuffer::copy(serial->data, static_cast<size_t>(serial->length)),
       std::move(retExtensions)
     };
   }
@@ -2852,8 +2875,8 @@ namespace bignum {
 namespace ecdsa {
   bool Signature::operator ==(const Signature &other) const
   {
-    return r.size() == other.r.size() &&
-      s.size() == other.s.size() &&
+    return r.size == other.r.size &&
+      s.size == other.s.size &&
       std::equal(r.begin(), r.end(), other.r.begin()) && 
       std::equal(s.begin(), s.end(), other.s.begin());
   }
@@ -3067,7 +3090,7 @@ namespace ecdsa {
 
   Result<ByteBuffer> signSha1(const ByteBuffer &message, EC_KEY &key)
   {
-    const auto digest = hash::sha1(message);
+    auto digest = hash::sha1(message);
     if(!digest)
       return digest;
 
@@ -3076,7 +3099,7 @@ namespace ecdsa {
 
   Result<ByteBuffer> signSha224(const ByteBuffer &message, EC_KEY &key)
   {
-    const auto digest = hash::sha224(message);
+    auto digest = hash::sha224(message);
     if(!digest)
       return digest; 
     
@@ -3085,7 +3108,7 @@ namespace ecdsa {
 
   Result<ByteBuffer> signSha256(const ByteBuffer &message, EC_KEY &key)
   {
-    const auto digest = hash::sha256(message);
+    auto digest = hash::sha256(message);
     if(!digest)
       return digest; 
 
@@ -3094,7 +3117,7 @@ namespace ecdsa {
 
   Result<ByteBuffer> signSha384(const ByteBuffer &message, EC_KEY &key)
   {
-    const auto digest = hash::sha384(message);
+    auto digest = hash::sha384(message);
     if(!digest)
       return digest;
 
@@ -3103,7 +3126,7 @@ namespace ecdsa {
   
   Result<ByteBuffer> signSha512(const ByteBuffer &message, EC_KEY &key)
   {
-    const auto digest = hash::sha512(message);
+    auto digest = hash::sha512(message);
     if(!digest)
       return digest;
 
@@ -3623,7 +3646,7 @@ namespace rsa {
  
   Result<ByteBuffer> signSha1(const ByteBuffer &msg, RSA &privKey)
   {
-    const auto digest = hash::sha1(msg);
+    auto digest = hash::sha1(msg);
     if(!digest)
       return digest;
 
@@ -3632,7 +3655,7 @@ namespace rsa {
 
   Result<ByteBuffer> signSha224(const ByteBuffer &msg, RSA &privKey)
   {
-    const auto digest = hash::sha224(msg);
+    auto digest = hash::sha224(msg);
     if(!digest)
       return digest;
 
@@ -3641,7 +3664,7 @@ namespace rsa {
 
   Result<ByteBuffer> signSha256(const ByteBuffer &msg, RSA &privKey)
   {
-    const auto digest = hash::sha256(msg);
+    auto digest = hash::sha256(msg);
     if(!digest)
       return digest;
 
@@ -3650,7 +3673,7 @@ namespace rsa {
 
   Result<ByteBuffer> signSha384(const ByteBuffer &msg, RSA &privKey)
   {
-    const auto digest = hash::sha384(msg);
+    auto digest = hash::sha384(msg);
     if(!digest)
       return digest;
 
@@ -3659,7 +3682,7 @@ namespace rsa {
   
   Result<ByteBuffer> signSha512(const ByteBuffer &msg, RSA &privKey)
   {
-    const auto digest = hash::sha512(msg);
+    auto digest = hash::sha512(msg);
     if(!digest)
       return digest;
 
@@ -4433,10 +4456,7 @@ namespace x509 {
     if(!palg || !psig)
       return internal::err<ByteBuffer>();
 
-    ByteBuffer rawDerSequence(static_cast<size_t>(psig->length));
-    std::memcpy(rawDerSequence.data(), psig->data, static_cast<size_t>(psig->length));
-
-    return internal::ok(std::move(rawDerSequence));
+    return internal::ok(ByteBuffer::copy(psig->data, static_cast<size_t>(psig->length)));
   }
   
   nid::Nid getSignatureAlgorithm(const X509_CRL &crl)

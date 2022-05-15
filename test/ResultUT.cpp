@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -34,28 +34,28 @@ namespace so { namespace ut { namespace expected {
 TEST(ResultUT, okUsageWithBytes)
 {
   // WHEN
-  const auto expected = ::so::internal::ok(::so::VectorBuffer{0x00, 0x01});
+  const auto expected = ::so::internal::ok(::so::ByteBuffer{0x00, 0x01});
  
   // THEN
   EXPECT_TRUE(expected);
   EXPECT_TRUE(expected.ok());
   EXPECT_EQ(0ul, expected.opensslErrCode);
   EXPECT_EQ("ok", expected.msg());
-  EXPECT_EQ((::so::VectorBuffer{0x00, 0x01}), expected.value);
-  EXPECT_EQ((::so::VectorBuffer{0x00, 0x01}), expected.value);
+  EXPECT_EQ((::so::ByteBuffer{0x00, 0x01}), expected.value);
+  EXPECT_EQ((::so::ByteBuffer{0x00, 0x01}), expected.value);
 }
 
 TEST(ResultUT, errUsageWithBytes)
 {
   // WHEN
-  const auto expected = ::so::internal::err<::so::VectorBuffer>(5);
+  const auto expected = ::so::internal::err<::so::ByteBuffer>(5);
  
   // THEN
   EXPECT_FALSE(expected);
   EXPECT_FALSE(expected.ok());
   EXPECT_EQ(5ul, expected.opensslErrCode);
-  EXPECT_EQ((::so::VectorBuffer{}), expected.value);
-  EXPECT_EQ((::so::VectorBuffer{}), expected.value);
+  EXPECT_EQ((::so::ByteBuffer{}), expected.value);
+  EXPECT_EQ((::so::ByteBuffer{}), expected.value);
 }
 
 TEST(ResultUT, okUsageWithUptrs)

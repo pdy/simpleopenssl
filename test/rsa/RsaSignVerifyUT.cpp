@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -42,13 +42,13 @@ struct SignVerifyInput
   std::string shortDesc;
   std::string privKeyPem;
   std::string pubKeyPem;
-  ::so::VectorBuffer privKeyDer;
-  ::so::VectorBuffer pubKeyDer;
-  ::so::VectorBuffer signedData;
-  ::so::VectorBuffer signature;
-  std::function<::so::Result<::so::VectorBuffer>(const ::so::VectorBuffer&, RSA&)> signer;
-  std::function<::so::Result<bool>(const ::so::VectorBuffer&,const ::so::VectorBuffer&, RSA&)> verifier;
-  std::function<::so::Result<bool>(const ::so::VectorBuffer&,const ::so::VectorBuffer&, EVP_PKEY&)> evpVerifier;
+  const ::so::ByteBuffer &privKeyDer;
+  const ::so::ByteBuffer &pubKeyDer;
+  const ::so::ByteBuffer &signedData;
+  const ::so::ByteBuffer &signature;
+  std::function<::so::Result<::so::ByteBuffer>(const ::so::ByteBuffer&, RSA&)> signer;
+  std::function<::so::Result<bool>(const ::so::ByteBuffer&,const ::so::ByteBuffer&, RSA&)> verifier;
+  std::function<::so::Result<bool>(const ::so::ByteBuffer&,const ::so::ByteBuffer&, EVP_PKEY&)> evpVerifier;
 
   friend std::ostream& operator<<(std::ostream &oss, const SignVerifyInput &input);
 };
@@ -117,7 +117,7 @@ TEST_P(RsaSignVerifyUT, signVerify_ApiIntegrity)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  std::vector<uint8_t> data(256);
+  ::so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0); 
   auto key = rsa::create(rsa::KeyBits::_2048_);
   ASSERT_TRUE(key);
@@ -137,7 +137,7 @@ TEST_P(RsaSignVerifyUT, signVerify_IntegrityWithEvp)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  std::vector<uint8_t> data(256);
+  ::so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0); 
   auto key = rsa::create(rsa::KeyBits::_2048_);
   ASSERT_TRUE(key);

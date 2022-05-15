@@ -1,7 +1,7 @@
 /*
 *  MIT License
 *  
-*  Copyright (c) 2020 Pawel Drzycimski
+*  Copyright (c) 2020 - 2022 Pawel Drzycimski
 *  
 *  Permission is hereby granted, free of charge, to any person obtaining a copy
 *  of this software and associated documentation files (the "Software"), to deal
@@ -29,7 +29,6 @@
 
 #include "simpleopenssl/simpleopenssl.h"
 #include <string>
-#include <vector>
 #include <algorithm>
 
 namespace so { namespace ut { namespace data {

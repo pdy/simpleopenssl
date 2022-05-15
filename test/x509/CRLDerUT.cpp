@@ -37,8 +37,8 @@ TEST(CRLDERUT, certToDerFile)
 {
   static constexpr auto TMP_OUT_FILENAME = "data/tmp_der_crl.der";
 
-  const unsigned char *it = data::validDerCrl.data();
-  auto crl = ::so::make_unique(d2i_X509_CRL(nullptr, &it, static_cast<long>(data::validDerCrl.size())));
+  const unsigned char *it = data::validDerCrl.get();
+  auto crl = ::so::make_unique(d2i_X509_CRL(nullptr, &it, static_cast<long>(data::validDerCrl.size)));
   ASSERT_TRUE(crl);
 
   auto scope = ::makeScopeGuard([&] { ::removeFile(TMP_OUT_FILENAME); });

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -40,14 +40,14 @@ struct EvpSignVerifyInput
   std::string shortDesc;
   std::string privKeyPem;
   std::string pubKeyPem;
-  ::so::VectorBuffer signedData;
-  ::so::VectorBuffer signature;
-  std::function<::so::Result<::so::VectorBuffer>(const ::so::VectorBuffer&, EVP_PKEY&)> signer;
-  std::function<::so::Result<bool>(const ::so::VectorBuffer&,const ::so::VectorBuffer&, EVP_PKEY&)> verifier;
+  const ::so::ByteBuffer &signedData;
+  const ::so::ByteBuffer &signature;
+  std::function<::so::Result<::so::ByteBuffer>(const ::so::ByteBuffer&, EVP_PKEY&)> signer;
+  std::function<::so::Result<bool>(const ::so::ByteBuffer&,const ::so::ByteBuffer&, EVP_PKEY&)> verifier;
 };
 
 // so that gtest failure log would be more descriptive
-std::ostream& operator<<(std::ostream &s, const EvpSignVerifyInput &input)
+inline std::ostream& operator<<(std::ostream &s, const EvpSignVerifyInput &input)
 {
   return s << input.shortDesc;
 }
@@ -93,7 +93,7 @@ TEST_P(EvpSignVerifyUT, signVerify_ShouldSignAndVerifyWithEcdsaGeneratedKeys)
 {
   // GIVEN
   const EvpSignVerifyInput input{ GetParam() };
-  std::vector<uint8_t> data(256);
+  so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0); 
   auto key = ecdsa::create(ecdsa::Curve::SECT571R1);
   ASSERT_TRUE(key);

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021 Pawel Drzycimski
+* Copyright (c) 2021 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -56,7 +56,7 @@ protected:
     m_key = maybeKey.moveValue();
   }
 
-  so::X509_uptr getMinimalNotSigned(const so::VectorBuffer &serial = so::VectorBuffer{0x01, 0x02, 0x03}) const
+  so::X509_uptr getMinimalNotSigned(const so::ByteBuffer &serial = {0x01, 0x02, 0x03}) const
   {
     auto ret = x509::create();
     X509_gmtime_adj(X509_get_notBefore(ret.value.get()), 0);

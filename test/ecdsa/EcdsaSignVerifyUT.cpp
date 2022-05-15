@@ -111,7 +111,7 @@ TEST_P(EcdsaSignVerifyUT, signVerify_ApiIntegrity)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  std::vector<uint8_t> data(256);
+  so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0); 
   auto key = ecdsa::create(ecdsa::Curve::SECP224R1);
   ASSERT_TRUE(key);
@@ -131,7 +131,7 @@ TEST_P(EcdsaSignVerifyUT, signVerify_IntegrityWithEvp)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  std::vector<uint8_t> data(256);
+  so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0); 
   auto key = ecdsa::create(ecdsa::Curve::SECT233K1);
   ASSERT_TRUE(key);

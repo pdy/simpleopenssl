@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 - 2021 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -330,7 +330,7 @@ TEST(X509UT, getSetPubKeyWithGeneratedKey)
   auto extractedPub = maybeExtractedPub.moveValue();
   
   // 4.
-  ::so::VectorBuffer data(256);
+  ::so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
   const auto signResult = ::so::evp::signSha1(data, *evpPrivKey);
   ASSERT_TRUE(signResult);
@@ -362,7 +362,7 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
   auto pub = maybePub.moveValue();
 
   // 2.
-  ::so::VectorBuffer data(256);
+  ::so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
   const auto signResult = ::so::evp::signSha1(data, *priv);
   ASSERT_TRUE(signResult);
@@ -403,7 +403,7 @@ TEST(X509UT, getSerialNumberWithPrecalculatedData)
 
   // THEN
   ASSERT_TRUE(maybeSerial);
-  auto serial = maybeSerial.value;
+  const auto &serial = maybeSerial.value;
   EXPECT_EQ(expected, serial);
 }
 
@@ -421,7 +421,7 @@ TEST(X509UT, getSerialNumberFromPEMFile)
 
   // THEN
   ASSERT_TRUE(maybeSerial);
-  auto serial = maybeSerial.value;
+  const auto &serial = maybeSerial.value;
   EXPECT_EQ(expected, serial);
 }
 
@@ -439,14 +439,14 @@ TEST(X509UT, getSerialNumber)
 
   // THEN
   ASSERT_TRUE(maybeSerial);
-  auto serial = maybeSerial.value;
+  const auto &serial = maybeSerial.value;
   EXPECT_EQ(expectedSerialArray, serial);
 }
 
 TEST(X509UT, getSetSerialNumberAPIIntegrity)
 {
   // GIVEN
-  std::vector<uint8_t> expected(256);
+  ::so::ByteBuffer expected(256);
   std::iota(expected.begin(), expected.end(), 0x10);
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
@@ -458,14 +458,14 @@ TEST(X509UT, getSetSerialNumberAPIIntegrity)
   // THEN
   ASSERT_TRUE(setResult);
   ASSERT_TRUE(getResult);
-  auto serial = getResult.value;
+  const auto &serial = getResult.value;
   EXPECT_EQ(expected, serial);
 }
 
 TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
 {
   // GIVEN
-  std::vector<uint8_t> data(256);
+  ::so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0x00);
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
@@ -478,7 +478,7 @@ TEST(X509UT, getSetSerialNumberWhenStartsWithZeroShouldReturnWithoutOne)
   // THEN
   ASSERT_TRUE(setResult);
   ASSERT_TRUE(getResult);
-  auto serial = getResult.value;
+  const auto &serial = getResult.value;
   EXPECT_EQ(expected, serial);
 }
 
@@ -495,8 +495,8 @@ TEST(X509UT, getEcdsaSignature)
   // THEN
   ASSERT_TRUE(maybeSig);
   const auto& sig = maybeSig.value;
-  ASSERT_EQ(48, sig.r.size()); // it's secp384r1
-  ASSERT_EQ(48, sig.s.size()); // it's secp384r1
+  ASSERT_EQ(48, sig.r.size); // it's secp384r1
+  ASSERT_EQ(48, sig.s.size); // it's secp384r1
 }
 
 TEST(X509UT, isSelfSignedShouldBeTrue)
@@ -556,7 +556,7 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
   ASSERT_TRUE(der);
 
   // THEN
-  EXPECT_EQ(maybeSignature.value.size(), der.value.size());
+  EXPECT_EQ(maybeSignature.value.size, der.value.size);
   EXPECT_EQ(maybeSignature.value, der.value);
 }
 
@@ -652,7 +652,7 @@ TEST(X509UT, copyMinimalStruct)
   ASSERT_TRUE(rsa);
   auto evp = ::so::evp::create();
   ASSERT_TRUE(::so::evp::assign(*evp.value, *rsa.value));
-  auto serial = ::so::asn1::encodeInteger(::so::VectorBuffer{0x01, 0x02, 0x03});
+  auto serial = ::so::asn1::encodeInteger(::so::ByteBuffer({0x01, 0x02, 0x03}));
   ASSERT_TRUE(serial);
 
   auto cert = ::so::make_unique(X509_new());

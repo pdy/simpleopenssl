@@ -68,7 +68,7 @@ TEST(EcdsaKeyUT, extractPublicKeyOK)
   auto maybePub = ecdsa::getPublic(*priv);
   ASSERT_TRUE(maybePub);
   auto pub = maybePub.moveValue();
-  ::so::VectorBuffer data(256);
+  ::so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
 
   // WHEN
@@ -91,7 +91,7 @@ TEST(EcdsaKeyUT, extractedPublicKeyCantBeUsedForSign)
   auto maybePub = ecdsa::getPublic(*priv);
   ASSERT_TRUE(maybePub);
   auto pub = maybePub.moveValue();
-  ::so::VectorBuffer data(256);
+  ::so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
 
   // WHEN

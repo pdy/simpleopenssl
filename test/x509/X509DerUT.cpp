@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021 Pawel Drzycimski
+* Copyright (c) 2021 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -37,8 +37,8 @@ TEST(X509DERUT, certToDerFile)
 {
   static constexpr auto TMP_OUT_FILENAME = "data/tmp_der_cert.der";
 
-  const unsigned char *it = data::validDerCert.data();
-  auto cert = ::so::make_unique(d2i_X509(nullptr, &it, static_cast<long>(data::validDerCert.size())));
+  const unsigned char *it = data::validDerCert.get();
+  auto cert = ::so::make_unique(d2i_X509(nullptr, &it, static_cast<long>(data::validDerCert.size)));
   ASSERT_TRUE(cert);
 
   auto scope = ::makeScopeGuard([&] { ::removeFile(TMP_OUT_FILENAME); });

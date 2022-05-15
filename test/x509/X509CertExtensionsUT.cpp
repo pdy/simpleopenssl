@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -85,21 +85,21 @@ TEST(X509CertExtensionsUT, getExtensions)
       false,
       "X509v3 Subject Key Identifier",
       "2.5.29.14",
-      internal::bytes::fromStringVectorBuffer("75:71:A7:19:48:19:BC:9D:9D:EA:41:47:DF:94:C4:48:77:99:D3:79")
+      internal::bytes::fromString("75:71:A7:19:48:19:BC:9D:9D:EA:41:47:DF:94:C4:48:77:99:D3:79")
     },
     {
       x509::CertExtensionId::KEY_USAGE,
       true,
       "X509v3 Key Usage",
       "2.5.29.15",
-      internal::bytes::fromStringVectorBuffer("Certificate Sign, CRL Sign")
+      internal::bytes::fromString("Certificate Sign, CRL Sign")
     },
     {
       x509::CertExtensionId::BASIC_CONSTRAINTS,
       true,
       "X509v3 Basic Constraints",
       "2.5.29.19",
-      internal::bytes::fromStringVectorBuffer("CA:TRUE")
+      internal::bytes::fromString("CA:TRUE")
     } 
   };
   
@@ -128,7 +128,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsage)
     true,
     "X509v3 Key Usage",
     "2.5.29.15",
-    internal::bytes::fromStringVectorBuffer("Certificate Sign, CRL Sign")
+    internal::bytes::fromString("Certificate Sign, CRL Sign")
   };
 
   auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
@@ -152,7 +152,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsageByOidNumerical)
     true,
     "X509v3 Key Usage",
     oidToFind,
-    internal::bytes::fromStringVectorBuffer("Certificate Sign, CRL Sign")
+    internal::bytes::fromString("Certificate Sign, CRL Sign")
   };
 
   auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
@@ -245,7 +245,7 @@ TEST(X509CertExtensionsUT, addExtensionUsingLibraryStructure)
     false,
     "",
     "",
-    internal::bytes::fromStringVectorBuffer("CA:TRUE")
+    internal::bytes::fromString("CA:TRUE")
   }; 
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);

@@ -37,7 +37,7 @@ struct HashTestInput
   std::string shortDesc;
   std::string plaintext;
   std::string expectedHexString;
-  std::function<::so::Result<::so::ByteBuffer>(const ::so::VectorBuffer&)> hasher;
+  std::function<::so::Result<::so::ByteBuffer>(const ::so::ByteBuffer&)> hasher;
   std::function<::so::Result<::so::ByteBuffer>(const ::std::string&)> strHasher;
 };
 
@@ -72,7 +72,7 @@ const auto hashUTTestCases = ::testing::Values(
       "md4",
       "test_test_foobar",
       "e0e7ea8d8da4cd38dea5c40951292dae",
-      [](const ::so::VectorBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::md4(bytes);},
+      [](const ::so::ByteBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::md4(bytes);},
       [](const ::std::string &str) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::md4(str);}
     },
 
@@ -80,7 +80,7 @@ const auto hashUTTestCases = ::testing::Values(
       "md5",
       "test_test_foobar",
       "506c5777af0c699d27f0e1214343e90a",
-      [](const ::so::VectorBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::md5(bytes);},
+      [](const ::so::ByteBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::md5(bytes);},
       [](const ::std::string &str) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::md5(str);}
     },
 
@@ -88,7 +88,7 @@ const auto hashUTTestCases = ::testing::Values(
       "sha1",
       "test_test_foobar",
       "42316b3d7b91ddb03e3980173e66d59522ceafb0",
-      [](const ::so::VectorBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha1(bytes);},
+      [](const ::so::ByteBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha1(bytes);},
       [](const ::std::string &str) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha1(str);}
     },
 
@@ -96,7 +96,7 @@ const auto hashUTTestCases = ::testing::Values(
       "sha224",
       "test_test_foobar",
       "42388802eda260242eabb109f3959dca377cc326a4fe6ef0b6cf7b25",
-      [](const ::so::VectorBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha224(bytes);},
+      [](const ::so::ByteBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha224(bytes);},
       [](const ::std::string &str) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha224(str);}
     },
 
@@ -104,7 +104,7 @@ const auto hashUTTestCases = ::testing::Values(
       "sha256",
       "test_test_foobar",
       "bc454e8c3505ee0315b34389de085393a08e0eb7f5d600222207bbe3498c53a6",
-      [](const ::so::VectorBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha256(bytes);},
+      [](const ::so::ByteBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha256(bytes);},
       [](const ::std::string &str) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha256(str);}
     },
 
@@ -112,7 +112,7 @@ const auto hashUTTestCases = ::testing::Values(
       "sha384",
       "test_test_foobar",
       "9962cbe6aae7259c26a50f1892bcfab6b287ad0609a484739a2ac6d0f3e800533b369b663fd6ddc0bd7d3dee62801d4b",
-      [](const ::so::VectorBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha384(bytes);},
+      [](const ::so::ByteBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha384(bytes);},
       [](const ::std::string &str) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha384(str);}
     },
 
@@ -120,7 +120,7 @@ const auto hashUTTestCases = ::testing::Values(
       "sha512",
       "test_test_foobar",
       "781a5cfc1fb0cb51b550696fad366c37486000a69f70510701106db7e8081a381c0790f245e14cfbbb1eaee59c1e8811dc05d82cf75f50b7eabc1ff7923b0a08",
-      [](const ::so::VectorBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha512(bytes);},
+      [](const ::so::ByteBuffer &bytes) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha512(bytes);},
       [](const ::std::string &str) -> ::so::Result<::so::ByteBuffer> {return ::so::hash::sha512(str);}
     }
 );

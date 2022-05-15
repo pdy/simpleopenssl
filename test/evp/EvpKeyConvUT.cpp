@@ -21,7 +21,6 @@
 *
 */
 
-#include <vector>
 #include <algorithm>
 #include <numeric>
 #include <gtest/gtest.h>
@@ -32,14 +31,12 @@
 
 namespace so { namespace ut { namespace evp {
 
-//namespace evp = ::so::evp;
-
 TEST(EvpKeyConvUT, rsaPubDerToEVP)
 {
-  const auto derPub = data::rsa3072PubKeyDer;
+  const auto &derPub = data::rsa3072PubKeyDer;
 
-  const uint8_t *it = derPub.data();
-  auto evpPub = ::so::make_unique(d2i_PublicKey(EVP_PKEY_RSA, nullptr, &it, static_cast<long>(derPub.size())));
+  const uint8_t *it = derPub.get();
+  auto evpPub = ::so::make_unique(d2i_PublicKey(EVP_PKEY_RSA, nullptr, &it, static_cast<long>(derPub.size)));
 
   EXPECT_TRUE(evpPub) << ::so::getLastErrString();
 }

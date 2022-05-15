@@ -25,6 +25,7 @@
 #include <simpleopenssl/simpleopenssl.h>
 #include <numeric>
 #include "utils.h"
+
 namespace so { namespace ut { namespace bignum {
 
 namespace bignum = ::so::bignum;
@@ -33,7 +34,7 @@ TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
 {
   constexpr size_t SIZE = 20;
 
-  std::vector<uint8_t> buffer(SIZE);
+  so::ByteBuffer buffer(SIZE);
   std::iota(buffer.begin(), buffer.end(), 0x7f);
 
   auto maybeBignum = bignum::convertToBignum(buffer);
@@ -41,10 +42,10 @@ TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
   auto bignum = maybeBignum.moveValue();
   ASSERT_EQ(SIZE, bignum::getByteLen(*bignum).value);
 
-  auto maybeReturnedBuffer = bignum::convertToVectorBuffer(*bignum);
+  auto maybeReturnedBuffer = bignum::convertToByteBuffer(*bignum);
   ASSERT_TRUE(maybeReturnedBuffer);
-  auto returnedBuffer = maybeReturnedBuffer.value;
-  ASSERT_EQ(SIZE, returnedBuffer.size());
+  auto returnedBuffer = maybeReturnedBuffer.moveValue();
+  ASSERT_EQ(SIZE, returnedBuffer.size);
 
   EXPECT_EQ(buffer, returnedBuffer);
 }

@@ -42,16 +42,16 @@ namespace so { namespace ut { namespace utils {
 
 namespace internal {
 
-inline ::so::VectorBuffer doHashFile(const std::string &path, const EVP_MD *evpMd)
+inline std::vector<uint8_t> doHashFile(const std::string &path, const EVP_MD *evpMd)
 {    
   auto bioRaw = make_unique(BIO_new_file(path.c_str(), "rb"));
   if(!bioRaw)
-    return ::so::VectorBuffer{}; 
+    return std::vector<uint8_t>{}; 
 
   // mdtmp will be freed with bio
   BIO *mdtmp = BIO_new(BIO_f_md());
   if(!mdtmp)
-    return ::so::VectorBuffer{};
+    return std::vector<uint8_t>{};
 
   // WTF OpenSSL?
   // Every EVP_<digest>() function returns const pointer, but
@@ -60,7 +60,7 @@ inline ::so::VectorBuffer doHashFile(const std::string &path, const EVP_MD *evpM
   BIO_set_md(mdtmp, const_cast<EVP_MD*>(evpMd));
   auto bio = make_unique(BIO_push(mdtmp, bioRaw.release()));
   if(!bio)
-    return ::so::VectorBuffer{};
+    return std::vector<uint8_t>{};
 
   {
     char buf[10240];
@@ -74,14 +74,21 @@ inline ::so::VectorBuffer doHashFile(const std::string &path, const EVP_MD *evpM
   uint8_t mdbuf[EVP_MAX_MD_SIZE];
   const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
 
-  return ::so::VectorBuffer(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen));
+  return std::vector<uint8_t>(std::begin(mdbuf), std::next(std::begin(mdbuf), mdlen));
 }
 
 } // namespace internal
 
-inline bool equal(const ::so::VectorBuffer &lhs, unsigned char *rhs, int rhsLen)
+inline ::so::ByteBuffer copy(const ::so::ByteBuffer &buff)
 {
-  if(static_cast<int>(lhs.size()) != rhsLen)
+  ::so::ByteBuffer ret(buff.size);
+  std::copy(buff.begin(), buff.end(), ret.begin());
+  return ret;
+}
+
+inline bool equal(const ::so::ByteBuffer &lhs, unsigned char *rhs, int rhsLen)
+{
+  if(static_cast<int>(lhs.size) != rhsLen)
     return false;
 
   size_t idx = 0;
@@ -105,7 +112,7 @@ inline std::string bin2Hex(const so::ByteBuffer &buff)
   return oss.str(); 
 }
 
-inline std::string bin2Hex(const so::VectorBuffer &buff)
+inline std::string bin2Hex(const std::vector<uint8_t> &buff)
 {
   std::ostringstream oss;
   for(const auto bt : buff){
@@ -114,32 +121,31 @@ inline std::string bin2Hex(const so::VectorBuffer &buff)
   return oss.str(); 
 }
 
-inline std::string toString(const so::VectorBuffer &bt)
+inline std::string toString(const ::so::ByteBuffer &bt)
 {
   std::ostringstream ss;
   std::copy(bt.begin(), bt.end(), std::ostream_iterator<char>(ss, ""));
   return ss.str();
 }
 
-inline so::VectorBuffer toBytes(const std::string &str)
+inline ::so::ByteBuffer toBytes(const std::string &str)
 {
-  so::VectorBuffer ret;
-  ret.reserve(str.size());
-  std::transform(str.begin(), str.end(), std::back_inserter(ret), [](char chr){
+  ::so::ByteBuffer ret(str.size());
+  std::transform(str.begin(), str.end(), ret.begin(), [](char chr){
       return static_cast<uint8_t>(chr);
   });
 
   return ret;
 }
 
-inline ::so::ByteBuffer toByteBuffer(const ::so::VectorBuffer &vbt)
+inline ::so::ByteBuffer toByteBuffer(const std::vector<uint8_t> &vbt)
 {
   ::so::ByteBuffer ret(vbt.size());
   std::copy(vbt.begin(), vbt.end(), ret.begin());
   return ret;
 }
 
-inline so::VectorBuffer readBinaryFile(const std::string &filePath)
+inline ::so::ByteBuffer readBinaryFile(const std::string &filePath)
 {
   std::ifstream input(filePath.c_str(), std::ios::binary);
   if(!input.is_open())
@@ -149,14 +155,14 @@ inline so::VectorBuffer readBinaryFile(const std::string &filePath)
   const auto size = input.tellg();
   input.seekg(0, std::ios::beg);
 
-  so::VectorBuffer ret(static_cast<size_t>(size));
-  input.read(reinterpret_cast<char*>(ret.data()), size);
+  ::so::ByteBuffer ret(static_cast<size_t>(size));
+  input.read(reinterpret_cast<char*>(ret.get()), size);
   input.close();
 
   return ret;
 }
 
-inline bool operator==(const ::so::VectorBuffer &lhs, const ::so::VectorBuffer &rhs)
+inline bool operator==(const std::vector<uint8_t> &lhs, const std::vector<uint8_t> &rhs)
 {
   return lhs.size() == rhs.size() &&
     std::equal(lhs.begin(), lhs.end(), rhs.begin());

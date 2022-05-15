@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -25,6 +25,7 @@
 #include <simpleopenssl/simpleopenssl.h>
 
 #include "../precalculated.h"
+#include "../utils.h"
 
 namespace so { namespace ut { namespace ecdsa {
 
@@ -33,7 +34,7 @@ namespace ecdsa = ::so::ecdsa;
 TEST(ecdsa, derSignatureBytesToSignatureStruct)
 {
   // GIVEN
-  const ecdsa::Signature expected { data::signature_sha256_R, data::signature_sha256_S };
+  const ecdsa::Signature expected { utils::copy(data::signature_sha256_R), utils::copy(data::signature_sha256_S) };
 
   // WHEN
   auto maybeSig = ecdsa::convertToSignature(data::signature_sha256);
@@ -48,8 +49,8 @@ TEST(ecdsa, derSignatureBytesToSignatureStruct)
 TEST(ecdsa, signatureStructToDerBytes)
 {
   // GIVEN
-  const so::VectorBuffer expected { data::signature_sha256 };
-  const ecdsa::Signature sig { data::signature_sha256_R, data::signature_sha256_S };
+  const so::ByteBuffer expected = utils::copy(data::signature_sha256 );
+  const ecdsa::Signature sig { utils::copy(data::signature_sha256_R), utils::copy(data::signature_sha256_S) };
 
   // WHEN
   auto maybeDer = ecdsa::convertToDer(sig);
@@ -58,7 +59,7 @@ TEST(ecdsa, signatureStructToDerBytes)
   auto der = maybeDer.moveValue();
 
   // THEN
-  ASSERT_EQ(expected.size(), der.size());
+  ASSERT_EQ(expected.size, der.size);
   EXPECT_TRUE(std::equal(expected.begin(), expected.end(), der.begin()));
 }
 
