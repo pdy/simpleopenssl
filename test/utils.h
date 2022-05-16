@@ -81,12 +81,12 @@ inline std::vector<uint8_t> doHashFile(const std::string &path, const EVP_MD *ev
 
 inline bool equals(const ::so::ByteBuffer &buff, const ::so::OsslByteBuffer &osslBuffer)
 {
-  return osslBuffer.size == buff.size && std::equal(osslBuffer.begin(), osslBuffer.end(), buff.begin());
+  return osslBuffer.size() == buff.size() && std::equal(osslBuffer.begin(), osslBuffer.end(), buff.begin());
 }
 
 inline bool equals(const ::so::OsslByteBuffer &osslBuffer, const ::so::ByteBuffer &buff)
 {
-  return osslBuffer.size == buff.size && std::equal(osslBuffer.begin(), osslBuffer.end(), buff.begin());
+  return osslBuffer.size() == buff.size() && std::equal(osslBuffer.begin(), osslBuffer.end(), buff.begin());
 }
 
 template <typename T>
@@ -107,14 +107,14 @@ std::vector<T> make_vector(Args&&... args) {
 
 inline ::so::ByteBuffer copy(const ::so::ByteBuffer &buff)
 {
-  ::so::ByteBuffer ret(buff.size);
+  ::so::ByteBuffer ret(buff.size());
   std::copy(buff.begin(), buff.end(), ret.begin());
   return ret;
 }
 
 inline bool equal(const ::so::ByteBuffer &lhs, unsigned char *rhs, int rhsLen)
 {
-  if(static_cast<int>(lhs.size) != rhsLen)
+  if(static_cast<int>(lhs.size()) != rhsLen)
     return false;
 
   size_t idx = 0;

@@ -38,7 +38,7 @@ static bool equal(const uint8_t (&arr)[SIZE], const so::ByteBuffer &buff)
     return false;
 
   for(size_t i = 0; i < SIZE; ++i)
-    if(buff.memory[i] != arr[i])
+    if(buff[i] != arr[i])
       return false;
 
   return true;
@@ -53,10 +53,10 @@ TEST(ByteBuffer, osslByteBuffer)
 
   ::so::OsslByteBuffer bt(rc, 3);
 
-  ASSERT_EQ(3, bt.size);
-  EXPECT_EQ(0x01, bt.memory[0]);
-  EXPECT_EQ(0x02, bt.memory[1]);
-  EXPECT_EQ(0x03, bt.memory[2]);
+  ASSERT_EQ(3, bt.size());
+  EXPECT_EQ(0x01, bt[0]);
+  EXPECT_EQ(0x02, bt[1]);
+  EXPECT_EQ(0x03, bt[2]);
 }
 
 TEST(ByteBuffer, create)
@@ -67,9 +67,9 @@ TEST(ByteBuffer, create)
   // WHEN
   ByteBuffer buff(3);
   ASSERT_TRUE(buff);
-  ASSERT_EQ(3, buff.size);
+  ASSERT_EQ(3, buff.size());
   for(size_t i = 0; i < 3; ++i)
-    buff.memory[i] = ARRAY[i];
+    buff[i] = ARRAY[i];
 
   // THEN
   EXPECT_TRUE(equal(ARRAY, buff));

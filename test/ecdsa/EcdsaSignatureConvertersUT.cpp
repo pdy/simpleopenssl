@@ -59,7 +59,7 @@ TEST(ecdsa, signatureStructToDerBytes)
   auto der = maybeDer.moveValue();
 
   // THEN
-  ASSERT_EQ(expected.size, der.size);
+  ASSERT_EQ(expected.size(), der.size());
   EXPECT_TRUE(std::equal(expected.begin(), expected.end(), der.begin()));
 }
 

@@ -36,7 +36,7 @@ TEST(EvpKeyConvUT, rsaPubDerToEVP)
   const auto &derPub = data::rsa3072PubKeyDer;
 
   const uint8_t *it = derPub.get();
-  auto evpPub = ::so::make_unique(d2i_PublicKey(EVP_PKEY_RSA, nullptr, &it, static_cast<long>(derPub.size)));
+  auto evpPub = ::so::make_unique(d2i_PublicKey(EVP_PKEY_RSA, nullptr, &it, static_cast<long>(derPub.size())));
 
   EXPECT_TRUE(evpPub) << ::so::getLastErrString();
 }

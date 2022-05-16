@@ -495,8 +495,8 @@ TEST(X509UT, getEcdsaSignature)
   // THEN
   ASSERT_TRUE(maybeSig);
   const auto& sig = maybeSig.value;
-  ASSERT_EQ(48, sig.r.size); // it's secp384r1
-  ASSERT_EQ(48, sig.s.size); // it's secp384r1
+  ASSERT_EQ(48, sig.r.size()); // it's secp384r1
+  ASSERT_EQ(48, sig.s.size()); // it's secp384r1
 }
 
 TEST(X509UT, isSelfSignedShouldBeTrue)
@@ -556,7 +556,7 @@ TEST(X509UT, getSignatureAPIIntegrityWithEcdsaDerConversion)
   ASSERT_TRUE(der);
 
   // THEN
-  EXPECT_EQ(maybeSignature.value.size, der.value.size);
+  EXPECT_EQ(maybeSignature.value.size(), der.value.size());
   EXPECT_EQ(maybeSignature.value, der.value);
 }
 

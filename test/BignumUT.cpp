@@ -45,7 +45,7 @@ TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
   auto maybeReturnedBuffer = bignum::convertToByteBuffer(*bignum);
   ASSERT_TRUE(maybeReturnedBuffer);
   auto returnedBuffer = maybeReturnedBuffer.moveValue();
-  ASSERT_EQ(SIZE, returnedBuffer.size);
+  ASSERT_EQ(SIZE, returnedBuffer.size());
 
   EXPECT_EQ(buffer, returnedBuffer);
 }
