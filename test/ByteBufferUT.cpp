@@ -59,6 +59,14 @@ TEST(ByteBuffer, osslByteBuffer)
   EXPECT_EQ(0x03, bt[2]);
 }
 
+TEST(ByteBuffer, checkTypes)
+{
+  EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::value_type, uint8_t>::value));
+  EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::pointer_type, uint8_t*>::value));
+  EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::memory_type, std::unique_ptr<uint8_t[], std::default_delete<uint8_t[]>>>::value));
+  EXPECT_TRUE((std::is_const<typename ::so::ByteBuffer::const_iterator>::value));
+}
+
 TEST(ByteBuffer, create)
 {
   // GIVEN

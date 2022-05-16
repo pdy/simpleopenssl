@@ -56,6 +56,12 @@
 namespace so {
 
 namespace internal {
+  template<typename T>
+  struct uptr_underlying_type
+  {
+    using type = typename std::remove_pointer<decltype(std::declval<T>().get())>::type;
+  };
+
   template<typename T = void>
   struct OSSLFreeDeleter
   {
@@ -79,9 +85,10 @@ namespace internal {
 
     using memory_type = decltype(m_memory);
     using deleter_type = Deleter;
-     
-    using iterator = T*;
-    using const_iterator = const T*;
+    using value_type = typename uptr_underlying_type<memory_type>::type;
+    using pointer_type = value_type*; 
+    using iterator = pointer_type;
+    using const_iterator = const pointer_type;
 
     Buffer() = default;
     Buffer(Buffer<T, Deleter>&&) = default; // TODO will need to make noexcept later
@@ -164,13 +171,19 @@ namespace internal {
       return ret;
     }
 
-    T* get() { return m_memory.get(); }
-    const T* get() const { return m_memory.get(); }
+    pointer_type get() { return m_memory.get(); }
+    const pointer_type get() const { return m_memory.get(); }
 
     T* release()
     {
       m_size = 0;
       return m_memory.release();
+    }
+
+    void reset(T *ptr = nullptr, size_t size = 0)
+    {
+      m_memory.reset(ptr);
+      m_size = size;
     }
 
     template
@@ -2137,12 +2150,6 @@ namespace bytes {
   } 
 
   template<typename T>
-  struct uptr_underlying_type
-  {
-    using type = typename std::remove_pointer<decltype(std::declval<T>().get())>::type;
-  };
-
-  template<typename T>
   Result<T> err(T &&val)
   {
     return Result<T>{ std::move(val), ERR_get_error() };
@@ -3068,7 +3075,7 @@ namespace ecdsa {
 
   Result<Signature> convertToSignature(const ByteBuffer &derSigByteBuffer)
   {
-    auto *derIt = derSigByteBuffer.get();
+    const auto *derIt = derSigByteBuffer.get();
     auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigByteBuffer.size())));
     if(!sig)
       return internal::err<Signature>();
