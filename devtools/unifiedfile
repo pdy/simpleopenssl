@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2020 Pawel Drzycimski
+# Copyright (c) 2020 - 2022 Pawel Drzycimski
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -27,7 +27,7 @@ if [ $# -ne 2 ]; then
 fi
 
 path=$1
-outputFile="$2.cpp"
+outputFile="$2"
 filenames=`ls $path/*.cpp`
 
 :> $outputFile
