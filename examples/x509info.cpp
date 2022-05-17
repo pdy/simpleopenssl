@@ -33,8 +33,25 @@ using namespace so;
 
 enum class Format { PEM, DER };
 
-std::string bin2Hex(const so::Bytes &buff);
-std::string bin2Text(const so::Bytes &buff);
+template<typename T>
+std::string bin2Hex(const T &buff)
+{
+  std::ostringstream oss;
+  for(const auto bt : buff){
+    oss << std::setfill('0') << std::setw(2) << std::hex << +bt;
+  }
+  return oss.str(); 
+}
+
+template<typename T>
+std::string bin2Text(const T &buff)
+{
+  std::string ret;
+  ret.reserve(buff.size());
+  std::transform(buff.begin(), buff.end(), std::back_inserter(ret), [](uint8_t bt) { return static_cast<char>(bt);});
+  return ret;
+}
+
 void logHex(const std::string &hexStr, size_t newLine);
 void handleCert(const std::string &fileName, Format format);
 void handleCrl(const std::string &fileName, Format format);
@@ -389,24 +406,6 @@ void handleCert(const std::string &fileName, Format format)
   const auto sigType = x509::getSignatureAlgorithm(*cert);
   log << "Signature: " << nid::getLongName(sigType).value;
   logHex(bin2Hex(sig.value), 36);
-}
-
-std::string bin2Hex(const so::Bytes &buff)
-{
-  std::ostringstream oss;
-  for(const auto bt : buff){
-    oss << std::setfill('0') << std::setw(2) << std::hex << +bt;
-  }
-  return oss.str(); 
-}
-
-
-std::string bin2Text(const so::Bytes &buff)
-{
-  std::string ret;
-  ret.reserve(buff.size());
-  std::transform(buff.begin(), buff.end(), std::back_inserter(ret), [](uint8_t bt) { return static_cast<char>(bt);});
-  return ret;
 }
 
 void logHex(const std::string &hexStr, size_t newLine)
