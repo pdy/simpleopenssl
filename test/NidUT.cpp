@@ -29,11 +29,6 @@
 
 namespace {
 
-static std::ostream& operator<<(std::ostream &ss, const NidUTInput &input)
-{
-  return ss << OBJ_nid2sn(input.rawNid) << " [" << input.rawNid << "]";
-}
-
 // std::size from c++17 sooo....
 template<typename T, size_t N>
 size_t arrSize(const T(&)[N]){ return N; }

@@ -54,12 +54,12 @@ main-build: pre-build
 unifiedTarget:
 	@mkdir -p $(UNIFIED_PATH)
 	@cd $(UNIFIED_PATH) && \
-	$(PROJ_ROOT)/devtools/unifiedfile ../ rest &&  \
-	$(PROJ_ROOT)/devtools/unifiedfile ../ecdsa ecdsa && \
-	$(PROJ_ROOT)/devtools/unifiedfile ../evp evp && \
-	$(PROJ_ROOT)/devtools/unifiedfile ../hash hash && \
-	$(PROJ_ROOT)/devtools/unifiedfile ../rsa rsa && \
-	$(PROJ_ROOT)/devtools/unifiedfile ../x509 x509 && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../ rest.cpp &&  \
+	$(PROJ_ROOT)/devtools/unifiedfile ../ecdsa ecdsa.cpp && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../evp evp.cpp && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../hash hash.cpp && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../rsa rsa.cpp && \
+	$(PROJ_ROOT)/devtools/unifiedfile ../x509 x509.cpp && \
 	cd -
 
 #$(UNIFIED_PATH)/../pch.hpp.pch: 
