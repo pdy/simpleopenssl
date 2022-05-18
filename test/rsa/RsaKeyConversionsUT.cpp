@@ -180,7 +180,7 @@ TEST(RsaKeyConversionsUT, privKey2DerConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybeDerPriv);
-  EXPECT_TRUE(utils::equals(data::rsa3072PrivKeyDer, maybeDerPriv.value));
+  EXPECT_EQ(data::rsa3072PrivKeyDer, maybeDerPriv.value);
 }
 
 TEST(RsaKeyConversionsUT, derToPrivKeyConversion_ok)
@@ -224,7 +224,7 @@ TEST(RsaKeyConversionsUT, pubKey2DerConversion_FromPemPub)
 
   // THEN
   ASSERT_TRUE(maybeDerPub);
-  EXPECT_TRUE(utils::equals(data::rsa3072PubKeyDer, maybeDerPub.value));
+  EXPECT_EQ(data::rsa3072PubKeyDer, maybeDerPub.value);
 }
 
 TEST(RsaKeyConversionsUT, pubKey2DerConversion_FromDerPriv)
@@ -239,7 +239,7 @@ TEST(RsaKeyConversionsUT, pubKey2DerConversion_FromDerPriv)
 
   // THEN
   ASSERT_TRUE(pub);
-  EXPECT_TRUE(utils::equals(data::rsa3072PubKeyDer, pub.value));
+  EXPECT_EQ(data::rsa3072PubKeyDer, pub.value);
 }
 
 TEST(RsaKeyConversionsUT, derToPubKeyConversion_ok)
@@ -268,7 +268,7 @@ TEST(RsaKeyConversionsUT, pubKeyDerFromPriv)
 
   // THEN
   ASSERT_TRUE(pub);
-  EXPECT_TRUE(utils::equals(data::rsa3072PubKeyDer, pub.value)); 
+  EXPECT_EQ(data::rsa3072PubKeyDer, pub.value); 
 }
 
 }}} // so::ut::rsa

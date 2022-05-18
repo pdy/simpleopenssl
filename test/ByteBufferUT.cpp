@@ -51,7 +51,7 @@ TEST(ByteBuffer, osslByteBuffer)
   rc[1] = 0x02;
   rc[2] = 0x03;
 
-  ::so::OsslByteBuffer bt(rc, 3);
+  ::so::ByteBuffer bt(rc, 3);
 
   ASSERT_EQ(3, bt.size());
   EXPECT_EQ(0x01, bt[0]);
@@ -63,7 +63,7 @@ TEST(ByteBuffer, checkTypes)
 {
   EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::value_type, uint8_t>::value));
   EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::pointer_type, uint8_t*>::value));
-  EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::memory_type, std::unique_ptr<uint8_t[], std::default_delete<uint8_t[]>>>::value));
+  EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::memory_type, std::unique_ptr<uint8_t[], ::so::internal::OSSLFreeDeleter<uint8_t>>>::value));
   EXPECT_TRUE((std::is_const<typename ::so::ByteBuffer::const_iterator>::value));
 }
 

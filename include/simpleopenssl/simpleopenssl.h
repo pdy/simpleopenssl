@@ -75,8 +75,17 @@ namespace internal {
     }
   };
 
-  template<typename T, typename Deleter>
-  class Buffer
+  template<typename T = void>
+  struct OSSLMallocAllocator
+  {
+    T* operator()(size_t size) const
+    {
+      return reinterpret_cast<T*>(OPENSSL_malloc(size));
+    }
+  };
+
+  template<typename T, typename Allocator, typename Deleter>
+  class ArrayBuffer
   {
     std::unique_ptr<T[], Deleter> m_memory{ nullptr } ;
     size_t m_size{ 0 };
@@ -85,45 +94,31 @@ namespace internal {
 
     using memory_type = decltype(m_memory);
     using deleter_type = Deleter;
-    using value_type = typename uptr_underlying_type<memory_type>::type;
+    using allocator_type = Allocator;
+    using value_type = T; 
     using pointer_type = value_type*; 
     using iterator = pointer_type;
     using const_iterator = const pointer_type;
 
-    Buffer() = default;
-    Buffer(Buffer<T, Deleter>&&) = default; // TODO will need to make noexcept later
+    ArrayBuffer() = default;
+    ArrayBuffer(ArrayBuffer<T, Allocator, Deleter>&&) = default; // TODO will need to make noexcept later
 
-    Buffer(T *ptr, size_t size)
+    ArrayBuffer(T *ptr, size_t size)
       : m_memory(ptr), m_size{size}
     {}
 
-    template
-    <
-      typename T_ = T,
-      typename std::enable_if<!std::is_same<Deleter, OSSLFreeDeleter<T_>>::value, int>::type = 0
-    >
-    Buffer(size_t size)
-      : m_memory(new T[size]), m_size{size}
+    ArrayBuffer(size_t size)
+      : m_memory(Allocator{}(size)), m_size{size}
     {}
-
-    template
-    <
-      typename T_ = T,
-      typename std::enable_if<!std::is_same<Deleter, OSSLFreeDeleter<T_>>::value, int>::type = 0
-    >
-    Buffer(std::initializer_list<T> list)
-      : m_size{list.size()}
+ 
+    ArrayBuffer(std::initializer_list<T> list)
+      : m_memory(Allocator{}(list.size())), m_size{list.size()}
     {
-      m_memory = memory_type{new T[list.size()]};
       std::copy(list.begin(), list.end(), begin());
     }
 
-    template
-    <
-      typename T_ = T,
-      typename std::enable_if<!std::is_same<Deleter, OSSLFreeDeleter<T_>>::value, int>::type = 0
-    >
-    Buffer(Buffer<T, Deleter>::const_iterator start, Buffer<T, Deleter>::const_iterator end)
+    
+    ArrayBuffer(ArrayBuffer<T, Allocator, Deleter>::const_iterator start, ArrayBuffer<T, Allocator, Deleter>::const_iterator end)
     {
       m_size = static_cast<size_t>(std::distance(start, end));
       if(m_size)
@@ -141,12 +136,12 @@ namespace internal {
 
     explicit operator bool() const noexcept { return m_memory != nullptr; }
 
-    bool operator==(const Buffer<T, Deleter> &other) const
+    bool operator==(const ArrayBuffer<T, Allocator, Deleter> &other) const
     {
       return size() == other.size() && std::equal(begin(), end(), other.begin());
     }
 
-    bool operator!=(const Buffer<T, Deleter> &other) const
+    bool operator!=(const ArrayBuffer<T, Allocator, Deleter> &other) const
     {
       return !(*this == other);
     }
@@ -185,19 +180,6 @@ namespace internal {
       m_memory.reset(ptr);
       m_size = size;
     }
-
-    template
-    <
-      typename U,
-      typename std::enable_if<std::is_same<U, uint8_t>::value || std::is_same<U, char>::value, int>::type = 0
-    >
-    static Buffer<U, std::default_delete<U[]>> copy(const U *ptr, size_t size)
-    {
-      Buffer<U, std::default_delete<U[]>> ret(size);
-      std::memcpy(ret.get(), ptr, size);
-      return ret;
-    }
-
   };
     
   template<typename T>
@@ -218,8 +200,10 @@ namespace internal {
 
 } //namespace internal
  
-using ByteBuffer = internal::Buffer<uint8_t, std::default_delete<uint8_t[]>>;
-using OsslByteBuffer = internal::Buffer<uint8_t, internal::OSSLFreeDeleter<uint8_t>>;
+//using ByteBuffer = internal::ArrayBuffer<uint8_t, std::default_delete<uint8_t[]>>;
+//using OsslByteBuffer = internal::ArrayBuffer<uint8_t, internal::OSSLMallocAllocator<uint8_t>, internal::OSSLFreeDeleter<uint8_t>>;
+using ByteBuffer = internal::ArrayBuffer<uint8_t, internal::OSSLMallocAllocator<uint8_t>, internal::OSSLFreeDeleter<uint8_t>>;
+ByteBuffer copy(uint8_t *ptr, size_t size);
 
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
 namespace internal {                                  \
@@ -475,11 +459,9 @@ namespace ecdsa {
 
   Result<EC_KEY_uptr> convertDerToPrivKey(const ByteBuffer &der);
   Result<EC_KEY_uptr> convertDerToPubKey(const ByteBuffer &der);
-  Result<EC_KEY_uptr> convertDerToPrivKey(const OsslByteBuffer &der);
-  Result<EC_KEY_uptr> convertDerToPubKey(const OsslByteBuffer &der);
 
-  Result<OsslByteBuffer> convertPrivKeyToDer(EC_KEY &ec);
-  Result<OsslByteBuffer> convertPubKeyToDer(EC_KEY &ec);
+  Result<ByteBuffer> convertPrivKeyToDer(EC_KEY &ec);
+  Result<ByteBuffer> convertPubKeyToDer(EC_KEY &ec);
 
   Result<ByteBuffer> convertToDer(const Signature &signature); 
   Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
@@ -525,11 +507,9 @@ namespace evp {
 
   Result<EVP_PKEY_uptr> convertDerToPrivKey(const ByteBuffer &der);
   Result<EVP_PKEY_uptr> convertDerToPubKey(const ByteBuffer &der);
-  Result<EVP_PKEY_uptr> convertDerToPrivKey(const OsslByteBuffer &der);
-  Result<EVP_PKEY_uptr> convertDerToPubKey(const OsslByteBuffer &der);
 
-  Result<OsslByteBuffer> convertPrivKeyToDer(EVP_PKEY &privKey);
-  Result<OsslByteBuffer> convertPubKeyToDer(EVP_PKEY &pubKey);
+  Result<ByteBuffer> convertPrivKeyToDer(EVP_PKEY &privKey);
+  Result<ByteBuffer> convertPubKeyToDer(EVP_PKEY &pubKey);
 
   Result<std::string> convertPrivKeyToPem(EVP_PKEY &privKey);
   Result<std::string> convertPubKeyToPem(EVP_PKEY &pubKey);
@@ -1816,13 +1796,11 @@ namespace rsa {
 
   Result<RSA_uptr> convertDerToPrivKey(const ByteBuffer &der);
   Result<RSA_uptr> convertDerToPubKey(const ByteBuffer &der);
-  Result<RSA_uptr> convertDerToPrivKey(const OsslByteBuffer &der);
-  Result<RSA_uptr> convertDerToPubKey(const OsslByteBuffer &der);
-  Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size);
+ Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size);
   Result<RSA_uptr> convertDerToPubKey(const uint8_t der[], size_t size);
   
-  Result<OsslByteBuffer> convertPrivKeyToDer(RSA &rsa);
-  Result<OsslByteBuffer> convertPubKeyToDer(RSA &rsa);
+  Result<ByteBuffer> convertPrivKeyToDer(RSA &rsa);
+  Result<ByteBuffer> convertPubKeyToDer(RSA &rsa);
 
   Result<EVP_PKEY_uptr> convertToEvp(RSA &rsa);
   Result<bool> checkKey(RSA &rsa);
@@ -2090,6 +2068,17 @@ namespace x509 {
 #undef SO_IMPLEMENTATION
 
 namespace so {
+
+ByteBuffer copy(uint8_t *ptr, size_t size)
+{ 
+  if(!ptr)
+    return ByteBuffer{};
+
+  ByteBuffer ret(size);
+  std::copy(ptr, ptr + size, ret.begin());
+
+  return ret;
+}
 
 namespace internal {
 
@@ -2449,7 +2438,7 @@ namespace bytes {
     if(finalSigLen == static_cast<unsigned>(sigLen))
       return internal::ok(std::move(tmpSig));
 
-    return internal::ok(ByteBuffer::copy(tmpSig.get(), static_cast<size_t>(finalSigLen)));
+    return internal::ok(::so::copy(tmpSig.get(), static_cast<size_t>(finalSigLen)));
   }
 
   Result<bool> ecdsaVerify(const ByteBuffer &signature, const ByteBuffer &dg, EC_KEY &publicKey)
@@ -2537,7 +2526,7 @@ namespace bytes {
     if(finalSigLen == static_cast<unsigned>(sz))
       return internal::ok(std::move(firstSignature));
 
-    return internal::ok(ByteBuffer::copy(firstSignature.get(), static_cast<size_t>(finalSigLen)));
+    return internal::ok(::so::copy(firstSignature.get(), static_cast<size_t>(finalSigLen)));
   }
 
   Result<bool> rsaVerify(int hashNid, const ByteBuffer &signature, const ByteBuffer &digest, RSA &pubKey)
@@ -2576,7 +2565,7 @@ namespace bytes {
             static_cast<bool>(critical),
             "",
             oidStr.moveValue(),
-            ByteBuffer::copy(val->data, static_cast<size_t>(val->length))
+            ::so::copy(val->data, static_cast<size_t>(val->length))
       });
     }
    
@@ -2590,7 +2579,7 @@ namespace bytes {
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         oidStr.moveValue(),
-        ByteBuffer::copy(val->data, static_cast<size_t>(val->length))
+        ::so::copy(val->data, static_cast<size_t>(val->length))
       });
     }
     
@@ -2602,7 +2591,7 @@ namespace bytes {
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         oidStr.moveValue(),
-        ByteBuffer::copy(reinterpret_cast<uint8_t*>(bptr->data), bptr->length)
+        ::so::copy(reinterpret_cast<uint8_t*>(bptr->data), bptr->length)
     }); 
   }
 
@@ -2672,7 +2661,7 @@ namespace bytes {
     uint8_t mdbuf[EVP_MAX_MD_SIZE];
     const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
 
-    return internal::ok(ByteBuffer::copy(mdbuf, static_cast<size_t>(mdlen)));
+    return internal::ok(::so::copy(mdbuf, static_cast<size_t>(mdlen)));
   }
 
   template<typename FUNC, typename ... Types>
@@ -2719,14 +2708,14 @@ namespace bytes {
   }
 
   template<typename Key, typename FUNC>
-  Result<OsslByteBuffer> convertKeyToDer(Key &key, FUNC i2dFunction)
+  Result<ByteBuffer> convertKeyToDer(Key &key, FUNC i2dFunction)
   {
     uint8_t *ptr = nullptr; // this needs to be freed with OPENSSL_free
     const int len = i2dFunction(&key, &ptr);
     if (0 > len)
-      return internal::err<OsslByteBuffer>();
+      return internal::err<ByteBuffer>();
 
-    return internal::ok(OsslByteBuffer(ptr, static_cast<size_t>(len)));
+    return internal::ok(ByteBuffer(ptr, static_cast<size_t>(len)));
   }
 
   x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
@@ -2766,7 +2755,7 @@ namespace bytes {
     return x509::Revoked{
       (timeStr ? timeStr.value : ""),
       (date ? date.value : std::time_t{}),
-      ByteBuffer::copy(serial->data, static_cast<size_t>(serial->length)),
+      ::so::copy(serial->data, static_cast<size_t>(serial->length)),
       std::move(retExtensions)
     };
   }
@@ -2990,26 +2979,16 @@ namespace ecdsa {
     return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der.get(), der.size());
   } 
  
-  Result<EC_KEY_uptr> convertDerToPrivKey(const OsslByteBuffer &der)
-  {
-    return internal::convertDerToKey<EC_KEY_uptr>(d2i_ECPrivateKey, der.get(), der.size());
-  }
-
-  Result<EC_KEY_uptr> convertDerToPubKey(const OsslByteBuffer &der)
-  {
-    return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der.get(), der.size());
-  }
-
-  Result<OsslByteBuffer> convertPrivKeyToDer(EC_KEY &ec)
+  Result<ByteBuffer> convertPrivKeyToDer(EC_KEY &ec)
   {
     const auto check = ecdsa::checkKey(ec);
     if(!check)
-      return internal::err<OsslByteBuffer>(check.opensslErrCode);
+      return internal::err<ByteBuffer>(check.opensslErrCode);
 
     return internal::convertKeyToDer(ec, i2d_ECPrivateKey);
   }
 
-  Result<OsslByteBuffer> convertPubKeyToDer(EC_KEY &ec)
+  Result<ByteBuffer> convertPubKeyToDer(EC_KEY &ec)
   {
     return internal::convertKeyToDer(ec, i2d_EC_PUBKEY);
   }
@@ -3333,22 +3312,12 @@ namespace evp {
     return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der.get(), der.size());
   }
 
-  Result<EVP_PKEY_uptr> convertDerToPrivKey(const OsslByteBuffer &der)
-  {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_AutoPrivateKey, der.get(), der.size());
-  }
-
-  Result<EVP_PKEY_uptr> convertDerToPubKey(const OsslByteBuffer &der)
-  {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der.get(), der.size());
-  }
-
-  Result<OsslByteBuffer> convertPrivKeyToDer(EVP_PKEY &privKey)
+  Result<ByteBuffer> convertPrivKeyToDer(EVP_PKEY &privKey)
   {
     return internal::convertKeyToDer(privKey, i2d_PrivateKey);
   }
 
-  Result<OsslByteBuffer> convertPubKeyToDer(EVP_PKEY &pkey)
+  Result<ByteBuffer> convertPubKeyToDer(EVP_PKEY &pkey)
   {
     return internal::convertKeyToDer(pkey, i2d_PUBKEY);
   }
@@ -3652,16 +3621,6 @@ namespace rsa {
     return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der.get(), der.size());
   }
  
-  Result<RSA_uptr> convertDerToPrivKey(const OsslByteBuffer &der)
-  {
-    return internal::convertDerToKey<RSA_uptr>(d2i_RSAPrivateKey, der.get(), der.size());
-  }
-
-  Result<RSA_uptr> convertDerToPubKey(const OsslByteBuffer &der)
-  {
-    return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der.get(), der.size());
-  }
-
   Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size)
   {
     return internal::convertDerToKey<RSA_uptr>(d2i_RSAPrivateKey, der, size);
@@ -3672,16 +3631,16 @@ namespace rsa {
     return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der, size);
   }
 
-  Result<OsslByteBuffer> convertPrivKeyToDer(RSA &rsa)
+  Result<ByteBuffer> convertPrivKeyToDer(RSA &rsa)
   {
     const auto check = rsa::checkKey(rsa);
     if(!check)
-      return internal::err<OsslByteBuffer>(check.opensslErrCode);
+      return internal::err<ByteBuffer>(check.opensslErrCode);
 
     return internal::convertKeyToDer(rsa, i2d_RSAPrivateKey);
   }
 
-  Result<OsslByteBuffer> convertPubKeyToDer(RSA &rsa)
+  Result<ByteBuffer> convertPubKeyToDer(RSA &rsa)
   {
     return internal::convertKeyToDer(rsa, i2d_RSA_PUBKEY);
   }
@@ -4075,7 +4034,7 @@ namespace x509 {
     if(!palg || !psig)
       return internal::err<ByteBuffer>();
 
-    return internal::ok(ByteBuffer::copy(psig->data, static_cast<size_t>(psig->length)));
+    return internal::ok(::so::copy(psig->data, static_cast<size_t>(psig->length)));
   }
   
   nid::Nid getSignatureAlgorithm(const X509 &cert)
@@ -4556,7 +4515,7 @@ namespace x509 {
     if(!palg || !psig)
       return internal::err<ByteBuffer>();
 
-    return internal::ok(ByteBuffer::copy(psig->data, static_cast<size_t>(psig->length)));
+    return internal::ok(::so::copy(psig->data, static_cast<size_t>(psig->length)));
   }
   
   nid::Nid getSignatureAlgorithm(const X509_CRL &crl)

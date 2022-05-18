@@ -122,7 +122,7 @@ TEST(EvpKeyUT, privKey2DerConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybeDerPriv);
-  EXPECT_TRUE(utils::equals(data::rsa3072PrivKeyDer, maybeDerPriv.value));
+  EXPECT_EQ(data::rsa3072PrivKeyDer, maybeDerPriv.value);
 }
 
 TEST(EvpKeyUT, derToPrivKeyConversion_ok)
@@ -167,7 +167,7 @@ TEST(EvpKeyUT, pubKey2DerConversion_ok)
 
   // THEN
   ASSERT_TRUE(maybeDerPub);
-  EXPECT_TRUE(utils::equals(data::rsa3072PubKeyDer, maybeDerPub.value));
+  EXPECT_EQ(data::rsa3072PubKeyDer, maybeDerPub.value);
 }
 
 TEST(EvpKeyUT, derToPubKeyConversion_ok)
