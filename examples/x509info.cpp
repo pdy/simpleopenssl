@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -33,8 +33,7 @@ using namespace so;
 
 enum class Format { PEM, DER };
 
-template<typename T>
-std::string bin2Hex(const T &buff)
+static std::string bin2Hex(const ::so::ByteBuffer &buff)
 {
   std::ostringstream oss;
   for(const auto bt : buff){
@@ -43,8 +42,7 @@ std::string bin2Hex(const T &buff)
   return oss.str(); 
 }
 
-template<typename T>
-std::string bin2Text(const T &buff)
+static std::string bin2Text(const ::so::ByteBuffer &buff)
 {
   std::string ret;
   ret.reserve(buff.size());
