@@ -62,6 +62,7 @@ TEST(ByteBuffer, osslByteBuffer)
 TEST(ByteBuffer, checkTypes)
 {
   EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::value_type, uint8_t>::value));
+  EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::size_type, size_t>::value));
   EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::pointer_type, uint8_t*>::value));
   EXPECT_TRUE((std::is_same<typename ::so::ByteBuffer::memory_type, std::unique_ptr<uint8_t[], ::so::internal::OSSLFreeDeleter<uint8_t>>>::value));
   EXPECT_TRUE((std::is_const<typename ::so::ByteBuffer::const_iterator>::value));
