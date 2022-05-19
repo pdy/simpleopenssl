@@ -104,11 +104,11 @@ namespace internal {
     ArrayBuffer() = default;
     ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>&&) = default; // TODO will need to make noexcept later
 
-    ArrayBuffer(pointer_type ptr, size_type size)
+    explicit ArrayBuffer(pointer_type ptr, size_type size)
       : m_memory(ptr), m_size{size}
     {}
 
-    ArrayBuffer(size_type size)
+    explicit ArrayBuffer(size_type size)
       : m_memory(allocator_type{}(size)), m_size{size}
     {}
  
@@ -119,7 +119,7 @@ namespace internal {
     }
 
     
-    ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
+    explicit ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
     {
       m_size = static_cast<size_type>(std::distance(start, end));
       if(m_size)
@@ -2442,7 +2442,7 @@ namespace bytes {
     if(finalSigLen == static_cast<unsigned>(sigLen))
       return internal::ok(std::move(tmpSig));
 
-    return internal::ok(::so::copy(tmpSig.get(), static_cast<size_t>(finalSigLen)));
+    return internal::ok(ByteBuffer(tmpSig.begin(), tmpSig.begin() + finalSigLen));
   }
 
   Result<bool> ecdsaVerify(const ByteBuffer &signature, const ByteBuffer &dg, EC_KEY &publicKey)
@@ -2530,7 +2530,7 @@ namespace bytes {
     if(finalSigLen == static_cast<unsigned>(sz))
       return internal::ok(std::move(firstSignature));
 
-    return internal::ok(::so::copy(firstSignature.get(), static_cast<size_t>(finalSigLen)));
+    return internal::ok(ByteBuffer(firstSignature.begin(), firstSignature.begin() + finalSigLen));
   }
 
   Result<bool> rsaVerify(int hashNid, const ByteBuffer &signature, const ByteBuffer &digest, RSA &pubKey)
@@ -2562,7 +2562,7 @@ namespace bytes {
     if(nid == NID_undef)
     {
       // most likely custom extension
-      const auto val = X509_EXTENSION_get_data(&ex);
+      const auto *val = X509_EXTENSION_get_data(&ex);
 
       return internal::ok(RetType {
             static_cast<ID>(nid),
@@ -2576,7 +2576,7 @@ namespace bytes {
     auto bio = make_unique(BIO_new(BIO_s_mem()));
     if(!X509V3_EXT_print(bio.get(), &ex, 0, 0))
     {
-      const auto val = X509_EXTENSION_get_data(&ex);
+      const auto *val = X509_EXTENSION_get_data(&ex);
 
       return internal::ok(RetType{
         static_cast<ID>(nid),
@@ -2662,10 +2662,11 @@ namespace bytes {
       } while (rdlen > 0);
     }
 
-    uint8_t mdbuf[EVP_MAX_MD_SIZE];
-    const int mdlen = BIO_gets(mdtmp, reinterpret_cast<char*>(mdbuf), EVP_MAX_MD_SIZE);
+    const int mdSize = EVP_MD_size(evpMd);
+    ByteBuffer ret(static_cast<size_t>(mdSize));
+    /*const int mdlen = */BIO_gets(mdtmp, reinterpret_cast<char*>(ret.get()), mdSize);
 
-    return internal::ok(::so::copy(mdbuf, static_cast<size_t>(mdlen)));
+    return internal::ok(std::move(ret));
   }
 
   template<typename FUNC, typename ... Types>
