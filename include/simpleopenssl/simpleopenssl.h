@@ -96,91 +96,95 @@ namespace internal {
     using deleter_type = Deleter;
     using allocator_type = Allocator;
     using value_type = T; 
+    using size_type = decltype(m_size); 
     using pointer_type = value_type*; 
     using iterator = pointer_type;
     using const_iterator = const pointer_type;
 
     ArrayBuffer() = default;
-    ArrayBuffer(ArrayBuffer<T, Allocator, Deleter>&&) = default; // TODO will need to make noexcept later
+    ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>&&) = default; // TODO will need to make noexcept later
 
-    ArrayBuffer(T *ptr, size_t size)
+    ArrayBuffer(pointer_type ptr, size_type size)
       : m_memory(ptr), m_size{size}
     {}
 
-    ArrayBuffer(size_t size)
-      : m_memory(Allocator{}(size)), m_size{size}
+    ArrayBuffer(size_type size)
+      : m_memory(allocator_type{}(size)), m_size{size}
     {}
  
-    ArrayBuffer(std::initializer_list<T> list)
-      : m_memory(Allocator{}(list.size())), m_size{list.size()}
+    ArrayBuffer(std::initializer_list<value_type> list)
+      : m_memory(allocator_type{}(list.size())), m_size{list.size()}
     {
       std::copy(list.begin(), list.end(), begin());
     }
 
     
-    ArrayBuffer(ArrayBuffer<T, Allocator, Deleter>::const_iterator start, ArrayBuffer<T, Allocator, Deleter>::const_iterator end)
+    ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
     {
-      m_size = static_cast<size_t>(std::distance(start, end));
+      m_size = static_cast<size_type>(std::distance(start, end));
       if(m_size)
       {
-        m_memory = memory_type(new T[m_size]);
+        m_memory = memory_type{ allocator_type{}(m_size) };
         std::copy(start, end, begin());
       }
     }
 
-    iterator begin() { return m_memory.get(); }
-    const_iterator begin() const { return m_memory.get(); }
-
-    iterator end() { return begin() + m_size; }
-    const_iterator end() const { return begin() + m_size; }
-
     explicit operator bool() const noexcept { return m_memory != nullptr; }
 
-    bool operator==(const ArrayBuffer<T, Allocator, Deleter> &other) const
+    bool operator==(const ArrayBuffer<value_type, allocator_type, deleter_type> &other) const
     {
       return size() == other.size() && std::equal(begin(), end(), other.begin());
     }
 
-    bool operator!=(const ArrayBuffer<T, Allocator, Deleter> &other) const
+    bool operator!=(const ArrayBuffer<value_type, allocator_type, deleter_type> &other) const
     {
       return !(*this == other);
     }
 
-    T& operator[](size_t idx)
+    value_type& operator[](size_type idx)
     {
       return m_memory[idx];
     }
     
-    const T& operator[](size_t idx) const
+    const value_type& operator[](size_type idx) const
     {
       return m_memory[idx];
     }
 
+    iterator begin() noexcept { return m_memory.get(); }
+    const_iterator begin() const noexcept { return m_memory.get(); }
+
+    iterator end() noexcept { return begin() + m_size; }
+    const_iterator end() const noexcept { return begin() + m_size; }
+
     size_t size() const noexcept { return m_size; }
     bool empty() const noexcept { return size() == 0 || !get(); }
 
-    std::vector<T> toStdVector() const
-    {
-      std::vector<T> ret; ret.reserve(size());
-      std::copy(begin(), end(), std::back_inserter(ret));
-      return ret;
-    }
+    pointer_type get() noexcept { return m_memory.get(); }
+    const pointer_type get() const noexcept { return m_memory.get(); }
 
-    pointer_type get() { return m_memory.get(); }
-    const pointer_type get() const { return m_memory.get(); }
+    pointer_type data() noexcept { return get(); }
+    const pointer_type data() const noexcept { return get(); }
 
-    T* release()
+    pointer_type release()
     {
       m_size = 0;
       return m_memory.release();
     }
 
-    void reset(T *ptr = nullptr, size_t size = 0)
+    void reset(pointer_type ptr = nullptr, size_type size = 0)
     {
       m_memory.reset(ptr);
       m_size = size;
     }
-  };
+ 
+    std::vector<value_type> toStdVector() const
+    {
+      std::vector<T> ret; ret.reserve(size());
+      std::copy(begin(), end(), std::back_inserter(ret));
+      return ret;
+    }
+ };
     
   template<typename T>
   struct is_uptr : std::false_type {}; 
