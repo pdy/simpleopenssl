@@ -75,12 +75,21 @@ namespace internal {
     }
   };
 
-  template<typename T = void>
+  template<typename T>
   struct OSSLMallocAllocator
   {
-    T* operator()(size_t size) const
+    T* operator()(size_t count) const
     {
-      return reinterpret_cast<T*>(OPENSSL_malloc(size));
+      return reinterpret_cast<T*>(OPENSSL_malloc(sizeof(T) + count));
+    }
+  };
+
+  template<>
+  struct OSSLMallocAllocator<void>
+  {
+    void* operator()(size_t count)
+    {
+      return OPENSSL_malloc(count);
     }
   };
 
