@@ -219,7 +219,7 @@ namespace internal {
 //using ByteBuffer = internal::ArrayBuffer<uint8_t, std::default_delete<uint8_t[]>>;
 //using OsslByteBuffer = internal::ArrayBuffer<uint8_t, internal::OSSLMallocAllocator<uint8_t>, internal::OSSLFreeDeleter<uint8_t>>;
 using ByteBuffer = internal::OSSLArrayBuffer<uint8_t>;//internal::ArrayBuffer<uint8_t, internal::OSSLMallocAllocator<uint8_t>, internal::OSSLFreeDeleter<uint8_t>>;
-ByteBuffer copy(uint8_t *ptr, size_t size);
+ByteBuffer copy(typename ByteBuffer::pointer_type ptr, typename ByteBuffer::size_type size);
 
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
 namespace internal {                                  \
@@ -2085,7 +2085,7 @@ namespace x509 {
 
 namespace so {
 
-ByteBuffer copy(uint8_t *ptr, size_t size)
+ByteBuffer copy(typename ByteBuffer::pointer_type ptr, typename ByteBuffer::size_type size)
 { 
   if(!ptr)
     return ByteBuffer{};
