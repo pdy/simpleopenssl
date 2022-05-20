@@ -193,8 +193,11 @@ namespace internal {
       std::copy(begin(), end(), std::back_inserter(ret));
       return ret;
     }
- };
-    
+  };
+  
+  template<typename T>
+  using OSSLArrayBuffer = ArrayBuffer<T, OSSLMallocAllocator<T>, OSSLFreeDeleter<T>>;
+
   template<typename T>
   struct is_uptr : std::false_type {}; 
 
@@ -215,7 +218,7 @@ namespace internal {
  
 //using ByteBuffer = internal::ArrayBuffer<uint8_t, std::default_delete<uint8_t[]>>;
 //using OsslByteBuffer = internal::ArrayBuffer<uint8_t, internal::OSSLMallocAllocator<uint8_t>, internal::OSSLFreeDeleter<uint8_t>>;
-using ByteBuffer = internal::ArrayBuffer<uint8_t, internal::OSSLMallocAllocator<uint8_t>, internal::OSSLFreeDeleter<uint8_t>>;
+using ByteBuffer = internal::OSSLArrayBuffer<uint8_t>;//internal::ArrayBuffer<uint8_t, internal::OSSLMallocAllocator<uint8_t>, internal::OSSLFreeDeleter<uint8_t>>;
 ByteBuffer copy(uint8_t *ptr, size_t size);
 
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
