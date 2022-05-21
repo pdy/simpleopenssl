@@ -64,7 +64,7 @@ TEST(CRLDERUT, derFileToCert)
   ASSERT_TRUE(len >= 0); 
 
 
-  EXPECT_TRUE(utils::equal(data::validDerCrl, der, len));
+  EXPECT_TRUE(utils::equals(der, static_cast<size_t>(len), data::validDerCrl));
   OPENSSL_free(der);
 }
 

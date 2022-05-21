@@ -102,23 +102,6 @@ inline ::so::ByteBuffer copy(const ::so::ByteBuffer &buff)
   return ret;
 }
 
-inline bool equal(const ::so::ByteBuffer &lhs, unsigned char *rhs, int rhsLen)
-{
-  if(static_cast<int>(lhs.size()) != rhsLen)
-    return false;
-
-  size_t idx = 0;
-  for(const auto &bt : lhs)
-  {
-    if(bt != rhs[idx])
-      return false;
-
-    ++idx;
-  }
-
-  return true;
-}
-
 inline std::string bin2Hex(const so::ByteBuffer &buff)
 {
   std::ostringstream oss;
@@ -184,10 +167,9 @@ bool equals(const uint8_t(&arr)[SIZE], const ::so::ByteBuffer &bb)
   return SIZE == bb.size() && std::equal(bb.begin(), bb.end(), arr);
 }
 
-inline bool operator==(const std::vector<uint8_t> &lhs, const std::vector<uint8_t> &rhs)
+inline bool equals(const uint8_t *arr, size_t size, const ::so::ByteBuffer &bb)
 {
-  return lhs.size() == rhs.size() &&
-    std::equal(lhs.begin(), lhs.end(), rhs.begin());
+  return arr != nullptr && size == bb.size() && std::equal(bb.begin(), bb.end(), arr);
 }
 
 inline bool filesEqual(const std::string &file_1, const std::string &file_2)

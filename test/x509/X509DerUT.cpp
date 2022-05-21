@@ -62,7 +62,7 @@ TEST(X509DERUT, derFileToCert)
   unsigned char *der = nullptr;
   const int len = i2d_X509(cert.value.get(), &der);
   ASSERT_TRUE(len >= 0); 
-  EXPECT_TRUE(utils::equal(data::validDerCert, der, len));
+  EXPECT_TRUE(utils::equals(der, static_cast<size_t>(len), data::validDerCert));
   OPENSSL_free(der);
 }
 

@@ -38,9 +38,7 @@ TEST(ByteBuffer, osslByteBuffer)
   ::so::ByteBuffer bt(rc, 3);
 
   ASSERT_EQ(3, bt.size());
-  EXPECT_EQ(0x01, bt[0]);
-  EXPECT_EQ(0x02, bt[1]);
-  EXPECT_EQ(0x03, bt[2]);
+  EXPECT_TRUE(utils::equals(rc, 3, bt));
 }
 
 TEST(ByteBuffer, checkTypes)
