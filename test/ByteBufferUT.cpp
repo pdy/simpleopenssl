@@ -28,22 +28,6 @@
 
 namespace so { namespace ut { namespace bytebuffer {
 
-template<size_t SIZE>
-static bool equal(const uint8_t (&arr)[SIZE], const so::ByteBuffer &buff)
-{
-  if(buff && !arr)
-    return false;
-
-  if(!buff && arr)
-    return false;
-
-  for(size_t i = 0; i < SIZE; ++i)
-    if(buff[i] != arr[i])
-      return false;
-
-  return true;
-}
-
 TEST(ByteBuffer, osslByteBuffer)
 {
   uint8_t *rc = reinterpret_cast<uint8_t*>(OPENSSL_malloc(3));
@@ -80,8 +64,9 @@ TEST(ByteBuffer, create)
   for(size_t i = 0; i < 3; ++i)
     buff[i] = ARRAY[i];
 
+
   // THEN
-  EXPECT_TRUE(equal(ARRAY, buff));
+  EXPECT_TRUE(utils::equals(ARRAY, buff));
 }
 
 }}} // so::ut::bytebuffer

@@ -105,8 +105,8 @@ namespace internal {
   template<typename T, typename Allocator, typename Deleter>
   class ArrayBuffer
   {
-    std::unique_ptr<T[], Deleter> m_memory{ nullptr } ;
     size_t m_size{ 0 };
+    std::unique_ptr<T[], Deleter> m_memory{ nullptr } ;
 
   public:
 
@@ -122,29 +122,28 @@ namespace internal {
     ArrayBuffer() = default;
     ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>&&) = default; // TODO will need to make noexcept later
 
+    ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
+      : m_size{ static_cast<size_type>(std::distance(start, end))}, m_memory{ memory_type{ allocator_type{}(m_size) }}
+    {
+      std::copy_n(start, m_size, begin());
+    }
+
     explicit ArrayBuffer(pointer_type ptr, size_type size)
-      : m_memory(ptr), m_size{size}
+      : m_size{size}, m_memory(ptr) 
     {}
 
     explicit ArrayBuffer(size_type size)
-      : m_memory(allocator_type{}(size)), m_size{size}
+      : m_size{size}, m_memory(allocator_type{}(size))
     {}
 
 #ifdef so_has_init_list 
     ArrayBuffer(std::initializer_list<value_type> list)
-      : m_memory(allocator_type{}(list.size())), m_size{list.size()}
+      : m_size{list.size()}, m_memory(allocator_type{}(list.size())) 
     {
-      std::copy(list.begin(), list.end(), begin());
+      std::copy_n(list.begin(), m_size, begin());
     }
 #endif
     
-    explicit ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
-    {
-      m_size = static_cast<size_type>(std::distance(start, end));
-      m_memory = memory_type{ allocator_type{}(m_size) };
-      std::copy_n(start, m_size, begin());
-    }
-
     explicit operator bool() const noexcept { return m_memory != nullptr; }
 
     bool operator==(const ArrayBuffer<value_type, allocator_type, deleter_type> &other) const

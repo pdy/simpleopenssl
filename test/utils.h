@@ -178,6 +178,12 @@ inline ::so::ByteBuffer readBinaryFile(const std::string &filePath)
   return ret;
 }
 
+template<size_t SIZE>
+bool equals(const uint8_t(&arr)[SIZE], const ::so::ByteBuffer &bb) 
+{
+  return SIZE == bb.size() && std::equal(bb.begin(), bb.end(), arr);
+}
+
 inline bool operator==(const std::vector<uint8_t> &lhs, const std::vector<uint8_t> &rhs)
 {
   return lhs.size() == rhs.size() &&
