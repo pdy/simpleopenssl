@@ -131,11 +131,8 @@ namespace internal {
     explicit ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
     {
       m_size = static_cast<size_type>(std::distance(start, end));
-      if(m_size)
-      {
-        m_memory = memory_type{ allocator_type{}(m_size) };
-        std::copy(start, end, begin());
-      }
+      m_memory = memory_type{ allocator_type{}(m_size) };
+      std::copy_n(start, m_size, begin());
     }
 
     explicit operator bool() const noexcept { return m_memory != nullptr; }
