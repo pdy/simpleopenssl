@@ -166,7 +166,7 @@ namespace internal {
     iterator end() noexcept { return begin() + m_size; }
     const_iterator end() const noexcept { return begin() + m_size; }
 
-    size_t size() const noexcept { return m_size; }
+    size_type size() const noexcept { return m_size; }
     bool empty() const noexcept { return size() == 0 || !get(); }
 
     pointer_type get() noexcept { return m_memory.get(); }
