@@ -26,6 +26,11 @@
 *
 */
 
+
+#if __cpp_initializer_lists >= 200806
+# define so_has_init_list
+#endif
+
 // openssl
 #include <openssl/asn1.h>
 #include <openssl/ec.h>
@@ -50,7 +55,11 @@
 #include <chrono>
 #include <iterator>
 #include <sstream>
+
+#ifdef so_has_init_list
 #include <initializer_list>
+#endif
+
 //#include <iostream>
 
 namespace so {
@@ -120,13 +129,14 @@ namespace internal {
     explicit ArrayBuffer(size_type size)
       : m_memory(allocator_type{}(size)), m_size{size}
     {}
- 
+
+#ifdef so_has_init_list 
     ArrayBuffer(std::initializer_list<value_type> list)
       : m_memory(allocator_type{}(list.size())), m_size{list.size()}
     {
       std::copy(list.begin(), list.end(), begin());
     }
-
+#endif
     
     explicit ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
     {
@@ -183,13 +193,6 @@ namespace internal {
       m_memory.reset(ptr);
       m_size = size;
     }
- 
-    std::vector<value_type> toStdVector() const
-    {
-      std::vector<T> ret; ret.reserve(size());
-      std::copy(begin(), end(), std::back_inserter(ret));
-      return ret;
-    }
   };
   
   template<typename T>
@@ -213,10 +216,7 @@ namespace internal {
 
 } //namespace internal
  
-//using ByteBuffer = internal::ArrayBuffer<uint8_t, std::default_delete<uint8_t[]>>;
-//using OsslByteBuffer = internal::ArrayBuffer<uint8_t, internal::OSSLMallocAllocator<uint8_t>, internal::OSSLFreeDeleter<uint8_t>>;
-using ByteBuffer = internal::OSSLArrayBuffer<uint8_t>;//internal::ArrayBuffer<uint8_t, internal::OSSLMallocAllocator<uint8_t>, internal::OSSLFreeDeleter<uint8_t>>;
-ByteBuffer copy(typename ByteBuffer::pointer_type ptr, typename ByteBuffer::size_type size);
+using ByteBuffer = internal::OSSLArrayBuffer<uint8_t>;
 
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
 namespace internal {                                  \
@@ -280,11 +280,12 @@ PDY_CUSTOM_DELETER_UPTR(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 
 namespace internal {
 
-namespace bytes {
+namespace buffer {
+  ByteBuffer copy(typename ByteBuffer::pointer_type ptr, typename ByteBuffer::size_type size);
   std::string toString(const ByteBuffer &bt);
   std::string toString(const ByteBuffer &bt, ByteBuffer::const_iterator start);
   ByteBuffer fromString(const std::string &str);
-} // namespace bytes
+} // namespace buffer
 
 
 template<typename UPTRTag, typename ArithTag>
@@ -2068,7 +2069,7 @@ namespace x509 {
 
 } // namespace so
 
-#endif
+#endif // PDY_SIMPLEOPENSSL_H_
 
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -2082,20 +2083,22 @@ namespace x509 {
 
 namespace so {
 
-ByteBuffer copy(typename ByteBuffer::pointer_type ptr, typename ByteBuffer::size_type size)
-{ 
-  if(!ptr)
-    return ByteBuffer{};
-
-  ByteBuffer ret(size);
-  std::copy(ptr, ptr + size, ret.begin());
-
-  return ret;
-}
-
 namespace internal {
 
-namespace bytes {
+namespace buffer {
+
+  ByteBuffer copy(typename ByteBuffer::pointer_type ptr, typename ByteBuffer::size_type size)
+  { 
+    if(!ptr)
+      return ByteBuffer{};
+
+    ByteBuffer ret(size);
+    std::copy(ptr, ptr + size, ret.begin());
+
+    return ret;
+  }
+
+
   std::string toString(const ByteBuffer &bt)
   {
     std::ostringstream ss;
@@ -2117,7 +2120,7 @@ namespace bytes {
     return ret;
   }
 
-} // namespace bytes
+} // namespace buffer
 
 
   bool X509Name::operator ==(const X509Name &other) const
@@ -2578,7 +2581,7 @@ namespace bytes {
             static_cast<bool>(critical),
             "",
             oidStr.moveValue(),
-            ::so::copy(val->data, static_cast<size_t>(val->length))
+            internal::buffer::copy(val->data, static_cast<size_t>(val->length))
       });
     }
    
@@ -2592,7 +2595,7 @@ namespace bytes {
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         oidStr.moveValue(),
-        ::so::copy(val->data, static_cast<size_t>(val->length))
+        internal::buffer::copy(val->data, static_cast<size_t>(val->length))
       });
     }
     
@@ -2604,7 +2607,7 @@ namespace bytes {
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         oidStr.moveValue(),
-        ::so::copy(reinterpret_cast<uint8_t*>(bptr->data), bptr->length)
+        internal::buffer::copy(reinterpret_cast<uint8_t*>(bptr->data), bptr->length)
     }); 
   }
 
@@ -2769,7 +2772,7 @@ namespace bytes {
     return x509::Revoked{
       (timeStr ? timeStr.value : ""),
       (date ? date.value : std::time_t{}),
-      ::so::copy(serial->data, static_cast<size_t>(serial->length)),
+      internal::buffer::copy(serial->data, static_cast<size_t>(serial->length)),
       std::move(retExtensions)
     };
   }
@@ -2904,7 +2907,7 @@ namespace asn1 {
   
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
   {
-    return encodeOctet(internal::bytes::fromString(str));
+    return encodeOctet(internal::buffer::fromString(str));
   } 
 } // namespace asn1
 
@@ -4048,7 +4051,7 @@ namespace x509 {
     if(!palg || !psig)
       return internal::err<ByteBuffer>();
 
-    return internal::ok(::so::copy(psig->data, static_cast<size_t>(psig->length)));
+    return internal::ok(internal::buffer::copy(psig->data, static_cast<size_t>(psig->length)));
   }
   
   nid::Nid getSignatureAlgorithm(const X509 &cert)
@@ -4529,7 +4532,7 @@ namespace x509 {
     if(!palg || !psig)
       return internal::err<ByteBuffer>();
 
-    return internal::ok(::so::copy(psig->data, static_cast<size_t>(psig->length)));
+    return internal::ok(internal::buffer::copy(psig->data, static_cast<size_t>(psig->length)));
   }
   
   nid::Nid getSignatureAlgorithm(const X509_CRL &crl)
