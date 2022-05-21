@@ -2088,15 +2088,8 @@ namespace buffer {
 
   ByteBuffer copy(typename ByteBuffer::pointer_type ptr, typename ByteBuffer::size_type size)
   { 
-    if(!ptr)
-      return ByteBuffer{};
-
-    ByteBuffer ret(size);
-    std::copy(ptr, ptr + size, ret.begin());
-
-    return ret;
+    return ByteBuffer(ptr, ptr + size);
   }
-
 
   std::string toString(const ByteBuffer &bt)
   {
