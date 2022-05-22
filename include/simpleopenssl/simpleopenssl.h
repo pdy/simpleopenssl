@@ -28,7 +28,7 @@
 
 
 #if __cpp_initializer_lists >= 200806
-# define so_has_init_list
+# define PDY_SO_HAS_INIT_LIST
 #endif
 
 // openssl
@@ -127,27 +127,35 @@ namespace internal {
     {}      
 
     ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
-      : m_size{ static_cast<size_type>(std::distance(start, end))}, m_capacity{m_size}, m_memory{ memory_type{ allocator_type{}(m_size) }}
-    {
-      std::copy_n(start, m_size, begin());
-    }
-
-    explicit ArrayBuffer(pointer_type ptr, size_type size)
-      : m_size{size}, m_capacity{size}, m_memory(ptr) 
+      : ArrayBuffer(start, static_cast<size_type>(std::distance(start, end)))
     {}
 
-    explicit ArrayBuffer(size_type size)
+    ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, size_type size)
+      : m_size{size}, m_capacity{size}, m_memory{memory_type{allocator_type{}(size)}}
+    {
+      std::copy_n(start, size, begin());
+    }
+
+   explicit ArrayBuffer(size_type size)
       : m_size{size}, m_capacity{size}, m_memory(allocator_type{}(size))
     {}
 
-#ifdef so_has_init_list 
+#ifdef PDY_SO_HAS_INIT_LIST
     ArrayBuffer(std::initializer_list<value_type> list)
       : m_size{list.size()}, m_capacity{m_size}, m_memory(allocator_type{}(list.size())) 
     {
       std::copy_n(list.begin(), m_size, begin());
     }
 #endif
-    
+   
+    static ArrayBuffer<value_type, allocator_type, deleter_type>
+    take(pointer_type ptr, size_type size)
+    {
+      // we're using private assign ctor whish is very similar to one of the copy ctor
+      // so I prefer to have static factory method to lessen chance of mistake
+      return ArrayBuffer<value_type, allocator_type, deleter_type>(size, ptr);
+    }
+
     explicit operator bool() const noexcept { return m_memory != nullptr; }
 
     ArrayBuffer<value_type, allocator_type, deleter_type>& operator=(const ArrayBuffer<value_type, allocator_type, deleter_type> &other)
@@ -210,7 +218,7 @@ namespace internal {
     pointer_type release() noexcept
     {
       m_capacity = 0;
-      m_capacity = 0;
+      m_size = 0;
       return m_memory.release();
     }
 
@@ -220,6 +228,11 @@ namespace internal {
       m_size = size;
       m_capacity = size;
     }
+
+  private:
+    explicit ArrayBuffer(size_type size, pointer_type ptr)
+      : m_size{size}, m_capacity{size}, m_memory(ptr) 
+    {}
   };
   
   template<typename T>
@@ -308,12 +321,10 @@ PDY_CUSTOM_DELETER_UPTR(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 namespace internal {
 
 namespace buffer {
-  ByteBuffer copy(typename ByteBuffer::pointer_type ptr, typename ByteBuffer::size_type size);
   std::string toString(const ByteBuffer &bt);
   std::string toString(const ByteBuffer &bt, ByteBuffer::const_iterator start);
   ByteBuffer fromString(const std::string &str);
 } // namespace buffer
-
 
 template<typename UPTRTag, typename ArithTag>
 struct IsUptrOrArithmeticTag : std::false_type {};
@@ -2114,11 +2125,6 @@ namespace internal {
 
 namespace buffer {
 
-  ByteBuffer copy(typename ByteBuffer::pointer_type ptr, typename ByteBuffer::size_type size)
-  { 
-    return ByteBuffer(ptr, ptr + size);
-  }
-
   std::string toString(const ByteBuffer &bt)
   {
     std::ostringstream ss;
@@ -2601,7 +2607,7 @@ namespace buffer {
             static_cast<bool>(critical),
             "",
             oidStr.moveValue(),
-            internal::buffer::copy(val->data, static_cast<size_t>(val->length))
+            ByteBuffer(val->data, static_cast<size_t>(val->length))
       });
     }
    
@@ -2615,7 +2621,7 @@ namespace buffer {
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         oidStr.moveValue(),
-        internal::buffer::copy(val->data, static_cast<size_t>(val->length))
+        ByteBuffer(val->data, static_cast<size_t>(val->length))
       });
     }
     
@@ -2627,7 +2633,7 @@ namespace buffer {
         static_cast<bool>(critical),
         std::string(OBJ_nid2ln(nid)),
         oidStr.moveValue(),
-        internal::buffer::copy(reinterpret_cast<uint8_t*>(bptr->data), bptr->length)
+        ByteBuffer(reinterpret_cast<uint8_t*>(bptr->data), bptr->length)
     }); 
   }
 
@@ -2752,7 +2758,7 @@ namespace buffer {
     if (0 > len)
       return internal::err<ByteBuffer>();
 
-    return internal::ok(ByteBuffer(ptr, static_cast<size_t>(len)));
+    return internal::ok(ByteBuffer::take(ptr, static_cast<size_t>(len)));
   }
 
   x509::Revoked getRevoked(STACK_OF(X509_REVOKED) *revStack, int index)
@@ -2795,7 +2801,7 @@ namespace buffer {
     return x509::Revoked{
       (timeStr ? timeStr.value : ""),
       (date ? date.value : std::time_t{}),
-      internal::buffer::copy(serial->data, static_cast<size_t>(serial->length)),
+      ByteBuffer(serial->data, static_cast<size_t>(serial->length)),
       getExtensions()
     };
   }
@@ -4074,7 +4080,7 @@ namespace x509 {
     if(!palg || !psig)
       return internal::err<ByteBuffer>();
 
-    return internal::ok(internal::buffer::copy(psig->data, static_cast<size_t>(psig->length)));
+    return internal::ok(ByteBuffer(psig->data, static_cast<size_t>(psig->length)));
   }
   
   nid::Nid getSignatureAlgorithm(const X509 &cert)
@@ -4555,7 +4561,7 @@ namespace x509 {
     if(!palg || !psig)
       return internal::err<ByteBuffer>();
 
-    return internal::ok(internal::buffer::copy(psig->data, static_cast<size_t>(psig->length)));
+    return internal::ok(ByteBuffer(psig->data, static_cast<size_t>(psig->length)));
   }
   
   nid::Nid getSignatureAlgorithm(const X509_CRL &crl)
