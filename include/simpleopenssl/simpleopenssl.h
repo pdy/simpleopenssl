@@ -106,6 +106,7 @@ namespace internal {
   class ArrayBuffer
   {
     size_t m_size{ 0 };
+    size_t m_capacity{ 0 };
     std::unique_ptr<T[], Deleter> m_memory{ nullptr } ;
 
   public:
@@ -121,30 +122,44 @@ namespace internal {
 
     ArrayBuffer() = default;
     ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>&&) = default; // TODO will need to make noexcept later
+    ArrayBuffer(const ArrayBuffer<value_type, allocator_type, deleter_type> &other)
+      : ArrayBuffer(other.begin(), other.end())
+    {}      
 
     ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
-      : m_size{ static_cast<size_type>(std::distance(start, end))}, m_memory{ memory_type{ allocator_type{}(m_size) }}
+      : m_size{ static_cast<size_type>(std::distance(start, end))}, m_capacity{m_size}, m_memory{ memory_type{ allocator_type{}(m_size) }}
     {
       std::copy_n(start, m_size, begin());
     }
 
     explicit ArrayBuffer(pointer_type ptr, size_type size)
-      : m_size{size}, m_memory(ptr) 
+      : m_size{size}, m_capacity{size}, m_memory(ptr) 
     {}
 
     explicit ArrayBuffer(size_type size)
-      : m_size{size}, m_memory(allocator_type{}(size))
+      : m_size{size}, m_capacity{size}, m_memory(allocator_type{}(size))
     {}
 
 #ifdef so_has_init_list 
     ArrayBuffer(std::initializer_list<value_type> list)
-      : m_size{list.size()}, m_memory(allocator_type{}(list.size())) 
+      : m_size{list.size()}, m_capacity{m_size}, m_memory(allocator_type{}(list.size())) 
     {
       std::copy_n(list.begin(), m_size, begin());
     }
 #endif
     
     explicit operator bool() const noexcept { return m_memory != nullptr; }
+
+    ArrayBuffer<value_type, allocator_type, deleter_type>& operator=(const ArrayBuffer<value_type, allocator_type, deleter_type> &other)
+    {
+      m_size = m_capacity = other.size();
+      m_memory = memory_type{allocator_type{}(other.size())};
+      std::copy_n(other.begin(), m_size, begin());
+
+      return *this;
+    }
+
+    ArrayBuffer<value_type, allocator_type, deleter_type>& operator=(ArrayBuffer<value_type, allocator_type, deleter_type> &&other) = default;
 
     bool operator==(const ArrayBuffer<value_type, allocator_type, deleter_type> &other) const
     {
@@ -173,6 +188,7 @@ namespace internal {
     const_iterator end() const noexcept { return begin() + m_size; }
 
     size_type size() const noexcept { return m_size; }
+    size_type capacity() const noexcept { return m_capacity; }
     bool empty() const noexcept { return size() == 0 || !get(); }
 
     pointer_type get() noexcept { return m_memory.get(); }
@@ -181,22 +197,31 @@ namespace internal {
     pointer_type data() noexcept { return get(); }
     const pointer_type data() const noexcept { return get(); }
 
-    pointer_type release()
+    void push_back(const T &val) { m_memory[m_size++] = val; }
+    void push_back(T &&val) { m_memory[m_size++] = std::move(val); }
+
+    void reserve(size_type capacity) noexcept
     {
       m_size = 0;
+      m_capacity = capacity;
+      m_memory = memory_type{allocator_type{}(capacity)};
+    }
+
+    pointer_type release() noexcept
+    {
+      m_capacity = 0;
+      m_capacity = 0;
       return m_memory.release();
     }
 
-    void reset(pointer_type ptr = nullptr, size_type size = 0)
+    void reset(pointer_type ptr = nullptr, size_type size = 0) noexcept
     {
       m_memory.reset(ptr);
       m_size = size;
+      m_capacity = size;
     }
   };
   
-  template<typename T>
-  using OSSLArrayBuffer = ArrayBuffer<T, OSSLMallocAllocator<T>, OSSLFreeDeleter<T>>;
-
   template<typename T>
   struct is_uptr : std::false_type {}; 
 
@@ -214,8 +239,11 @@ namespace internal {
   using CustomDeleterUniquePtr = std::unique_ptr<T, D>;
 
 } //namespace internal
- 
-using ByteBuffer = internal::OSSLArrayBuffer<uint8_t>;
+
+template<typename T>
+using OSSLArrayBuffer = internal::ArrayBuffer<T, internal::OSSLMallocAllocator<T>, internal::OSSLFreeDeleter<T>>;
+
+using ByteBuffer = OSSLArrayBuffer<uint8_t>;
 
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
 namespace internal {                                  \
@@ -2742,21 +2770,24 @@ namespace buffer {
     if(!serial || !time)
       return {};
 
-    std::vector<x509::CrlEntryExtension> retExtensions;
-    {
+    const auto getExtensions = [&]{
       const STACK_OF(X509_EXTENSION) *exts = X509_REVOKED_get0_extensions(revoked);
       if(exts)
       {
         const int count = sk_X509_EXTENSION_num(exts);
-        retExtensions.reserve(static_cast<size_t>(count));
+        std::vector<x509::CrlEntryExtension> retExtensions; retExtensions.reserve(static_cast<size_t>(count));
         for(int i = 0; i < count; ++i)
         {
           auto getExtension = internal::getExtension<x509::CrlEntryExtensionId>(*X509_REVOKED_get_ext(revoked, i));
           if(getExtension)
             retExtensions.push_back(getExtension.moveValue());
         }
+
+        return retExtensions;
       }
-    }
+
+      return std::vector<x509::CrlEntryExtension>{};
+    };
 
     const auto timeStr = asn1::convertToISO8601(*time);
     const auto date = asn1::convertToStdTime(*time);
@@ -2765,7 +2796,7 @@ namespace buffer {
       (timeStr ? timeStr.value : ""),
       (date ? date.value : std::time_t{}),
       internal::buffer::copy(serial->data, static_cast<size_t>(serial->length)),
-      std::move(retExtensions)
+      getExtensions()
     };
   }
 
