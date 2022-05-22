@@ -162,6 +162,16 @@ inline ::so::ByteBuffer readBinaryFile(const std::string &filePath)
   return ret;
 }
 
+inline bool equals(const std::string &str, const ::so::StringBuffer &strBuff)
+{
+  return str.size() == strBuff.size() && std::equal(str.begin(), str.end(), strBuff.begin());
+}
+
+inline bool equals(const char *nullTerminated, const ::so::StringBuffer &strBuff)
+{
+  return equals(std::string(nullTerminated), strBuff);
+}
+
 template<size_t SIZE>
 bool equals(const uint8_t(&arr)[SIZE], const ::so::ByteBuffer &bb) 
 {

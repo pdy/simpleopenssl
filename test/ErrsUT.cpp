@@ -51,6 +51,18 @@ std::string toHexStr(unsigned long val)
   return ret;
 }
 
+bool contains(const StringBuffer &strBuff, const std::string &toFind)
+{
+  std::string tmp;
+  {
+    tmp.reserve(strBuff.size());
+    for(char chr : strBuff)
+      tmp.push_back(chr);
+  }
+
+  return tmp.find(toFind) != std::string::npos;
+}
+
 } // namespace
 
 
@@ -69,8 +81,8 @@ TEST(Errs, getLastErrorCode)
 
   // THEN
   EXPECT_EQ(expectedErrCode, actualErrCode);
-  EXPECT_EQ(expectedErrString, actualErrString);
-  EXPECT_TRUE(actualErrString.find(expectedErrCodeHexStr) != std::string::npos);
+  EXPECT_TRUE(utils::equals(expectedErrString, actualErrString));
+  EXPECT_TRUE(contains(actualErrString, expectedErrCodeHexStr));
 }
 
 TEST(Errs, DISABLED_getLastErrorStr)
@@ -91,8 +103,8 @@ TEST(Errs, DISABLED_getLastErrorStr)
   const auto actualErrString = ::so::getLastErrString();
 
   // THEN
-  EXPECT_TRUE(actualErrString.find(expectedErrCodeHexStr) != std::string::npos);
-  EXPECT_EQ(expectedErrString, actualErrString);
+  EXPECT_TRUE(contains(actualErrString, expectedErrCodeHexStr));
+  EXPECT_TRUE(utils::equals(expectedErrString, actualErrString));
 }
 
 }}}

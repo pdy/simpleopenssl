@@ -205,6 +205,18 @@ namespace internal {
       return !(*this == other);
     }
 
+    template<size_type SIZE>
+    bool operator==(const value_type(&arr)[SIZE]) const
+    {
+      return size() == SIZE && std::equal(begin(), end(), arr);
+    }
+
+    template<size_type SIZE>
+    bool operator!=(const value_type(&arr)[SIZE]) const
+    {
+      return !(*this == arr);
+    }
+
     value_type& operator[](size_type idx)
     {
       return m_memory[idx];
@@ -230,6 +242,16 @@ namespace internal {
 
     pointer_type data() noexcept { return get(); }
     const pointer_type data() const noexcept { return get(); }
+
+    const_iterator find(const value_type &val) const noexcept
+    {
+      return std::find_if(begin(), end(), [&](const value_type &el) { return el == val; });
+    }
+
+    iterator find(const value_type &val) noexcept
+    {
+      return std::find_if(begin(), end(), [&](const value_type &el) { return el == val; });
+    }
 
     void push_back(const T &val) { m_memory[m_size++] = val; }
     void push_back(T &&val) { m_memory[m_size++] = std::move(val); }
@@ -260,7 +282,19 @@ namespace internal {
       : m_size{size}, m_capacity{size}, m_memory(ptr) 
     {}
   };
-  
+ 
+  template<typename T>
+  using OSSLArrayBuffer = internal::ArrayBuffer<T, internal::OSSLMallocAllocator<T>, internal::OSSLFreeDeleter<T>>;
+
+  template<typename T>
+  std::ostream& operator<<(std::ostream &oss, const OSSLArrayBuffer<T> &buff)
+  {
+    for(const auto &el : buff)
+      oss << el;
+
+    return oss;
+  }
+
   template<typename T>
   struct is_uptr : std::false_type {}; 
 
@@ -279,10 +313,9 @@ namespace internal {
 
 } //namespace internal
 
-template<typename T>
-using OSSLArrayBuffer = internal::ArrayBuffer<T, internal::OSSLMallocAllocator<T>, internal::OSSLFreeDeleter<T>>;
 
-using ByteBuffer = OSSLArrayBuffer<uint8_t>;
+using ByteBuffer = internal::OSSLArrayBuffer<uint8_t>;
+using StringBuffer = internal::OSSLArrayBuffer<char>;
 
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
 namespace internal {                                  \
@@ -347,6 +380,7 @@ PDY_CUSTOM_DELETER_UPTR(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 namespace internal {
 
 namespace buffer {
+  StringBuffer toString(const char *str, size_t size);
   std::string toString(const ByteBuffer &bt);
   std::string toString(const ByteBuffer &bt, ByteBuffer::const_iterator start);
   ByteBuffer fromString(const std::string &str);
@@ -377,7 +411,7 @@ struct AddArrowOperator<T, TSelf, std::false_type>
 };
 
 static constexpr int OSSL_NO_ERR_CODE = 0;
-std::string errCodeToString(unsigned long);
+StringBuffer errCodeToString(unsigned long);
 
 } //namespace internal
 
@@ -405,10 +439,10 @@ struct Result : public internal::AddArrowOperator<T, Result<T>, typename interna
     return internal::OSSL_NO_ERR_CODE == opensslErrCode;
   }
 
-  std::string msg() const
+  StringBuffer msg() const
   {
     if(ok())
-      return "ok";
+      return internal::buffer::toString("ok", 2);
 
     return internal::errCodeToString(opensslErrCode);
   }
@@ -430,10 +464,10 @@ struct Result<void>
     return internal::OSSL_NO_ERR_CODE == opensslErrCode;
   }
 
-  std::string msg() const
+  StringBuffer msg() const
   {
     if(ok())
-      return "ok";
+      return internal::buffer::toString("ok", 2);
 
     return internal::errCodeToString(opensslErrCode);
   }
@@ -450,8 +484,8 @@ void init();
 void cleanUp();
 
 unsigned long getLastErrCode();
-std::string errCodeToString(unsigned long osslErrCode);
-std::string getLastErrString();
+StringBuffer errCodeToString(unsigned long osslErrCode);
+StringBuffer getLastErrString();
 std::string getOpenSSLVersion();
 
 namespace asn1 {
@@ -2146,10 +2180,16 @@ namespace x509 {
 #undef SO_IMPLEMENTATION
 
 namespace so {
-
 namespace internal {
 
 namespace buffer {
+
+  StringBuffer toString(const char *str, size_t size)
+  {
+    StringBuffer ret; ret.reserve(size);
+    std::copy_n(str, size, std::back_inserter(ret));
+    return ret;
+  }
 
   std::string toString(const ByteBuffer &bt)
   {
@@ -2197,13 +2237,17 @@ namespace buffer {
     return !(*this == other);
   }
 
-  std::string errCodeToString(unsigned long errCode)
+  StringBuffer errCodeToString(unsigned long errCode)
   {
-    static constexpr size_t SIZE = 1024;
-    char buff[SIZE];
-    std::memset(buff, 0x00, SIZE);
+    static constexpr size_t SIZE = 2048;
+    char buff[SIZE] = {0};
     ERR_error_string_n(errCode, buff, SIZE);
-    return std::string(buff);
+
+    StringBuffer ret; ret.reserve(SIZE);
+    for(size_t i = 0; buff[i] && i < SIZE; ++i)
+      ret.push_back(buff[i]);
+  
+    return ret; 
   } 
 
   template<typename T>
@@ -2856,12 +2900,12 @@ unsigned long getLastErrCode()
   return ERR_get_error();
 }
 
-std::string errCodeToString(unsigned long osslErrCode)
+StringBuffer errCodeToString(unsigned long osslErrCode)
 {
   return internal::errCodeToString(osslErrCode);
 }
 
-std::string getLastErrString()
+StringBuffer getLastErrString()
 {
   return errCodeToString(getLastErrCode()); 
 }

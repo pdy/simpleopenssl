@@ -54,6 +54,16 @@ TEST(OSSLArrayBuffer, ArrayBuffer_TryStdString)
 }
 #endif
 
+TEST(OSSLArrayBuffer, StringBuffer)
+{
+  so::StringBuffer str = {'c', 'a', 'b'};
+  std::stringstream ss;
+  // ss << str;
+  
+  std::cout << str;
+
+}
+
 TEST(OSSLArrayBuffer, ByteBuffer_CheckTypes)
 {
   EXPECT_TRUE((std::is_same<typename ByteBuffer::value_type, uint8_t>::value));
