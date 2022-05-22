@@ -276,7 +276,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_Release)
   EXPECT_TRUE(tmp.data() != nullptr);
 
   const auto size = tmp.size();
-  ByteBuffer buff(tmp.release(), size);
+  ByteBuffer buff = ByteBuffer::take(tmp.release(), size);
 
   EXPECT_FALSE(tmp);
   EXPECT_EQ(0, tmp.capacity());
