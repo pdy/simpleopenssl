@@ -71,18 +71,43 @@ namespace internal {
     using type = typename std::remove_pointer<decltype(std::declval<T>().get())>::type;
   };
 
-  template<typename T = void>
-  struct OSSLFreeDeleter
+#if 0
+  template<typename T, typename IsArithmetic>
+  struct OSSLMallocAllocatorSelector
+  {};
+  
+  template<typename T>
+  struct OSSLMallocAllocatorSelector<T, std::true_type>
   {
-    void operator()(T *ptr) const
+    T* operator()(size_t count) const
     {
-      if(ptr)
-      {
-//        std::cout << "OPENSSL_free\n";
-        OPENSSL_free(ptr);
-      }
+      return reinterpret_cast<T*>(OPENSSL_malloc(sizeof(T) + count));
     }
   };
+ 
+  template<typename T>
+  struct OSSLMallocAllocatorSelector<T, std::false_type>
+  {
+    T* operator()(size_t count) const
+    {
+      return new (reinterpret_cast<T*>(OPENSSL_malloc(sizeof(T) + count))) T[count];
+    }
+  };
+
+  // typename std::enable_if<!internal::is_uptr<T>::value, int>::type = 0
+  template<typename T>
+  struct OSSLMallocAllocator : public OSSLMallocAllocatorSelector<T, typename std::is_arithmetic<T>::type>
+  {};
+
+  template<>
+  struct OSSLMallocAllocator<void>
+  {
+    void* operator()(size_t count)
+    {
+      return OPENSSL_malloc(count);
+    }
+  };
+#endif
 
   template<typename T>
   struct OSSLMallocAllocator
@@ -93,14 +118,15 @@ namespace internal {
     }
   };
 
-  template<>
-  struct OSSLMallocAllocator<void>
+  template<typename T = void>
+  struct OSSLFreeDeleter
   {
-    void* operator()(size_t count)
+    void operator()(T *ptr) const
     {
-      return OPENSSL_malloc(count);
+      OPENSSL_free(ptr);
     }
   };
+
 
   template<typename T, typename Allocator, typename Deleter>
   class ArrayBuffer

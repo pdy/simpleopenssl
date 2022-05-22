@@ -27,6 +27,33 @@
 
 namespace so { namespace ut { namespace bytebuffer {
 
+#if 0
+struct Type
+{
+  Type() { log << "Type ctor"; }
+  ~Type() { log << "Type dtor"; }
+
+  int x{0},y{0};
+};
+
+TEST(OSSLArrayBuffer, ArrayBuffer_TryStdString)
+{
+  using TypeArray = ::so::OSSLArrayBuffer<Type>;
+  
+  TypeArray ta(3);
+  
+  for(const auto &el : ta)
+  {
+    EXPECT_EQ(0, el.x);
+    EXPECT_EQ(0, el.y);
+  }
+
+  log << "built in";
+  auto *ta2 = new Type[3];
+  (void)ta2;
+}
+#endif
+
 TEST(OSSLArrayBuffer, ByteBuffer_CheckTypes)
 {
   EXPECT_TRUE((std::is_same<typename ByteBuffer::value_type, uint8_t>::value));
