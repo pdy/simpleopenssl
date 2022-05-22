@@ -30,6 +30,7 @@
 #include <type_traits>
 #include <sstream>
 #include <iostream>
+#include <simpleopenssl/simpleopenssl.h>
 
 class SimpleLog
 {
@@ -53,6 +54,12 @@ public:
   SimpleLog& operator<<(const std::string &str)
   {
     m_ss << str;
+    return *this;
+  }
+
+  SimpleLog& operator<<(const ::so::StringBuffer &strBuff)
+  {
+    m_ss << strBuff;
     return *this;
   }
 
