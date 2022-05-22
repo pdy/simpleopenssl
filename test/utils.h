@@ -34,6 +34,7 @@
 #include <iterator>
 #include <fstream>
 
+#include "simplelog.h"
 #include "platform.h"
 #include "simpleopenssl/simpleopenssl.h"
 
