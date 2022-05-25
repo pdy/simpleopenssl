@@ -107,14 +107,13 @@ namespace internal {
       return OPENSSL_malloc(count);
     }
   };
-#endif
 
   template<typename T>
   struct OSSLMallocAllocator
   {
-    T* operator()(size_t count) const
+    void* operator()(size_t count) const
     {
-      return reinterpret_cast<T*>(OPENSSL_malloc(sizeof(T) + count));
+      return OPENSSL_malloc(sizeof(T) + count);
     }
   };
 
@@ -126,20 +125,89 @@ namespace internal {
       OPENSSL_free(ptr);
     }
   };
+#endif
 
+  template<typename T, typename IsArithmetic>
+  struct MallocatorSelector
+  {};
 
-  template<typename T, typename Allocator, typename Deleter>
+  template<typename T>
+  struct MallocatorSelector<T, std::true_type>
+  {
+    struct Allocator
+    {
+      T* operator()(size_t count) const
+      {
+        return reinterpret_cast<T*>(OPENSSL_malloc(sizeof(T) * count));
+      }
+    };
+
+    struct Dealocator
+    {
+      void operator()(T *ptr, size_t /*count*/) const
+      {
+        return OPENSSL_free(ptr);
+      }
+    };
+
+    using allocator_type = Allocator;
+    using deleter_type = Dealocator;
+  };
+
+  template<typename T>
+  struct MallocatorSelector<T, std::false_type>
+  {
+    struct Allocator
+    {
+      T* operator()(size_t count) const
+      {
+        // TODO make sure it's aligned
+        uint8_t *mem = reinterpret_cast<uint8_t*>(OPENSSL_malloc(sizeof(T) * count));
+        
+        static constexpr size_t chunkSize = sizeof(T);
+        uint8_t *memChunk = mem;
+        for(size_t i = 0; i < count; ++i, memChunk += chunkSize)
+          new(memChunk) T; 
+
+        return reinterpret_cast<T*>(mem); 
+        
+  
+        //return new(NewRawMemory{}(count)) T[count];
+      }
+    };
+
+    struct Dealocator
+    {
+      void operator()(T *ptr, size_t count) const
+      {
+        for(size_t i = 0; i < count; ++i)
+          ptr[i].~T();
+
+        return OPENSSL_free(ptr);
+      }
+    };
+
+    using allocator_type = Allocator;
+    using deleter_type = Dealocator;
+  };
+
+  template<typename T>
+  struct Mallocator : public MallocatorSelector<T, typename std::is_arithmetic<T>::type>
+  {};
+
+  template<typename T, typename Allocator>
   class ArrayBuffer
   {
     size_t m_size{ 0 };
     size_t m_capacity{ 0 };
-    std::unique_ptr<T[], Deleter> m_memory{ nullptr } ;
+    //std::unique_ptr<T[], Deleter> m_memory{ nullptr } ;
+    T *m_memory {nullptr};
 
   public:
 
     using memory_type = decltype(m_memory);
-    using deleter_type = Deleter;
-    using allocator_type = Allocator;
+    using deleter_type = typename Mallocator<T>::deleter_type;
+    using allocator_type = typename Mallocator<T>::allocator_type;
     using value_type = T; 
     using size_type = decltype(m_size); 
     using pointer_type = value_type*; 
@@ -147,16 +215,21 @@ namespace internal {
     using const_iterator = const pointer_type;
 
     ArrayBuffer() = default;
-    ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>&&) = default; // TODO will need to make noexcept later
-    ArrayBuffer(const ArrayBuffer<value_type, allocator_type, deleter_type> &other)
+    ArrayBuffer(ArrayBuffer<T, Allocator> &&other) noexcept
+      : ArrayBuffer()
+    {
+      swap(*this, other);
+    }
+
+    ArrayBuffer(const ArrayBuffer<T, Allocator> &other) noexcept
       : ArrayBuffer(other.begin(), other.end())
     {}      
 
-    ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator end)
+    ArrayBuffer(ArrayBuffer<T, Allocator>::const_iterator start, ArrayBuffer<T, Allocator>::const_iterator end)
       : ArrayBuffer(start, static_cast<size_type>(std::distance(start, end)))
     {}
 
-    ArrayBuffer(ArrayBuffer<value_type, allocator_type, deleter_type>::const_iterator start, size_type size)
+    ArrayBuffer(typename ArrayBuffer<T, Allocator>::const_iterator start, size_type size)
       : m_size{size}, m_capacity{size}, m_memory{memory_type{allocator_type{}(size)}}
     {
       std::copy_n(start, size, begin());
@@ -173,34 +246,37 @@ namespace internal {
       std::copy_n(list.begin(), m_size, begin());
     }
 #endif
-   
-    static ArrayBuffer<value_type, allocator_type, deleter_type>
+  
+    ~ArrayBuffer()
+    {
+      if(m_memory)
+        deleter_type{}(m_memory, m_size); 
+    }
+
+    static ArrayBuffer<T, Allocator>
     take(pointer_type ptr, size_type size)
     {
       // we're using private assign ctor whish is very similar to one of the copy ctor
       // so I prefer to have static factory method to lessen chance of mistake
-      return ArrayBuffer<value_type, allocator_type, deleter_type>(size, ptr);
+      return ArrayBuffer<T, Allocator>(size, ptr);
     }
 
     explicit operator bool() const noexcept { return m_memory != nullptr; }
 
-    ArrayBuffer<value_type, allocator_type, deleter_type>& operator=(const ArrayBuffer<value_type, allocator_type, deleter_type> &other)
+    ArrayBuffer<T, Allocator>& operator=(ArrayBuffer<value_type, Allocator> other) noexcept
     {
-      m_size = m_capacity = other.size();
-      m_memory = memory_type{allocator_type{}(other.size())};
-      std::copy_n(other.begin(), m_size, begin());
-
+      swap(*this, other); 
       return *this;
     }
 
-    ArrayBuffer<value_type, allocator_type, deleter_type>& operator=(ArrayBuffer<value_type, allocator_type, deleter_type> &&other) = default;
+//    ArrayBuffer<value_type, Allocator, Deleter>& operator=(ArrayBuffer<value_type, Allocator, Deleter> &&other) = default;
 
-    bool operator==(const ArrayBuffer<value_type, allocator_type, deleter_type> &other) const
+    bool operator==(const ArrayBuffer<T, Allocator> &other) const
     {
       return size() == other.size() && std::equal(begin(), end(), other.begin());
     }
 
-    bool operator!=(const ArrayBuffer<value_type, allocator_type, deleter_type> &other) const
+    bool operator!=(const ArrayBuffer<T, Allocator> &other) const
     {
       return !(*this == other);
     }
@@ -227,8 +303,14 @@ namespace internal {
       return m_memory[idx];
     }
 
-    iterator begin() noexcept { return m_memory.get(); }
-    const_iterator begin() const noexcept { return m_memory.get(); }
+    pointer_type get() noexcept { return m_memory; }
+    const pointer_type get() const noexcept { return m_memory; }
+
+    pointer_type data() noexcept { return get(); }
+    const pointer_type data() const noexcept { return get(); }
+
+    iterator begin() noexcept { return get(); }
+    const_iterator begin() const noexcept { return get(); }
 
     iterator end() noexcept { return begin() + m_size; }
     const_iterator end() const noexcept { return begin() + m_size; }
@@ -236,12 +318,6 @@ namespace internal {
     size_type size() const noexcept { return m_size; }
     size_type capacity() const noexcept { return m_capacity; }
     bool empty() const noexcept { return size() == 0 || !get(); }
-
-    pointer_type get() noexcept { return m_memory.get(); }
-    const pointer_type get() const noexcept { return m_memory.get(); }
-
-    pointer_type data() noexcept { return get(); }
-    const pointer_type data() const noexcept { return get(); }
 
     const_iterator find(const value_type &val) const noexcept
     {
@@ -267,14 +343,28 @@ namespace internal {
     {
       m_capacity = 0;
       m_size = 0;
-      return m_memory.release();
+      pointer_type ret = m_memory;
+      m_memory = nullptr;
+      return ret;
     }
 
     void reset(pointer_type ptr = nullptr, size_type size = 0) noexcept
     {
-      m_memory.reset(ptr);
+      if(m_memory)
+        deleter_type{}(m_memory, m_size);
+
+      m_memory = ptr;
       m_size = size;
       m_capacity = size;
+    }
+
+    friend void swap(ArrayBuffer<T, Allocator> &lhs, ArrayBuffer<T, Allocator> &rhs) noexcept
+    {
+      using std::swap;
+
+      swap(lhs.m_size, rhs.m_size);
+      swap(lhs.m_capacity, rhs.m_capacity);
+      swap(lhs.m_memory, rhs.m_memory);
     }
 
   private:
@@ -284,7 +374,7 @@ namespace internal {
   };
  
   template<typename T>
-  using OSSLArrayBuffer = internal::ArrayBuffer<T, internal::OSSLMallocAllocator<T>, internal::OSSLFreeDeleter<T>>;
+  using OSSLArrayBuffer = internal::ArrayBuffer<T, internal::Mallocator<T>>;
 
   template<typename T>
   std::ostream& operator<<(std::ostream &oss, const OSSLArrayBuffer<T> &buff)

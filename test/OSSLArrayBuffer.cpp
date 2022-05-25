@@ -27,33 +27,35 @@
 
 namespace so { namespace ut { namespace bytebuffer {
 
-#if 0
 struct Type
 {
-  Type() { log << "Type ctor"; }
+  Type()
+    : x{0}, y{0}
+  { log << "Type ctor"; }
+
   ~Type() { log << "Type dtor"; }
 
   int x{0},y{0};
 };
 
-TEST(OSSLArrayBuffer, ArrayBuffer_TryStdString)
+TEST(OSSLArrayBuffer, ArrayBuffer_TryCustomType)
 {
-  using TypeArray = ::so::OSSLArrayBuffer<Type>;
+  using TypeArray = internal::OSSLArrayBuffer<Type>;
   
   TypeArray ta(3);
-  
+ 
   for(const auto &el : ta)
   {
     EXPECT_EQ(0, el.x);
     EXPECT_EQ(0, el.y);
   }
 
-  log << "built in";
-  auto *ta2 = new Type[3];
-  (void)ta2;
+ // log << "built in";
+//  auto *ta2 = new Type[3];
+//  (void)ta2;
 }
-#endif
 
+/*
 TEST(OSSLArrayBuffer, StringBuffer)
 {
   so::StringBuffer str = {'c', 'a', 'b'};
@@ -63,13 +65,13 @@ TEST(OSSLArrayBuffer, StringBuffer)
   std::cout << str;
 
 }
-
+*/
 TEST(OSSLArrayBuffer, ByteBuffer_CheckTypes)
 {
   EXPECT_TRUE((std::is_same<typename ByteBuffer::value_type, uint8_t>::value));
   EXPECT_TRUE((std::is_same<typename ByteBuffer::size_type, size_t>::value));
   EXPECT_TRUE((std::is_same<typename ByteBuffer::pointer_type, uint8_t*>::value));
-  EXPECT_TRUE((std::is_same<typename ByteBuffer::memory_type, std::unique_ptr<uint8_t[], ::so::internal::OSSLFreeDeleter<uint8_t>>>::value));
+  EXPECT_TRUE((std::is_same<typename ByteBuffer::memory_type, uint8_t*>::value));
   EXPECT_TRUE((std::is_const<typename ByteBuffer::const_iterator>::value));
 }
 
