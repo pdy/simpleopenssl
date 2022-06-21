@@ -200,7 +200,6 @@ namespace internal {
   {
     size_t m_size{ 0 };
     size_t m_capacity{ 0 };
-    //std::unique_ptr<T[], Deleter> m_memory{ nullptr } ;
     T *m_memory {nullptr};
 
   public:
@@ -250,7 +249,13 @@ namespace internal {
     ~ArrayBuffer()
     {
       if(m_memory)
-        deleter_type{}(m_memory, m_size); 
+      {
+        deleter_type{}(m_memory, m_size);
+        m_memory = nullptr;
+      }
+
+      m_size = 0;
+      m_capacity = 0;
     }
 
     static ArrayBuffer<T, Allocator>
