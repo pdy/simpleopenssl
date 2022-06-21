@@ -27,46 +27,7 @@
 
 namespace so { namespace ut { namespace bytebuffer {
 
-struct Type
-{
-  Type()
-    : x{0}, y{0}
-  { log << "Type ctor"; }
-
-  ~Type() { log << "Type dtor"; }
-
-  int x{0},y{0};
-};
-
-TEST(OSSLArrayBuffer, ArrayBuffer_TryCustomType)
-{
-  using TypeArray = internal::OSSLArrayBuffer<Type>;
-  
-  TypeArray ta(3);
- 
-  for(const auto &el : ta)
-  {
-    EXPECT_EQ(0, el.x);
-    EXPECT_EQ(0, el.y);
-  }
-
- // log << "built in";
-//  auto *ta2 = new Type[3];
-//  (void)ta2;
-}
-
-/*
-TEST(OSSLArrayBuffer, StringBuffer)
-{
-  so::StringBuffer str = {'c', 'a', 'b'};
-  std::stringstream ss;
-  // ss << str;
-  
-  std::cout << str;
-
-}
-*/
-TEST(OSSLArrayBuffer, ByteBuffer_CheckTypes)
+TEST(ByteBuffer, CheckTypes)
 {
   EXPECT_TRUE((std::is_same<typename ByteBuffer::value_type, uint8_t>::value));
   EXPECT_TRUE((std::is_same<typename ByteBuffer::size_type, size_t>::value));
@@ -75,7 +36,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_CheckTypes)
   EXPECT_TRUE((std::is_const<typename ByteBuffer::const_iterator>::value));
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_DefaultCtor)
+TEST(ByteBuffer, DefaultCtor)
 {
   ByteBuffer buff;
 
@@ -87,7 +48,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_DefaultCtor)
   EXPECT_EQ(buff.begin(), buff.end());
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_CreateBuffer)
+TEST(ByteBuffer, CreateBuffer)
 {
   ByteBuffer buff(3);
 
@@ -98,7 +59,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_CreateBuffer)
   EXPECT_TRUE(buff.data() != nullptr);
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_InitializerRelease)
+TEST(ByteBuffer, InitializerRelease)
 {
   ByteBuffer buff = {0x01, 0x02, 0x03};
   
@@ -113,7 +74,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_InitializerRelease)
   EXPECT_EQ(0x03, buff[2]);
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_CopyCtor)
+TEST(ByteBuffer, CopyCtor)
 {
   ByteBuffer buff(3);
 
@@ -128,7 +89,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_CopyCtor)
   EXPECT_EQ(buff, copy);
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_IteratorCopyCtor)
+TEST(ByteBuffer, IteratorCopyCtor)
 {
   ByteBuffer buff(3);
 
@@ -143,7 +104,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_IteratorCopyCtor)
   EXPECT_EQ(buff, copy);
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_IteratorSizeCopyCtor)
+TEST(ByteBuffer, IteratorSizeCopyCtor)
 {
   ByteBuffer buff(3);
 
@@ -158,7 +119,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_IteratorSizeCopyCtor)
   EXPECT_EQ(buff, copy);
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_MoveCtor)
+TEST(ByteBuffer, MoveCtor)
 {
   ByteBuffer buff(3);
 
@@ -171,7 +132,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_MoveCtor)
   EXPECT_TRUE(copy.data() != nullptr);
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_CopyWithBegin)
+TEST(ByteBuffer, CopyWithBegin)
 {
   const uint8_t ARRAY[3] = {0x01, 0x02, 0x03};
 
@@ -193,7 +154,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_CopyWithBegin)
   EXPECT_TRUE(utils::equals(ARRAY, buff));
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_ReserveAndPushBackCopy)
+TEST(ByteBuffer, ReserveAndPushBackCopy)
 {
   const uint8_t ARRAY[3] = {0x01, 0x02, 0x03};
 
@@ -216,7 +177,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_ReserveAndPushBackCopy)
   EXPECT_TRUE(utils::equals(ARRAY, buff));
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_ReserveAndBackInserter)
+TEST(ByteBuffer, ReserveAndBackInserter)
 {
   const uint8_t ARRAY[3] = {0x01, 0x02, 0x03};
 
@@ -238,7 +199,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_ReserveAndBackInserter)
   EXPECT_TRUE(utils::equals(ARRAY, buff));
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_TakeResource)
+TEST(ByteBuffer, TakeResource)
 {
   uint8_t *rc = reinterpret_cast<uint8_t*>(OPENSSL_malloc(3));
   rc[0] = 0x01;
@@ -251,7 +212,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_TakeResource)
   EXPECT_TRUE(utils::equals(rc, 3, bt));
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_SquareBracketAssign)
+TEST(ByteBuffer, SquareBracketAssign)
 {
   // GIVEN
   const uint8_t ARRAY[] = {0x01, 0x01, 0x03};
@@ -267,7 +228,7 @@ TEST(OSSLArrayBuffer, ByteBuffer_SquareBracketAssign)
   EXPECT_TRUE(utils::equals(ARRAY, buff));
 }
 
-TEST(OSSLArrayBuffer, ByteBuffer_Release)
+TEST(ByteBuffer, Release)
 {
   ByteBuffer tmp = {0x01, 0x02, 0x03};
 
