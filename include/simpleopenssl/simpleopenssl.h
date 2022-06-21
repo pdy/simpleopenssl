@@ -56,7 +56,7 @@
 #include <iterator>
 #include <sstream>
 
-#ifdef so_has_init_list
+#ifdef PDY_SO_HAS_INIT_LIST
 #include <initializer_list>
 #endif
 
@@ -229,7 +229,7 @@ namespace internal {
       : ArrayBuffer(start, static_cast<size_type>(std::distance(start, end)))
     {}
 
-    ArrayBuffer(typename ArrayBuffer<T, Allocator>::const_iterator start, size_type size)
+    ArrayBuffer(ArrayBuffer<T, Allocator>::const_iterator start, size_type size)
       : m_size{size}, m_capacity{size}, m_memory{memory_type{allocator_type{}(size)}}
     {
       std::copy_n(start, size, begin());
