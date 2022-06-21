@@ -172,6 +172,13 @@ inline bool equals(const char *nullTerminated, const ::so::StringBuffer &strBuff
   return equals(std::string(nullTerminated), strBuff);
 }
 
+inline bool equals(char *str, size_t size, const ::so::StringBuffer &strBuffer)
+{
+  return size == strBuffer.size()
+    && (str == nullptr ? strBuffer.get() == nullptr : strBuffer.get() != nullptr)
+    && std::equal(strBuffer.begin(), strBuffer.end(), str);
+}
+
 template<size_t SIZE>
 bool equals(const uint8_t(&arr)[SIZE], const ::so::ByteBuffer &bb) 
 {
@@ -180,7 +187,9 @@ bool equals(const uint8_t(&arr)[SIZE], const ::so::ByteBuffer &bb)
 
 inline bool equals(const uint8_t *arr, size_t size, const ::so::ByteBuffer &bb)
 {
-  return arr != nullptr && size == bb.size() && std::equal(bb.begin(), bb.end(), arr);
+  return size == bb.size()
+    && (arr == nullptr ? bb.get() == nullptr : bb.get() != nullptr)
+    && std::equal(bb.begin(), bb.end(), arr);
 }
 
 inline bool filesEqual(const std::string &file_1, const std::string &file_2)
