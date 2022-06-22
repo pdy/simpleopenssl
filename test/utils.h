@@ -167,6 +167,13 @@ inline bool equals(const std::string &str, const ::so::StringBuffer &strBuff)
   return str.size() == strBuff.size() && std::equal(str.begin(), str.end(), strBuff.begin());
 }
 
+inline bool equals(const char *str, size_t size, const ::so::StringBuffer &strBuffer)
+{
+  return size == strBuffer.size()
+    && (str == nullptr ? strBuffer.get() == nullptr : strBuffer.get() != nullptr)
+    && std::equal(strBuffer.begin(), strBuffer.end(), str);
+}
+
 inline bool equals(char *str, size_t size, const ::so::StringBuffer &strBuffer)
 {
   return size == strBuffer.size()

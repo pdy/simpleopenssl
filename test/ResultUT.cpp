@@ -40,7 +40,7 @@ TEST(ResultUT, okUsageWithBytes)
   EXPECT_TRUE(expected);
   EXPECT_TRUE(expected.ok());
   EXPECT_EQ(0ul, expected.opensslErrCode);
-  EXPECT_TRUE(utils::equals("ok", expected.msg()));
+  EXPECT_TRUE(utils::equals("ok", 2, expected.msg()));
   EXPECT_EQ((::so::ByteBuffer{0x00, 0x01}), expected.value);
   EXPECT_EQ((::so::ByteBuffer{0x00, 0x01}), expected.value);
 }
@@ -67,7 +67,7 @@ TEST(ResultUT, okUsageWithUptrs)
   EXPECT_TRUE(expected);
   EXPECT_TRUE(expected.ok());
   EXPECT_EQ(0ul, expected.opensslErrCode);
-  EXPECT_TRUE(utils::equals("ok", expected.msg()));
+  EXPECT_TRUE(utils::equals("ok", 2, expected.msg()));
 }
 
 TEST(ResultUT, errUsageWithUptrs)
@@ -89,7 +89,7 @@ TEST(ResultUT, okUsageWithVoid)
   // THEN  
   EXPECT_TRUE(expected);
   EXPECT_EQ(0ul, expected.opensslErrCode);
-  EXPECT_TRUE(utils::equals("ok", expected.msg()));
+  EXPECT_TRUE(utils::equals("ok", 2, expected.msg()));
 }
 
 TEST(ResultUT, errUsageWithVoid)
@@ -112,7 +112,7 @@ TEST(ResultUT, okUsageWithUnsignedLong)
   EXPECT_TRUE(expected.ok());
   EXPECT_EQ(10ul, expected.value);
   EXPECT_EQ(0ul, expected.opensslErrCode);
-  EXPECT_TRUE(utils::equals("ok", expected.msg()));
+  EXPECT_TRUE(utils::equals("ok", 2, expected.msg()));
 }
 
 TEST(ResultUT, errUsageWithUnsignedLong)
