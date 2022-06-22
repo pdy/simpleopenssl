@@ -167,16 +167,17 @@ inline bool equals(const std::string &str, const ::so::StringBuffer &strBuff)
   return str.size() == strBuff.size() && std::equal(str.begin(), str.end(), strBuff.begin());
 }
 
-inline bool equals(const char *nullTerminated, const ::so::StringBuffer &strBuff)
-{
-  return equals(std::string(nullTerminated), strBuff);
-}
-
 inline bool equals(char *str, size_t size, const ::so::StringBuffer &strBuffer)
 {
   return size == strBuffer.size()
     && (str == nullptr ? strBuffer.get() == nullptr : strBuffer.get() != nullptr)
     && std::equal(strBuffer.begin(), strBuffer.end(), str);
+}
+
+template<size_t SIZE>
+bool equals(const char(&arr)[SIZE], const ::so::StringBuffer &bb) 
+{
+  return SIZE == bb.size() && std::equal(bb.begin(), bb.end(), arr);
 }
 
 template<size_t SIZE>

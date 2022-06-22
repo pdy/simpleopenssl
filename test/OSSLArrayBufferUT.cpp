@@ -38,7 +38,7 @@ struct Type
   int x{0},y{0};
 };
 
-TEST(OSSLArrayBuffer, ArrayBuffer_TryCustomType)
+TEST(OSSLArrayBuffer, DISABLED_ArrayBuffer_TryCustomType)
 {
   using TypeArray = internal::OSSLArrayBuffer<Type>;
   

@@ -27,6 +27,20 @@
 
 namespace so { namespace ut { namespace stringbuffer {
 
+namespace {
+  
+  template<size_t N>
+  StringBuffer initSB(const char(&arr)[N])
+  {
+    StringBuffer ret(N);
+    for(size_t i = 0; i < N; ++i)
+      ret[i] = arr[i];
+
+    return ret;
+  }
+
+} // namespace
+
 TEST(StringBuffer, CheckTypes)
 {
   EXPECT_TRUE((std::is_same<typename StringBuffer::value_type, char>::value));
@@ -76,7 +90,8 @@ TEST(StringBuffer, InitializerRelease)
 
 TEST(StringBuffer, CopyCtor)
 {
-  StringBuffer buff(3);
+  static constexpr char ARR[] = {0x01, 0x02, 0x03};
+  StringBuffer buff = initSB(ARR);
 
   StringBuffer copy(buff);
 
@@ -91,7 +106,8 @@ TEST(StringBuffer, CopyCtor)
 
 TEST(StringBuffer, IteratorCopyCtor)
 {
-  StringBuffer buff(3);
+  static constexpr char ARR[] = {0x01, 0x02, 0x03};
+  StringBuffer buff = initSB(ARR);
 
   StringBuffer copy(buff.begin(), buff.end());
 
@@ -106,7 +122,8 @@ TEST(StringBuffer, IteratorCopyCtor)
 
 TEST(StringBuffer, IteratorSizeCopyCtor)
 {
-  StringBuffer buff(3);
+  static constexpr char ARR[] = {0x01, 0x02, 0x03};
+  StringBuffer buff = initSB(ARR);
 
   StringBuffer copy(buff.begin(), buff.size());
 
@@ -121,7 +138,8 @@ TEST(StringBuffer, IteratorSizeCopyCtor)
 
 TEST(StringBuffer, MoveCtor)
 {
-  StringBuffer buff(3);
+  static constexpr char ARR[] = {0x01, 0x02, 0x03};
+  StringBuffer buff = initSB(ARR);
 
   StringBuffer copy(std::move(buff));
 
@@ -135,7 +153,6 @@ TEST(StringBuffer, MoveCtor)
 TEST(StringBuffer, CopyWithBegin)
 {
   const char ARRAY[3] = {0x01, 0x02, 0x03};
-
   StringBuffer buff(3);
 
   ASSERT_TRUE(buff);
@@ -157,7 +174,6 @@ TEST(StringBuffer, CopyWithBegin)
 TEST(StringBuffer, ReserveAndPushBackCopy)
 {
   const char ARRAY[3] = {0x01, 0x02, 0x03};
-
   StringBuffer buff; buff.reserve(3);
 
   ASSERT_TRUE(buff);
@@ -180,7 +196,6 @@ TEST(StringBuffer, ReserveAndPushBackCopy)
 TEST(StringBuffer, ReserveAndBackInserter)
 {
   const char ARRAY[3] = {0x01, 0x02, 0x03};
-
   StringBuffer buff; buff.reserve(3);
 
   ASSERT_TRUE(buff);

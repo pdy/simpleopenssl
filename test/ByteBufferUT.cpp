@@ -27,6 +27,20 @@
 
 namespace so { namespace ut { namespace bytebuffer {
 
+namespace {
+  
+  template<size_t N>
+  ByteBuffer initBB(const uint8_t(&arr)[N])
+  {
+    ByteBuffer ret(N);
+    for(size_t i = 0; i < N; ++i)
+      ret[i] = arr[i];
+
+    return ret;
+  }
+
+} // namespace
+
 TEST(ByteBuffer, CheckTypes)
 {
   EXPECT_TRUE((std::is_same<typename ByteBuffer::value_type, uint8_t>::value));
@@ -76,7 +90,8 @@ TEST(ByteBuffer, InitializerRelease)
 
 TEST(ByteBuffer, CopyCtor)
 {
-  ByteBuffer buff(3);
+  static constexpr uint8_t ARR[] = {0x01, 0x02, 0x03};
+  ByteBuffer buff = initBB(ARR);
 
   ByteBuffer copy(buff);
 
@@ -91,7 +106,8 @@ TEST(ByteBuffer, CopyCtor)
 
 TEST(ByteBuffer, IteratorCopyCtor)
 {
-  ByteBuffer buff(3);
+  static constexpr uint8_t ARR[] = {0x01, 0x02, 0x03};
+  ByteBuffer buff = initBB(ARR);
 
   ByteBuffer copy(buff.begin(), buff.end());
 
@@ -106,7 +122,8 @@ TEST(ByteBuffer, IteratorCopyCtor)
 
 TEST(ByteBuffer, IteratorSizeCopyCtor)
 {
-  ByteBuffer buff(3);
+  static constexpr uint8_t ARR[] = {0x01, 0x02, 0x03};
+  ByteBuffer buff = initBB(ARR);
 
   ByteBuffer copy(buff.begin(), buff.size());
 
@@ -121,7 +138,8 @@ TEST(ByteBuffer, IteratorSizeCopyCtor)
 
 TEST(ByteBuffer, MoveCtor)
 {
-  ByteBuffer buff(3);
+  static constexpr uint8_t ARR[] = {0x01, 0x02, 0x03};
+  ByteBuffer buff = initBB(ARR);
 
   ByteBuffer copy(std::move(buff));
 
@@ -135,7 +153,6 @@ TEST(ByteBuffer, MoveCtor)
 TEST(ByteBuffer, CopyWithBegin)
 {
   const uint8_t ARRAY[3] = {0x01, 0x02, 0x03};
-
   ByteBuffer buff(3);
 
   ASSERT_TRUE(buff);
@@ -157,7 +174,6 @@ TEST(ByteBuffer, CopyWithBegin)
 TEST(ByteBuffer, ReserveAndPushBackCopy)
 {
   const uint8_t ARRAY[3] = {0x01, 0x02, 0x03};
-
   ByteBuffer buff; buff.reserve(3);
 
   ASSERT_TRUE(buff);
@@ -180,7 +196,6 @@ TEST(ByteBuffer, ReserveAndPushBackCopy)
 TEST(ByteBuffer, ReserveAndBackInserter)
 {
   const uint8_t ARRAY[3] = {0x01, 0x02, 0x03};
-
   ByteBuffer buff; buff.reserve(3);
 
   ASSERT_TRUE(buff);
