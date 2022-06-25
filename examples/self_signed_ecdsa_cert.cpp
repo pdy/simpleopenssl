@@ -26,7 +26,7 @@
 #include <ctime>
 #include <ios>
 #define SO_IMPLEMENTATION
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 #include "simplelog/simplelog.h"
 #include <iomanip>
 #include <fstream>

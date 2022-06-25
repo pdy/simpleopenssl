@@ -22,7 +22,7 @@
 */
 
 #include <gtest/gtest.h>
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 #include <numeric>
 #include "utils.h"
 namespace so { namespace ut { namespace bignum {

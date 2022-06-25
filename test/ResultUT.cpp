@@ -25,7 +25,7 @@
 
 #include <gtest/gtest.h>
 #define SO_IMPLEMENTATION
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 #include "utils.h"
 
 namespace so { namespace ut { namespace expected {

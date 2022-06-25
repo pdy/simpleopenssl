@@ -22,7 +22,7 @@
 */
 
 #include <gtest/gtest.h>
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 #include "utils.h"
 #include <sstream>
 #include <algorithm>

@@ -23,7 +23,7 @@
 
 #include <cmdline.h>
 #define SO_IMPLEMENTATION
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 
 #include <iostream>
 #include <iterator>

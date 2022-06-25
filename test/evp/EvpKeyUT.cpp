@@ -23,7 +23,7 @@
 
 #include <gtest/gtest.h>
 #include <functional>
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 
 #include "../precalculated.h"
 

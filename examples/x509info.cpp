@@ -24,7 +24,7 @@
 #include <cmdline.h> 
 #include <ctime>
 #define SO_IMPLEMENTATION
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 #include "simplelog/simplelog.h"
 #include <iomanip>
 

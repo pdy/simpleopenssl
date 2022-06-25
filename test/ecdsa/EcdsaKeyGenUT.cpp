@@ -23,7 +23,7 @@
 
 
 #include <gtest/gtest.h>
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 
 namespace so { namespace ut { namespace ecdsa {
 
