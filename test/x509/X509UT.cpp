@@ -25,7 +25,7 @@
 #include <gtest/gtest.h>
 
 #include <numeric>
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 
 #include "../precalculated.h"
 #include "../utils.h"

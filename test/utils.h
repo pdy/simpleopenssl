@@ -36,7 +36,7 @@
 
 #include "simplelog.h"
 #include "platform.h"
-#include "simpleopenssl/simpleopenssl.h"
+#include "simpleopenssl/simpleopenssl.hpp"
 
 
 namespace so { namespace ut { namespace utils {

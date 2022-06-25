@@ -85,15 +85,15 @@ std::string timetPrettyString(std::time_t time)
 ```
 
 # Usage
-1. Copy [simpleopenssl.h](https://raw.githubusercontent.com/severalgh/simpleopenssl/master/include/simpleopenssl/simpleopenssl.h) to your build tree.
+1. Copy [simpleopenssl.hpp](https://raw.githubusercontent.com/severalgh/simpleopenssl/master/include/simpleopenssl/simpleopenssl.hpp) to your build tree.
 2. Add ```#define SO_IMPLEMENTATION``` in exacly one place just before the include to specify where implementation should be placed for the linker:
 
     ```
     #define SO_IMPLEMENTATION
-    #include "simpleopenssl.h"
+    #include "simpleopenssl.hpp"
     ```
     
-3. Use plain ```#include "simpleopenssl.h"``` in every other place.
+3. Use plain ```#include "simpleopenssl.hpp"``` in every other place.
  
 # Dependencies
 * OpenSSL version 1.1.1 

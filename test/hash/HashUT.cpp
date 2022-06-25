@@ -21,7 +21,7 @@
 *
 */
 
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 
 #include <gtest/gtest.h>
 

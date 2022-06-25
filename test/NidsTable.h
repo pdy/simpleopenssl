@@ -24,7 +24,7 @@
 */
 
 
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 
 // Generated with devtools/opensslinids
 

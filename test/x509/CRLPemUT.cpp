@@ -23,7 +23,7 @@
 
 #include <gtest/gtest.h>
 
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 #include "../precalculated.h"
 
 namespace so { namespace ut { namespace x509 {
