@@ -27,7 +27,7 @@
 #ifndef PDY_SO_PRECALCULATED_H_
 #define PDY_SO_PRECALCULATED_H_
 
-#include "simpleopenssl/simpleopenssl.h"
+#include "simpleopenssl/simpleopenssl.hpp"
 #include <string>
 #include <algorithm>
 
