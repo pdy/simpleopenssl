@@ -1,5 +1,5 @@
-#ifndef PDY_SIMPLEOPENSSL_H_
-#define PDY_SIMPLEOPENSSL_H_
+#ifndef PDY_SIMPLEOPENSSL_HPP_
+#define PDY_SIMPLEOPENSSL_HPP_
 
 /*
 *  MIT License
@@ -27,6 +27,7 @@
 */
 
 
+#include <ostream>
 #if __cpp_initializer_lists >= 200806
 # define PDY_SO_HAS_INIT_LIST
 #endif
@@ -201,8 +202,8 @@ namespace internal {
     size_t m_size{ 0 };
     size_t m_capacity{ 0 };
     T *m_memory {nullptr};
-
-  public:
+  
+public:
 
     using memory_type = decltype(m_memory);
     using deleter_type = typename Mallocator<T>::deleter_type;
@@ -213,7 +214,7 @@ namespace internal {
     using iterator = pointer_type;
     using const_iterator = const pointer_type;
 
-    ArrayBuffer() = default;
+    ArrayBuffer() noexcept = default;
     ArrayBuffer(ArrayBuffer<T, Allocator> &&other) noexcept
       : ArrayBuffer()
     {
@@ -258,13 +259,14 @@ namespace internal {
       m_capacity = 0;
     }
 
-    static ArrayBuffer<T, Allocator>
-    take(pointer_type ptr, size_type size)
+    /*
+    static ArrayBuffer<T, Allocator> take(pointer_type ptr, size_type size)
     {
       // we're using private assign ctor whish is very similar to one of the copy ctor
       // so I prefer to have static factory method to lessen chance of mistake
       return ArrayBuffer<T, Allocator>(size, ptr);
     }
+    */
 
     explicit operator bool() const noexcept { return m_memory != nullptr; }
 
@@ -370,19 +372,36 @@ namespace internal {
       swap(lhs.m_size, rhs.m_size);
       swap(lhs.m_capacity, rhs.m_capacity);
       swap(lhs.m_memory, rhs.m_memory);
-    }
+    } 
 
-  private:
+  protected: 
     explicit ArrayBuffer(size_type size, pointer_type ptr)
       : m_size{size}, m_capacity{size}, m_memory(ptr) 
     {}
+
   };
  
-  template<typename T>
-  using OSSLArrayBuffer = internal::ArrayBuffer<T, internal::Mallocator<T>>;
+  template<typename T, typename Derived = internal::ArrayBuffer<T, internal::Mallocator<T>>>
+  class OSSLArrayBuffer : public internal::ArrayBuffer<T, internal::Mallocator<T>>
+  {
+    using Base = internal::ArrayBuffer<T, internal::Mallocator<T>>;
+ 
+  protected: 
+    explicit OSSLArrayBuffer(typename Base::size_type size, typename Base::pointer_type ptr)
+      : Base(size, ptr)
+    {}
 
-  template<typename T>
-  std::ostream& operator<<(std::ostream &oss, const OSSLArrayBuffer<T> &buff)
+  public:
+    using Base::Base;
+  
+    static Derived take(typename Base::pointer_type ptr, typename Base::size_type size)
+    {
+      return Derived(size, ptr); 
+    } 
+  };
+
+  template<typename T, typename Derived>
+  std::ostream& operator<<(std::ostream &oss, const OSSLArrayBuffer<T, Derived> &buff)
   {
     for(const auto &el : buff)
       oss << el;
@@ -409,8 +428,45 @@ namespace internal {
 } //namespace internal
 
 
-using ByteBuffer = internal::OSSLArrayBuffer<uint8_t>;
-using StringBuffer = internal::OSSLArrayBuffer<char>;
+class ByteBuffer final : public internal::OSSLArrayBuffer<uint8_t, ByteBuffer>
+{
+  using Base = internal::OSSLArrayBuffer<uint8_t, ByteBuffer>;
+
+public:
+  using Base::Base;
+};
+
+class StringBuffer final : public internal::OSSLArrayBuffer<char, StringBuffer>
+{
+  using Base = internal::OSSLArrayBuffer<char, StringBuffer>;
+
+  explicit StringBuffer(Base::size_type len, Base::pointer_type ptr)
+    : Base(len, ptr)
+  {}
+
+public:
+  using Base::Base;
+
+  StringBuffer(const char *c_str, Base::size_type len)
+    : Base(const_cast<char*>(c_str), len)
+  {}
+  
+  explicit StringBuffer(const char *c_str)
+    : StringBuffer(c_str, static_cast<Base::size_type>(strlen(c_str)))
+  {} 
+  
+  static StringBuffer take(const char *c_str, size_t len)
+  {
+    return StringBuffer(len, const_cast<char*>(c_str)); 
+  }
+
+  /*
+  static StringBuffer take(char *c_str, size_t len)
+  {
+    return StringBuffer(len, c_str); 
+  }
+  */
+};
 
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
 namespace internal {                                  \

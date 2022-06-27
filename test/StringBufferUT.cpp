@@ -88,6 +88,20 @@ TEST(StringBuffer, InitializerRelease)
   EXPECT_EQ(0x03, buff[2]);
 }
 
+TEST(StringBuffer, CharCopyCtor)
+{
+  char ARR[] = {'c', 'h', 'a', 'r'};
+
+  StringBuffer buff(ARR, 4);
+
+  ASSERT_TRUE(buff);
+  EXPECT_EQ(4, buff.capacity());
+  EXPECT_EQ(4, buff.size());
+  EXPECT_TRUE(buff.get() != nullptr);
+  EXPECT_TRUE(buff.data() != nullptr);
+  EXPECT_TRUE(utils::equals(ARR, 4, buff));
+}
+
 TEST(StringBuffer, CopyCtor)
 {
   static constexpr char ARR[] = {0x01, 0x02, 0x03};
@@ -148,6 +162,56 @@ TEST(StringBuffer, MoveCtor)
   EXPECT_EQ(3, copy.size());
   EXPECT_TRUE(copy.get() != nullptr);
   EXPECT_TRUE(copy.data() != nullptr);
+}
+
+TEST(StringBuffer, C_StrCopyCtor)
+{
+  const char *C_STR = "C_STR";
+
+  StringBuffer buff(C_STR);
+  
+  ASSERT_TRUE(buff);
+  EXPECT_TRUE(buff.data() != nullptr); 
+  EXPECT_TRUE(buff.get() != nullptr); 
+  EXPECT_EQ(buff.size(), 5); 
+  EXPECT_EQ(buff.capacity(), 5); 
+  EXPECT_TRUE(utils::equals(C_STR, strlen(C_STR), buff));
+}
+
+TEST(StringBuffer, C_StrCopyCtor_2)
+{
+  StringBuffer buff("C_STR");
+ 
+  ASSERT_TRUE(buff);
+  EXPECT_TRUE(buff.data() != nullptr); 
+  EXPECT_TRUE(buff.get() != nullptr); 
+  EXPECT_EQ(buff.size(), 5); 
+  EXPECT_EQ(buff.capacity(), 5); 
+  EXPECT_TRUE(utils::equals("C_STR", 5, buff));
+}
+
+TEST(StringBuffer, C_StrCopyCtorWithSize)
+{
+  StringBuffer buff("C_STR", 5);
+ 
+  ASSERT_TRUE(buff);
+  EXPECT_TRUE(buff.data() != nullptr); 
+  EXPECT_TRUE(buff.get() != nullptr); 
+  EXPECT_EQ(buff.size(), 5); 
+  EXPECT_EQ(buff.capacity(), 5);  
+  EXPECT_TRUE(utils::equals("C_STR", 5, buff));
+}
+
+TEST(StringBuffer, C_StrCopyCtorWithSize_2)
+{
+  StringBuffer buff("C_STR", 4);
+ 
+  ASSERT_TRUE(buff);
+  EXPECT_TRUE(buff.data() != nullptr); 
+  EXPECT_TRUE(buff.get() != nullptr); 
+  EXPECT_EQ(buff.size(), 4); 
+  EXPECT_EQ(buff.capacity(), 4);  
+  EXPECT_TRUE(utils::equals("C_ST", 4, buff));
 }
 
 TEST(StringBuffer, CopyWithBegin)
@@ -214,14 +278,27 @@ TEST(StringBuffer, ReserveAndBackInserter)
   EXPECT_TRUE(utils::equals(ARRAY, buff));
 }
 
-TEST(StringBuffer, TakeResource)
+TEST(StringBuffer, TakeResource_CharPtr)
 {
   char *rc = reinterpret_cast<char*>(OPENSSL_malloc(3));
   rc[0] = 0x01;
   rc[1] = 0x02;
   rc[2] = 0x03;
-
+ 
   auto bt = StringBuffer::take(rc, 3);
+
+  ASSERT_EQ(3, bt.size());
+  EXPECT_TRUE(utils::equals(rc, 3, bt));
+}
+
+TEST(StringBuffer, TakeResource_ConstCharPtr)
+{
+  char *rc = reinterpret_cast<char*>(OPENSSL_malloc(3));
+  rc[0] = 0x01;
+  rc[1] = 0x02;
+  rc[2] = 0x03;
+ 
+  auto bt = StringBuffer::take(const_cast<const char*>(rc), 3);
 
   ASSERT_EQ(3, bt.size());
   EXPECT_TRUE(utils::equals(rc, 3, bt));
