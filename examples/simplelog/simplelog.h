@@ -30,7 +30,7 @@
 #include <type_traits>
 #include <sstream>
 #include <iostream>
-#include <simpleopenssl/simpleopenssl.h>
+#include <simpleopenssl/simpleopenssl.hpp>
 
 class SimpleLog
 {
