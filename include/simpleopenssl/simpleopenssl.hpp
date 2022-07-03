@@ -259,7 +259,6 @@ namespace asn1 {
 
   Result<ASN1_INTEGER_uptr> encodeInteger(const uint8_t *bt, size_t size);
   Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
-//  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
 } // namepsace asn1
@@ -327,8 +326,8 @@ namespace ecdsa {
   Result<std::string> convertPrivKeyToPem(EC_KEY &ec);
   Result<std::string> convertPubKeyToPem(EC_KEY &ec);
 
-  Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der);
-  Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der);
+  Result<EC_KEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size);
+  Result<EC_KEY_uptr> convertDerToPubKey(const uint8_t *der, size_t size);
   Result<Bytes> convertPrivKeyToDer(EC_KEY &ec);
   Result<Bytes> convertPubKeyToDer(EC_KEY &ec);
 
@@ -2835,14 +2834,14 @@ namespace ecdsa {
     return internal::convertToPem(PEM_write_bio_EC_PUBKEY, &pubKey);
   }
 
-  Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<EC_KEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size)
   {
-    return internal::convertDerToKey<EC_KEY_uptr>(d2i_ECPrivateKey, der.data(), der.size());
+    return internal::convertDerToKey<EC_KEY_uptr>(d2i_ECPrivateKey, der, size);
   }
 
-  Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der)
+  Result<EC_KEY_uptr> convertDerToPubKey(const uint8_t *der, size_t size)
   {
-    return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der.data(), der.size());
+    return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der, size);
   } 
   
   Result<Bytes> convertPrivKeyToDer(EC_KEY &ec)
