@@ -168,7 +168,7 @@ TEST(EcdsaKeyConversionsUT, privKey2DerConversion_ok)
 TEST(EcdsaKeyConversionsUT, derToPrivKeyConversion_ok)
 {
   // WHEN
-  auto maybePrivKey = ecdsa::convertDerToPrivKey(data::secp256k1PrivKeyDer);
+  auto maybePrivKey = ecdsa::convertDerToPrivKey(data::secp256k1PrivKeyDer.data(), data::secp256k1PrivKeyDer.size());
 
   // THEN
   ASSERT_TRUE(maybePrivKey);
@@ -179,7 +179,7 @@ TEST(EcdsaKeyConversionsUT, derToPrivKeyConversion_ok)
 TEST(EcdsaKeyConversionsUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
 {
   // WHEN
-  auto maybePrivKey = rsa::convertDerToPrivKey(data::secp256PubKeyDer);
+  auto maybePrivKey = ecdsa::convertDerToPrivKey(data::secp256PubKeyDer.data(), data::secp256PubKeyDer.size());
 
   // THEN
   ASSERT_FALSE(maybePrivKey);
@@ -206,7 +206,7 @@ TEST(EcdsaKeyConversionsUT, pubKey2DerConversion_ok)
 TEST(EcdsaKeyConversionsUT, derToPubKeyConversion_ok)
 {
   // WHEN
-  auto maybePubKey = ecdsa::convertDerToPubKey(data::secp256PubKeyDer);
+  auto maybePubKey = ecdsa::convertDerToPubKey(data::secp256PubKeyDer.data(), data::secp256PubKeyDer.size());
 
   // THEN
   ASSERT_TRUE(maybePubKey);

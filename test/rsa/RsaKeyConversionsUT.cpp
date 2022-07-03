@@ -186,7 +186,7 @@ TEST(RsaKeyConversionsUT, privKey2DerConversion_ok)
 TEST(RsaKeyConversionsUT, derToPrivKeyConversion_ok)
 {
   // WHEN
-  auto maybePrivKey = rsa::convertDerToPrivKey(data::rsa3072PrivKeyDer);
+  auto maybePrivKey = rsa::convertDerToPrivKey(data::rsa3072PrivKeyDer.data(), data::rsa3072PrivKeyDer.size());
   auto maybePrivKey_2 = rsa::convertDerToPrivKey(data::rsa3072PrivKeyDer.data(), data::rsa3072PrivKeyDer.size());
 
   // THEN
@@ -201,7 +201,7 @@ TEST(RsaKeyConversionsUT, derToPrivKeyConversion_ok)
 TEST(RsaKeyConversionsUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
 {
   // WHEN
-  auto maybePrivKey = rsa::convertDerToPrivKey(data::rsa3072PubKeyDer);
+  auto maybePrivKey = rsa::convertDerToPrivKey(data::rsa3072PubKeyDer.data(), data::rsa3072PubKeyDer.size());
   auto maybePrivKey_2 = rsa::convertDerToPrivKey(data::rsa3072PubKeyDer.data(), data::rsa3072PubKeyDer.size());
 
   // THEN
@@ -245,7 +245,7 @@ TEST(RsaKeyConversionsUT, pubKey2DerConversion_FromDerPriv)
 TEST(RsaKeyConversionsUT, derToPubKeyConversion_ok)
 {
   // WHEN
-  auto maybePubKey = rsa::convertDerToPubKey(data::rsa3072PubKeyDer);
+  auto maybePubKey = rsa::convertDerToPubKey(data::rsa3072PubKeyDer.data(), data::rsa3072PubKeyDer.size());
   auto maybePubKey_2 = rsa::convertDerToPubKey(data::rsa3072PubKeyDer.data(), data::rsa3072PubKeyDer.size());
 
   // THEN

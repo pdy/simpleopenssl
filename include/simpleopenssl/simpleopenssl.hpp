@@ -257,16 +257,16 @@ namespace asn1 {
   Result<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time);
   Result<std::string> convertToISO8601(const ASN1_TIME &asnTime);
 
-  Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
+  Result<ASN1_INTEGER_uptr> encodeInteger(const uint8_t *bt, size_t size);
   Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
-  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
 } // namepsace asn1
 
 namespace bignum {
   Result<BIGNUM_uptr> create();
 
-  Result<BIGNUM_uptr> convertToBignum(const Bytes &bt);
+  Result<BIGNUM_uptr> convertToBignum(const uint8_t *bt, size_t size);
   Result<Bytes> convertToBytes(const BIGNUM &bn);
   
   Result<size_t> getByteLen(const BIGNUM &bn);
@@ -326,14 +326,14 @@ namespace ecdsa {
   Result<std::string> convertPrivKeyToPem(EC_KEY &ec);
   Result<std::string> convertPubKeyToPem(EC_KEY &ec);
 
-  Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der);
-  Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der);
+  Result<EC_KEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size);
+  Result<EC_KEY_uptr> convertDerToPubKey(const uint8_t *der, size_t size);
   Result<Bytes> convertPrivKeyToDer(EC_KEY &ec);
   Result<Bytes> convertPubKeyToDer(EC_KEY &ec);
 
   Result<Bytes> convertToDer(const Signature &signature); 
   Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
-  Result<Signature> convertToSignature(const Bytes &derSigBytes);
+  Result<Signature> convertToSignature(const uint8_t *derSigBytes, size_t size);
   Result<std::string> convertCurveToString(Curve curve);
 
   Result<bool> checkKey(const EC_KEY &ecKey);
@@ -373,8 +373,8 @@ namespace evp {
   Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
 
-  Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der);
-  Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size);
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const uint8_t *der, size_t size);
 
   Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
   Result<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
@@ -1662,9 +1662,7 @@ namespace rsa {
   Result<std::string> convertPrivKeyToPem(RSA &rsa);
   Result<std::string> convertPubKeyToPem(RSA &rsa);
 
-  Result<RSA_uptr> convertDerToPrivKey(const Bytes &der);
   Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size);
-  Result<RSA_uptr> convertDerToPubKey(const Bytes &der);
   Result<RSA_uptr> convertDerToPubKey(const uint8_t der[], size_t size);
   
   Result<Bytes> convertPrivKeyToDer(RSA &rsa);
@@ -2716,9 +2714,9 @@ namespace asn1 {
     return internal::ok(std::string(buff));
   }
 
-  Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
+  Result<ASN1_INTEGER_uptr> encodeInteger(const uint8_t *bt, size_t size)
   {
-    auto bn = bignum::convertToBignum(bt);
+    auto bn = bignum::convertToBignum(bt, size);
     if(!bn)
       return internal::err<ASN1_INTEGER_uptr>(); 
 
@@ -2726,9 +2724,9 @@ namespace asn1 {
     if(!integer)
       return internal::err<ASN1_INTEGER_uptr>();
 
-    return internal::ok(std::move(integer)); 
+    return internal::ok(std::move(integer));
   }
- 
+  
   Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical)
   {
     auto ret = make_unique(OBJ_txt2obj(nameOrNumerical.c_str(), 0));
@@ -2738,13 +2736,13 @@ namespace asn1 {
     return internal::ok(std::move(ret));
   }
 
-  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size)
   {
     auto ret = make_unique(ASN1_OCTET_STRING_new());
     if(!ret)
       return internal::err<ASN1_OCTET_STRING_uptr>();
 
-    if(1 != ASN1_OCTET_STRING_set(ret.get(), bt.data(), static_cast<int>(bt.size())))
+    if(1 != ASN1_OCTET_STRING_set(ret.get(), bt, static_cast<int>(size)))
       return internal::err<ASN1_OCTET_STRING_uptr>();
 
     return internal::ok(std::move(ret));
@@ -2752,7 +2750,7 @@ namespace asn1 {
   
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
   {
-    return encodeOctet(internal::bytes::fromString(str));
+    return encodeOctet(reinterpret_cast<const uint8_t*>(str.data()), str.size());
   } 
 } // namespace asn1
 
@@ -2777,15 +2775,15 @@ namespace bignum {
     return internal::ok(std::move(ret));
   }
 
-  Result<BIGNUM_uptr> convertToBignum(const Bytes &bt)
+  Result<BIGNUM_uptr> convertToBignum(const uint8_t *bt, size_t size)
   {
-    auto ret = make_unique(BN_bin2bn(bt.data(), static_cast<int>(bt.size()), nullptr));
+    auto ret = make_unique(BN_bin2bn(bt, static_cast<int>(size), nullptr));
     if(!ret)
       return internal::err<BIGNUM_uptr>();
 
     return internal::ok(std::move(ret));
   }
-
+  
   Result<size_t> getByteLen(const BIGNUM &bn)
   {
     const int bnlen = BN_num_bytes(&bn);
@@ -2834,14 +2832,14 @@ namespace ecdsa {
     return internal::convertToPem(PEM_write_bio_EC_PUBKEY, &pubKey);
   }
 
-  Result<EC_KEY_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<EC_KEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size)
   {
-    return internal::convertDerToKey<EC_KEY_uptr>(d2i_ECPrivateKey, der.data(), der.size());
+    return internal::convertDerToKey<EC_KEY_uptr>(d2i_ECPrivateKey, der, size);
   }
 
-  Result<EC_KEY_uptr> convertDerToPubKey(const Bytes &der)
+  Result<EC_KEY_uptr> convertDerToPubKey(const uint8_t *der, size_t size)
   {
-    return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der.data(), der.size());
+    return internal::convertDerToKey<EC_KEY_uptr>(d2i_EC_PUBKEY, der, size);
   } 
   
   Result<Bytes> convertPrivKeyToDer(EC_KEY &ec)
@@ -2890,11 +2888,11 @@ namespace ecdsa {
 
   Result<Bytes> convertToDer(const Signature &signature)
   {
-    auto r = bignum::convertToBignum(signature.r);
+    auto r = bignum::convertToBignum(signature.r.data(), signature.r.size());
     if(!r)
       return internal::err<Bytes>(r.opensslErrCode);
 
-    auto s = bignum::convertToBignum(signature.s);
+    auto s = bignum::convertToBignum(signature.s.data(), signature.s.size());
     if(!s)
       return internal::err<Bytes>(s.opensslErrCode);
  
@@ -2917,10 +2915,9 @@ namespace ecdsa {
     return internal::ok(std::move(ret));
   }
 
-  Result<Signature> convertToSignature(const Bytes &derSigBytes)
+  Result<Signature> convertToSignature(const uint8_t *derSigBytes, size_t size)
   {
-    auto *derIt = derSigBytes.data();
-    auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigBytes.size())));
+    auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derSigBytes, static_cast<long>(size)));
     if(!sig)
       return internal::err<Signature>();
 
@@ -3167,14 +3164,14 @@ namespace evp {
     return internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
   }
 
-  Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size)
   {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_AutoPrivateKey, der.data(), der.size());
+    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_AutoPrivateKey, der, size);
   }
 
-  Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der)
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const uint8_t *der, size_t size)
   {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der.data(), der.size());
+    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der, size);
   }
 
   Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey)
@@ -3474,16 +3471,6 @@ namespace rsa {
   Result<std::string> convertPubKeyToPem(RSA &pubKey)
   {
     return internal::convertToPem(PEM_write_bio_RSA_PUBKEY, &pubKey);
-  }
- 
-  Result<RSA_uptr> convertDerToPrivKey(const Bytes &der)
-  {
-    return internal::convertDerToKey<RSA_uptr>(d2i_RSAPrivateKey, der.data(), der.size());
-  }
-
-  Result<RSA_uptr> convertDerToPubKey(const Bytes &der)
-  {
-    return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der.data(), der.size());
   }
   
   Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size)
@@ -4099,7 +4086,7 @@ namespace x509 {
 
   Result<void> setExtension(X509 &cert, const CertExtension &extension)
   {
-    auto data = asn1::encodeOctet(extension.data);
+    auto data = asn1::encodeOctet(extension.data.data(), extension.data.size());
     if(!data)
       return internal::errVoid(data.opensslErrCode);
 
@@ -4143,7 +4130,7 @@ namespace x509 {
  
   Result<void> setSerial(X509 &cert, const Bytes &bytes)
   {
-    auto integer = asn1::encodeInteger(bytes);
+    auto integer = asn1::encodeInteger(bytes.data(), bytes.size());
     if(!integer)
       return internal::errVoid(integer.opensslErrCode);
 

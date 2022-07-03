@@ -36,7 +36,7 @@ TEST(BignumUT, convertersAPIIntegrityShouldSuccess)
   std::vector<uint8_t> buffer(SIZE);
   std::iota(buffer.begin(), buffer.end(), 0x7f);
 
-  auto maybeBignum = bignum::convertToBignum(buffer);
+  auto maybeBignum = bignum::convertToBignum(buffer.data(), buffer.size());
   ASSERT_TRUE(maybeBignum);
   auto bignum = maybeBignum.moveValue();
   ASSERT_EQ(SIZE, bignum::getByteLen(*bignum).value);

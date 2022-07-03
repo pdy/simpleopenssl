@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ TEST(ecdsa, derSignatureBytesToSignatureStruct)
   const ecdsa::Signature expected { data::signature_sha256_R, data::signature_sha256_S };
 
   // WHEN
-  auto maybeSig = ecdsa::convertToSignature(data::signature_sha256);
+  auto maybeSig = ecdsa::convertToSignature(data::signature_sha256.data(), data::signature_sha256.size());
   ASSERT_TRUE(maybeSig);
   
   auto sig = maybeSig.moveValue();

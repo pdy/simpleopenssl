@@ -33,7 +33,6 @@
 namespace so { namespace ut { namespace ecdsa {
 
 namespace ecdsa = ::so::ecdsa;
-namespace evp = ::so::evp;
 
 struct SignVerifyInput
 {
@@ -66,7 +65,7 @@ TEST_P(EcdsaSignVerifyUT, verify_AgainstPrecalculatedSignature)
   ASSERT_TRUE(maybeKeyDer);
   auto keyPem = maybeKeyDer.moveValue();
 
-  auto maybeDerKey = ecdsa::convertDerToPubKey(input.pubKeyDer);
+  auto maybeDerKey = ecdsa::convertDerToPubKey(input.pubKeyDer.data(), input.pubKeyDer.size());
   ASSERT_TRUE(maybeDerKey);
   auto keyDer = maybeDerKey.moveValue();
 
@@ -89,7 +88,7 @@ TEST_P(EcdsaSignVerifyUT, signVerify_AgainstPrecalculatedKey)
   ASSERT_TRUE(maybeKeyPem);
   auto keyPem = maybeKeyPem.moveValue();
 
-  auto maybeKeyDer = ecdsa::convertDerToPrivKey(input.privKeyDer);
+  auto maybeKeyDer = ecdsa::convertDerToPrivKey(input.privKeyDer.data(), input.privKeyDer.size());
   ASSERT_TRUE(maybeKeyPem);
   auto keyDer = maybeKeyDer.moveValue();
 
