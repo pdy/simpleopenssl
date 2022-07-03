@@ -201,7 +201,7 @@ TEST(X509CertExtensionsUT, addCustomExtensionAPIIntegrity)
   }; 
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-  auto maybeData = so::asn1::encodeOctet(expected.data);
+  auto maybeData = so::asn1::encodeOctet(expected.data.data(), expected.data.size());
   ASSERT_TRUE(maybeData);
   auto data = maybeData.moveValue();
 
@@ -229,7 +229,7 @@ TEST(X509CertExtensionsUT, addCustomExtensionUsingLibraryStructure)
   }; 
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-  auto maybeData = so::asn1::encodeOctet(expected.data);
+  auto maybeData = so::asn1::encodeOctet(expected.data.data(), expected.data.size());
   ASSERT_TRUE(maybeData);
   auto data = maybeData.moveValue();
 
@@ -256,7 +256,7 @@ TEST(X509CertExtensionsUT, addExtensionUsingLibraryStructure)
   }; 
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-  auto maybeData = so::asn1::encodeOctet(expected.data);
+  auto maybeData = so::asn1::encodeOctet(expected.data.data(), expected.data.size());
   ASSERT_TRUE(maybeData);
   auto data = maybeData.moveValue();
 
@@ -288,7 +288,7 @@ TEST(X509CertExtensionsUT, addCustomExtensionAndGetByOID_APIIntegrity)
   }; 
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-  auto maybeData = so::asn1::encodeOctet(expected.data);
+  auto maybeData = so::asn1::encodeOctet(expected.data.data(), expected.data.size());
   ASSERT_TRUE(maybeData);
   auto data = maybeData.moveValue();
 
@@ -316,7 +316,7 @@ TEST(X509CertExtensionsUT, addCustomExtensionToAlreadyExistingStandardExtensions
   auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
-  auto maybeData = so::asn1::encodeOctet(expected.data);
+  auto maybeData = so::asn1::encodeOctet(expected.data.data(), expected.data.size());
   ASSERT_TRUE(maybeData);
   auto data = maybeData.moveValue();
 

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2021 Pawel Drzycimski
+* Copyright (c) 2021 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 #include <filesystem>
 
 using namespace so;
+using namespace std::chrono;
 
 void saveToFile(std::string_view pemContent, const std::filesystem::path &filePath);
 void saveToFile(const so::Bytes &der, const std::filesystem::path &filePath);
@@ -94,12 +95,12 @@ int main(int argc, char *argv[])
   }
 
   const auto subject = x509::Subject{
-    "ECDSA Self Signed", // common name
-    "", // surname
-    "US", // country name
-    "", // locality
-    "", // state or province
-    "My Company", // organization name
+    .commonName = "ECDSA Self Signed", 
+    .surname = "", 
+    .countryName = "US", 
+    .localityName = "", 
+    .stateOrProvinceName = "", 
+    .organizationName = "My Company" 
   };
 
   if(const auto result = x509::setSubject(*cert.value, subject); !result)
@@ -114,12 +115,12 @@ int main(int argc, char *argv[])
     return 0;
   }
 
-  const auto now = std::chrono::system_clock::now();
-  const auto nowPlus30Days = now + std::chrono::hours(30 * 24); 
+  const auto now = system_clock::now();
+  const auto nowPlus30Days = now + hours(30 * 24); 
 
   const auto validity = x509::Validity{
-    std::chrono::system_clock::to_time_t(nowPlus30Days),
-    std::chrono::system_clock::to_time_t(now)
+    .notAfter = system_clock::to_time_t(nowPlus30Days),
+    .notBefore = system_clock::to_time_t(now)
   };
 
   if(const auto result = x509::setValidity(*cert.value, validity); !result)

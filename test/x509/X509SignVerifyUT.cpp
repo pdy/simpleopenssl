@@ -62,7 +62,7 @@ protected:
     X509_gmtime_adj(X509_get_notBefore(ret.value.get()), 0);
     X509_gmtime_adj(X509_get_notAfter(ret.value.get()), 0);
     X509_set_version(ret.value.get(), 2);
-    auto serialAsn1 = so::asn1::encodeInteger(serial);
+    auto serialAsn1 = so::asn1::encodeInteger(serial.data(), serial.size());
     X509_set_serialNumber(ret.value.get(), serialAsn1.value.get());
     X509_set_pubkey(ret.value.get(), m_key.get());
 

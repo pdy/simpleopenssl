@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 - 2022 Pawel Drzycimski
+* Copyright (c) 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -21,46 +21,31 @@
 *
 */
 
+#include <algorithm>
+#include <numeric>
 #include <gtest/gtest.h>
 #include <simpleopenssl/simpleopenssl.hpp>
 
 #include "../precalculated.h"
 #include "../utils.h"
 
-namespace so { namespace ut { namespace ecdsa {
+namespace so { namespace ut { namespace evp {
 
-namespace ecdsa = ::so::ecdsa;
+<<<<<<< HEAD
+TEST(EvpKeyConvUT, rsaPubDerToEVP)
+=======
+//namespace evp = ::so::evp;
 
-TEST(ecdsa, derSignatureBytesToSignatureStruct)
+TEST(EvpKeyConvUT, DISABLED_rsaPubDerToEVP)
+>>>>>>> master
 {
-  // GIVEN
-  const ecdsa::Signature expected { utils::copy(data::signature_sha256_R), utils::copy(data::signature_sha256_S) };
+  const auto &derPub = data::rsa3072PubKeyDer;
 
-  // WHEN
-  auto maybeSig = ecdsa::convertToSignature(data::signature_sha256.data(), data::signature_sha256.size());
-  ASSERT_TRUE(maybeSig);
-  
-  auto sig = maybeSig.moveValue();
+  const uint8_t *it = derPub.get();
+  auto evpPub = ::so::make_unique(d2i_PublicKey(EVP_PKEY_RSA, nullptr, &it, static_cast<long>(derPub.size())));
 
-  // THEN
-  EXPECT_EQ(expected, sig); 
+  EXPECT_TRUE(evpPub) << ::so::getLastErrString();
 }
 
-TEST(ecdsa, signatureStructToDerBytes)
-{
-  // GIVEN
-  const so::ByteBuffer expected = utils::copy(data::signature_sha256 );
-  const ecdsa::Signature sig { utils::copy(data::signature_sha256_R), utils::copy(data::signature_sha256_S) };
+}}} // so::ut::evp
 
-  // WHEN
-  auto maybeDer = ecdsa::convertToDer(sig);
-  ASSERT_TRUE(maybeDer);
-
-  auto der = maybeDer.moveValue();
-
-  // THEN
-  ASSERT_EQ(expected.size(), der.size());
-  EXPECT_TRUE(std::equal(expected.begin(), expected.end(), der.begin()));
-}
-
-}}} // namespace so { namespace ut { namespace ecdsa {

@@ -31,7 +31,7 @@
 
 namespace so { namespace ut { namespace evp {
 
-TEST(EvpKeyConvUT, rsaPubDerToEVP)
+TEST(EvpKeyConvUT, DISABLED_rsaPubDerToEVP)
 {
   const auto &derPub = data::rsa3072PubKeyDer;
 
