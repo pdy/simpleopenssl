@@ -37,7 +37,7 @@ namespace rsa = ::so::rsa;
 TEST(RsaKeyUT, getPublic)
 {
   // GIVEN
-  auto key = rsa::convertDerToPrivKey(data::rsa3072PrivKeyDer);
+  auto key = rsa::convertDerToPrivKey(data::rsa3072PrivKeyDer.data(), data::rsa3072PrivKeyDer.size());
   ASSERT_TRUE(key);
 
   // WHEN

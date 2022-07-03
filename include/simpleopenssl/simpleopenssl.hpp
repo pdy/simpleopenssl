@@ -373,8 +373,8 @@ namespace evp {
   Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
   Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
 
-  Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der);
-  Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der);
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size);
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const uint8_t *der, size_t size);
 
   Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey);
   Result<Bytes> convertPubKeyToDer(EVP_PKEY &pubKey);
@@ -1662,9 +1662,7 @@ namespace rsa {
   Result<std::string> convertPrivKeyToPem(RSA &rsa);
   Result<std::string> convertPubKeyToPem(RSA &rsa);
 
-  Result<RSA_uptr> convertDerToPrivKey(const Bytes &der);
   Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size);
-  Result<RSA_uptr> convertDerToPubKey(const Bytes &der);
   Result<RSA_uptr> convertDerToPubKey(const uint8_t der[], size_t size);
   
   Result<Bytes> convertPrivKeyToDer(RSA &rsa);
@@ -3166,14 +3164,14 @@ namespace evp {
     return internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
   }
 
-  Result<EVP_PKEY_uptr> convertDerToPrivKey(const Bytes &der)
+  Result<EVP_PKEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size)
   {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_AutoPrivateKey, der.data(), der.size());
+    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_AutoPrivateKey, der, size);
   }
 
-  Result<EVP_PKEY_uptr> convertDerToPubKey(const Bytes &der)
+  Result<EVP_PKEY_uptr> convertDerToPubKey(const uint8_t *der, size_t size)
   {
-    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der.data(), der.size());
+    return internal::convertDerToKey<EVP_PKEY_uptr>(d2i_PUBKEY, der, size);
   }
 
   Result<Bytes> convertPrivKeyToDer(EVP_PKEY &privKey)
@@ -3473,16 +3471,6 @@ namespace rsa {
   Result<std::string> convertPubKeyToPem(RSA &pubKey)
   {
     return internal::convertToPem(PEM_write_bio_RSA_PUBKEY, &pubKey);
-  }
- 
-  Result<RSA_uptr> convertDerToPrivKey(const Bytes &der)
-  {
-    return internal::convertDerToKey<RSA_uptr>(d2i_RSAPrivateKey, der.data(), der.size());
-  }
-
-  Result<RSA_uptr> convertDerToPubKey(const Bytes &der)
-  {
-    return internal::convertDerToKey<RSA_uptr>(d2i_RSA_PUBKEY, der.data(), der.size());
   }
   
   Result<RSA_uptr> convertDerToPrivKey(const uint8_t der[], size_t size)

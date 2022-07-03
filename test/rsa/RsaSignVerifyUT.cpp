@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -69,7 +69,7 @@ TEST_P(RsaSignVerifyUT, verify_AgainstPrecalculatedSignature)
   ASSERT_TRUE(maybePemKey);
   auto keyPem = maybePemKey.moveValue();
 
-  auto maybeDerKey = rsa::convertDerToPubKey(input.pubKeyDer);
+  auto maybeDerKey = rsa::convertDerToPubKey(input.pubKeyDer.data(), input.pubKeyDer.size());
   ASSERT_TRUE(maybeDerKey);
   auto keyDer = maybeDerKey.moveValue();
 
@@ -92,7 +92,7 @@ TEST_P(RsaSignVerifyUT, signVerify_PemDerConversionsAgainstPrecalculatedKey)
   ASSERT_TRUE(maybePemKey);
   auto pemKey = maybePemKey.moveValue();
   
-  auto maybeDerKey = rsa::convertDerToPrivKey(input.privKeyDer);
+  auto maybeDerKey = rsa::convertDerToPrivKey(input.privKeyDer.data(), input.privKeyDer.size());
   ASSERT_TRUE(maybeDerKey);
   auto derKey = maybeDerKey.moveValue();
 

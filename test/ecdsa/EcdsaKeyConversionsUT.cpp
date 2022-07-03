@@ -179,7 +179,7 @@ TEST(EcdsaKeyConversionsUT, derToPrivKeyConversion_ok)
 TEST(EcdsaKeyConversionsUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
 {
   // WHEN
-  auto maybePrivKey = rsa::convertDerToPrivKey(data::secp256PubKeyDer);
+  auto maybePrivKey = ecdsa::convertDerToPrivKey(data::secp256PubKeyDer.data(), data::secp256PubKeyDer.size());
 
   // THEN
   ASSERT_FALSE(maybePrivKey);
