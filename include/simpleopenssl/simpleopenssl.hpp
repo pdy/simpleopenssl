@@ -333,7 +333,7 @@ namespace ecdsa {
 
   Result<Bytes> convertToDer(const Signature &signature); 
   Result<EVP_PKEY_uptr> convertToEvp(const EC_KEY &key);
-  Result<Signature> convertToSignature(const Bytes &derSigBytes);
+  Result<Signature> convertToSignature(const uint8_t *derSigBytes, size_t size);
   Result<std::string> convertCurveToString(Curve curve);
 
   Result<bool> checkKey(const EC_KEY &ecKey);
@@ -2917,10 +2917,9 @@ namespace ecdsa {
     return internal::ok(std::move(ret));
   }
 
-  Result<Signature> convertToSignature(const Bytes &derSigBytes)
+  Result<Signature> convertToSignature(const uint8_t *derSigBytes, size_t size)
   {
-    auto *derIt = derSigBytes.data();
-    auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derIt, static_cast<long>(derSigBytes.size())));
+    auto sig = make_unique(d2i_ECDSA_SIG(nullptr, &derSigBytes, static_cast<long>(size)));
     if(!sig)
       return internal::err<Signature>();
 
