@@ -257,7 +257,7 @@ namespace asn1 {
   Result<std::time_t> convertToStdTime(const ASN1_TIME &asn1Time);
   Result<std::string> convertToISO8601(const ASN1_TIME &asnTime);
 
-  Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt);
+  Result<ASN1_INTEGER_uptr> encodeInteger(const uint8_t *bt, size_t size);
   Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
@@ -266,7 +266,7 @@ namespace asn1 {
 namespace bignum {
   Result<BIGNUM_uptr> create();
 
-  Result<BIGNUM_uptr> convertToBignum(const Bytes &bt);
+  Result<BIGNUM_uptr> convertToBignum(const uint8_t *bt, size_t size);
   Result<Bytes> convertToBytes(const BIGNUM &bn);
   
   Result<size_t> getByteLen(const BIGNUM &bn);
@@ -2716,9 +2716,9 @@ namespace asn1 {
     return internal::ok(std::string(buff));
   }
 
-  Result<ASN1_INTEGER_uptr> encodeInteger(const Bytes &bt)
+  Result<ASN1_INTEGER_uptr> encodeInteger(const uint8_t *bt, size_t size)
   {
-    auto bn = bignum::convertToBignum(bt);
+    auto bn = bignum::convertToBignum(bt, size);
     if(!bn)
       return internal::err<ASN1_INTEGER_uptr>(); 
 
@@ -2726,9 +2726,9 @@ namespace asn1 {
     if(!integer)
       return internal::err<ASN1_INTEGER_uptr>();
 
-    return internal::ok(std::move(integer)); 
+    return internal::ok(std::move(integer));
   }
- 
+  
   Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical)
   {
     auto ret = make_unique(OBJ_txt2obj(nameOrNumerical.c_str(), 0));
@@ -2777,15 +2777,15 @@ namespace bignum {
     return internal::ok(std::move(ret));
   }
 
-  Result<BIGNUM_uptr> convertToBignum(const Bytes &bt)
+  Result<BIGNUM_uptr> convertToBignum(const uint8_t *bt, size_t size)
   {
-    auto ret = make_unique(BN_bin2bn(bt.data(), static_cast<int>(bt.size()), nullptr));
+    auto ret = make_unique(BN_bin2bn(bt, static_cast<int>(size), nullptr));
     if(!ret)
       return internal::err<BIGNUM_uptr>();
 
     return internal::ok(std::move(ret));
   }
-
+  
   Result<size_t> getByteLen(const BIGNUM &bn)
   {
     const int bnlen = BN_num_bytes(&bn);
@@ -2890,11 +2890,11 @@ namespace ecdsa {
 
   Result<Bytes> convertToDer(const Signature &signature)
   {
-    auto r = bignum::convertToBignum(signature.r);
+    auto r = bignum::convertToBignum(signature.r.data(), signature.r.size());
     if(!r)
       return internal::err<Bytes>(r.opensslErrCode);
 
-    auto s = bignum::convertToBignum(signature.s);
+    auto s = bignum::convertToBignum(signature.s.data(), signature.s.size());
     if(!s)
       return internal::err<Bytes>(s.opensslErrCode);
  
@@ -4143,7 +4143,7 @@ namespace x509 {
  
   Result<void> setSerial(X509 &cert, const Bytes &bytes)
   {
-    auto integer = asn1::encodeInteger(bytes);
+    auto integer = asn1::encodeInteger(bytes.data(), bytes.size());
     if(!integer)
       return internal::errVoid(integer.opensslErrCode);
 
