@@ -259,7 +259,8 @@ namespace asn1 {
 
   Result<ASN1_INTEGER_uptr> encodeInteger(const uint8_t *bt, size_t size);
   Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
-  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
+//  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt);
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
 } // namepsace asn1
 
@@ -2738,13 +2739,13 @@ namespace asn1 {
     return internal::ok(std::move(ret));
   }
 
-  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const Bytes &bt)
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size)
   {
     auto ret = make_unique(ASN1_OCTET_STRING_new());
     if(!ret)
       return internal::err<ASN1_OCTET_STRING_uptr>();
 
-    if(1 != ASN1_OCTET_STRING_set(ret.get(), bt.data(), static_cast<int>(bt.size())))
+    if(1 != ASN1_OCTET_STRING_set(ret.get(), bt, static_cast<int>(size)))
       return internal::err<ASN1_OCTET_STRING_uptr>();
 
     return internal::ok(std::move(ret));
@@ -2752,7 +2753,7 @@ namespace asn1 {
   
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
   {
-    return encodeOctet(internal::bytes::fromString(str));
+    return encodeOctet(reinterpret_cast<const uint8_t*>(str.data()), str.size());
   } 
 } // namespace asn1
 
@@ -4099,7 +4100,7 @@ namespace x509 {
 
   Result<void> setExtension(X509 &cert, const CertExtension &extension)
   {
-    auto data = asn1::encodeOctet(extension.data);
+    auto data = asn1::encodeOctet(extension.data.data(), extension.data.size());
     if(!data)
       return internal::errVoid(data.opensslErrCode);
 
