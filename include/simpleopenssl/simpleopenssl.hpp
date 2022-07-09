@@ -534,7 +534,6 @@ namespace buffer {
   StringBuffer toString(const char *str, size_t size);
   std::string toString(const ByteBuffer &bt);
   std::string toString(const ByteBuffer &bt, ByteBuffer::const_iterator start);
-  ByteBuffer fromString(const std::string &str);
 } // namespace buffer
 
 template<typename UPTRTag, typename ArithTag>
@@ -2355,14 +2354,6 @@ namespace buffer {
     std::copy(start, bt.end(), std::ostream_iterator<char>(ss, ""));
     return ss.str();
   }
-
-  ByteBuffer fromString(const std::string &str)
-  {
-    ByteBuffer ret(str.size()); 
-    std::transform(str.begin(), str.end(), ret.begin(), [](char chr) { return static_cast<uint8_t>(chr); });
-    return ret;
-  }
-
 } // namespace buffer
 
 

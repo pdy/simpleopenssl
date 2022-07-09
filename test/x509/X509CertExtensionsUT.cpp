@@ -86,21 +86,21 @@ TEST(X509CertExtensionsUT, getExtensions)
       false,
       "X509v3 Subject Key Identifier",
       "2.5.29.14",
-      internal::buffer::fromString("75:71:A7:19:48:19:BC:9D:9D:EA:41:47:DF:94:C4:48:77:99:D3:79")
+      utils::toBytes("75:71:A7:19:48:19:BC:9D:9D:EA:41:47:DF:94:C4:48:77:99:D3:79")
     },
     x509::CertExtension{
       x509::CertExtensionId::KEY_USAGE,
       true,
       "X509v3 Key Usage",
       "2.5.29.15",
-      internal::buffer::fromString("Certificate Sign, CRL Sign")
+      utils::toBytes("Certificate Sign, CRL Sign")
     },
     x509::CertExtension{
       x509::CertExtensionId::BASIC_CONSTRAINTS,
       true,
       "X509v3 Basic Constraints",
       "2.5.29.19",
-      internal::buffer::fromString("CA:TRUE")
+      utils::toBytes("CA:TRUE")
     } 
   );
   
@@ -135,7 +135,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsage)
     true,
     "X509v3 Key Usage",
     "2.5.29.15",
-    internal::buffer::fromString("Certificate Sign, CRL Sign")
+    utils::toBytes("Certificate Sign, CRL Sign")
   };
 
   auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
@@ -159,7 +159,7 @@ TEST(X509CertExtensionsUT, getExtensionKeyUsageByOidNumerical)
     true,
     "X509v3 Key Usage",
     oidToFind,
-    internal::buffer::fromString("Certificate Sign, CRL Sign")
+    utils::toBytes("Certificate Sign, CRL Sign")
   };
 
   auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
@@ -252,7 +252,7 @@ TEST(X509CertExtensionsUT, addExtensionUsingLibraryStructure)
     false,
     "",
     "",
-    internal::buffer::fromString("CA:TRUE")
+    utils::toBytes("CA:TRUE")
   }; 
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
