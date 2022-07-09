@@ -259,15 +259,6 @@ public:
       m_capacity = 0;
     }
 
-    /*
-    static ArrayBuffer<T, Allocator> take(pointer_type ptr, size_type size)
-    {
-      // we're using private assign ctor whish is very similar to one of the copy ctor
-      // so I prefer to have static factory method to lessen chance of mistake
-      return ArrayBuffer<T, Allocator>(size, ptr);
-    }
-    */
-
     explicit operator bool() const noexcept { return m_memory != nullptr; }
 
     ArrayBuffer<T, Allocator>& operator=(ArrayBuffer<value_type, Allocator> other) noexcept
@@ -275,8 +266,6 @@ public:
       swap(*this, other); 
       return *this;
     }
-
-//    ArrayBuffer<value_type, Allocator, Deleter>& operator=(ArrayBuffer<value_type, Allocator, Deleter> &&other) = default;
 
     bool operator==(const ArrayBuffer<T, Allocator> &other) const
     {
@@ -645,7 +634,7 @@ namespace asn1 {
   Result<std::string> convertToISO8601(const ASN1_TIME &asnTime);
 
   Result<ASN1_INTEGER_uptr> encodeInteger(const uint8_t *bt, size_t size);
-  Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical);
+  Result<ASN1_OBJECT_uptr> encodeObject(const char *nameOrNumerical, size_t len);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
 } // namepsace asn1
@@ -3078,13 +3067,29 @@ namespace asn1 {
     return internal::ok(std::move(integer));
   }
   
-  Result<ASN1_OBJECT_uptr> encodeObject(const std::string &nameOrNumerical)
+  Result<ASN1_OBJECT_uptr> encodeObject(const char *nameOrNumerical, size_t len)
   {
-    auto ret = make_unique(OBJ_txt2obj(nameOrNumerical.c_str(), 0));
+    if(nameOrNumerical[len] == '\0')
+    {
+      auto ret = make_unique(OBJ_txt2obj(nameOrNumerical, 0));
+      if(!ret)
+        return internal::err<ASN1_OBJECT_uptr>();
+
+      return internal::ok(std::move(ret));
+    }
+
+    StringBuffer str(len + 1);
+    for(size_t i = 0; i < len; ++i)
+      str[i] = nameOrNumerical[i];
+
+    str[len] = '\0';
+
+    auto ret = make_unique(OBJ_txt2obj(str.get(), 0));
     if(!ret)
-      return internal::err<ASN1_OBJECT_uptr>();
+    return internal::err<ASN1_OBJECT_uptr>();
 
     return internal::ok(std::move(ret));
+
   }
 
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size)
@@ -4270,7 +4275,7 @@ namespace x509 {
 
   Result<CertExtension> getExtension(const X509 &cert, const std::string &oidNumerical)
   {
-    auto obj = asn1::encodeObject(oidNumerical);
+    auto obj = asn1::encodeObject(oidNumerical.c_str(), oidNumerical.size());
     if(!obj)
       return internal::err<CertExtension>(obj.opensslErrCode);
 
@@ -4372,7 +4377,7 @@ namespace x509 {
 
   Result<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical)
   {
-    auto asn1Oid = asn1::encodeObject(oidNumerical);
+    auto asn1Oid = asn1::encodeObject(oidNumerical.c_str(), oidNumerical.size());
     if(!asn1Oid)
       return internal::errVoid(asn1Oid.opensslErrCode);
 

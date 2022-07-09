@@ -60,6 +60,22 @@ TEST(Asn1UT, asn1ApiTimeConvertersIntegrityOK)
   EXPECT_EQ(now, stdTime.value);
 }
 
+TEST(Asn1UT, encodeObjectStringWithoutZeroTermination)
+{
+  const char *inputOid = "1.3.6.1.4.1.343_3";
+  const size_t inputLen = 15;
+  const char *expectedOid = "1.3.6.1.4.1.343";
+
+  auto maybeEncoded = asn1::encodeObject(inputOid, inputLen);
+  ASSERT_TRUE(maybeEncoded);
+  auto encoded = maybeEncoded.moveValue();
+  auto actual = asn1::convertObjToStr(*encoded);
+  
+  // THEN
+  ASSERT_TRUE(actual);
+  EXPECT_EQ(expectedOid, actual.value);
+}
+
 class Asn1ObjectEncodeUT : public testing::TestWithParam<std::string>
 {};
 
@@ -69,7 +85,7 @@ TEST_P(Asn1ObjectEncodeUT, encodeDecodeApiIntegrity)
   const std::string input { GetParam() };
 
   // WHEN
-  auto maybeEncoded = asn1::encodeObject(input);
+  auto maybeEncoded = asn1::encodeObject(input.c_str(), input.size());
   ASSERT_TRUE(maybeEncoded);
   auto encoded = maybeEncoded.moveValue();
   auto actual = asn1::convertObjToStr(*encoded);
