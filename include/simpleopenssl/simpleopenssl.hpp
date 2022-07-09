@@ -797,13 +797,13 @@ namespace hash {
   Result<ByteBuffer> sha512(const uint8_t *data, size_t size);
   Result<ByteBuffer> sha512(const char *str, size_t size);
 
-  Result<ByteBuffer> fileMD4(const std::string &path);
-  Result<ByteBuffer> fileMD5(const std::string &path);
-  Result<ByteBuffer> fileSHA1(const std::string &path);
-  Result<ByteBuffer> fileSHA224(const std::string &path);
-  Result<ByteBuffer> fileSHA256(const std::string &path);
-  Result<ByteBuffer> fileSHA384(const std::string &path);
-  Result<ByteBuffer> fileSHA512(const std::string &path);
+  Result<ByteBuffer> fileMD4(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileMD5(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA1(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA224(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA256(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA384(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA512(const char *path, size_t pathLen);
 } // namespace hash
 
 namespace nid {
@@ -2824,9 +2824,20 @@ namespace internal {
     return internal::ok(std::move(hash));
   }
   
-  Result<ByteBuffer> doHashFile(const std::string &path, const EVP_MD *evpMd)
+  Result<ByteBuffer> doHashFile(const char *path, size_t pathLen, const EVP_MD *evpMd)
   {    
-    auto bioRaw = make_unique(BIO_new_file(path.c_str(), "rb"));
+    auto bioRaw = [&] {
+      if(path[pathLen] == '\0')
+        return make_unique(BIO_new_file(path, "rb"));
+      
+      StringBuffer pathStr(pathLen + 1);
+      for(size_t i = 0; i < pathLen; ++i)
+        pathStr[i] = path[i];
+
+      pathStr[pathLen] = '\0';
+      return make_unique(BIO_new_file(pathStr.get(), "rb"));
+    }();
+
     if(!bioRaw)
       return internal::err<ByteBuffer>();
 
@@ -3697,39 +3708,39 @@ namespace hash {
     return internal::doHash<SHA512_CTX>(data, size, SHA512_DIGEST_LENGTH, SHA512_Init, SHA512_Update, SHA512_Final);
   }
   
-  Result<ByteBuffer> fileMD4(const std::string &path)
+  Result<ByteBuffer> fileMD4(const char *path, size_t pathLen)
   {
-    return internal::doHashFile(path, EVP_md4());
+    return internal::doHashFile(path, pathLen, EVP_md4());
   }
   
-  Result<ByteBuffer> fileMD5(const std::string &path)
+  Result<ByteBuffer> fileMD5(const char *path, size_t pathLen)
   {
-    return internal::doHashFile(path, EVP_md5());
+    return internal::doHashFile(path, pathLen, EVP_md5());
   }
   
-  Result<ByteBuffer> fileSHA1(const std::string &path)
+  Result<ByteBuffer> fileSHA1(const char *path, size_t pathLen)
   {
-    return internal::doHashFile(path, EVP_sha1());
+    return internal::doHashFile(path, pathLen, EVP_sha1());
   }
 
-  Result<ByteBuffer> fileSHA224(const std::string &path)
+  Result<ByteBuffer> fileSHA224(const char *path, size_t pathLen)
   {
-    return internal::doHashFile(path, EVP_sha224());
+    return internal::doHashFile(path, pathLen, EVP_sha224());
   }
 
-  Result<ByteBuffer> fileSHA256(const std::string &path)
+  Result<ByteBuffer> fileSHA256(const char *path, size_t pathLen)
   {
-    return internal::doHashFile(path, EVP_sha256());
+    return internal::doHashFile(path, pathLen, EVP_sha256());
   }
 
-  Result<ByteBuffer> fileSHA384(const std::string &path)
+  Result<ByteBuffer> fileSHA384(const char *path, size_t pathLen)
   {
-    return internal::doHashFile(path, EVP_sha384());
+    return internal::doHashFile(path, pathLen, EVP_sha384());
   }
 
-  Result<ByteBuffer> fileSHA512(const std::string &path)
+  Result<ByteBuffer> fileSHA512(const char *path, size_t pathLen)
   {
-    return internal::doHashFile(path, EVP_sha512());
+    return internal::doHashFile(path, pathLen, EVP_sha512());
   }
 }// namespace hash
 

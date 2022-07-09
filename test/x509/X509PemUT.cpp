@@ -85,19 +85,20 @@ TEST(X509PEMUT, pemFileToX509)
 TEST(X509PEMUT, x509ToPemFile)
 {
   // GIVEN
-  const std::string filePath = "data/tmp_test_cert.pem";
-  auto cert = x509::convertPemFileToX509("data/validpemcert.pem");
+  const std::string tmpFilePath = "data/tmp_test_cert.pem";
+  const std::string validPemCertFile = "data/validpemcert.pem";
+  auto cert = x509::convertPemFileToX509(validPemCertFile);
   ASSERT_TRUE(cert);
 
   // WHEN
-  const auto result = x509::convertX509ToPemFile(*cert.value, filePath);
+  const auto result = x509::convertX509ToPemFile(*cert.value, tmpFilePath);
   ASSERT_TRUE(result);
 
-  const auto fileGuard = makeScopeGuard([&]{ removeFile(filePath); });
+  const auto fileGuard = makeScopeGuard([&]{ removeFile(tmpFilePath); });
 
-  const auto correctFileHash = so::hash::fileSHA256("data/validpemcert.pem");
+  const auto correctFileHash = so::hash::fileSHA256(validPemCertFile.c_str(), validPemCertFile.size());
   ASSERT_TRUE(correctFileHash);
-  const auto actualFileHash = so::hash::fileSHA256(filePath);
+  const auto actualFileHash = so::hash::fileSHA256(tmpFilePath.c_str(), tmpFilePath.size());
   ASSERT_TRUE(actualFileHash);
 
   // THEN
