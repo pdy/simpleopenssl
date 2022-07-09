@@ -400,15 +400,6 @@ public:
     } 
   };
 
-  template<typename T, typename Derived>
-  std::ostream& operator<<(std::ostream &oss, const OSSLArrayBuffer<T, Derived> &buff)
-  {
-    for(const auto &el : buff)
-      oss << el;
-
-    return oss;
-  }
-
   template<typename T>
   struct is_uptr : std::false_type {}; 
 
@@ -467,6 +458,14 @@ public:
   }
   */
 };
+
+inline std::ostream& operator<<(std::ostream &oss, const StringBuffer &buff)
+{
+  for(const auto &el : buff)
+    oss << el;
+
+  return oss;
+}
 
 #define PDY_CUSTOM_DELETER_UPTR(Type, Deleter)\
 namespace internal {                                  \
