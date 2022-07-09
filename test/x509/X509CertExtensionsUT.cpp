@@ -357,7 +357,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtension)
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
   EXPECT_EQ(true, ext.critical);
-  EXPECT_EQ("CA:TRUE", internal::buffer::toString(ext.data));
+  EXPECT_EQ("CA:TRUE", utils::toString(ext.data));
 }
 
 TEST(X509CertExtensionsUT, addBasicConstraintsExtensionUsingNid)
@@ -386,7 +386,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionUsingNid)
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
   EXPECT_EQ(true, ext.critical);
-  EXPECT_EQ("CA:TRUE", internal::buffer::toString(ext.data));
+  EXPECT_EQ("CA:TRUE", utils::toString(ext.data));
 }
 
 TEST(X509CertExtensionsUT, addBasicConstraintsExtensionSingleExtraction)
@@ -414,7 +414,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionSingleExtraction)
   EXPECT_EQ(basicConstraintsOid, ext.oidNumerical);
   EXPECT_EQ(basicConstraintsName, ext.name);
   EXPECT_EQ(true, ext.critical);
-  EXPECT_EQ("CA:TRUE", internal::buffer::toString(ext.data));
+  EXPECT_EQ("CA:TRUE", utils::toString(ext.data));
 }
 
 TEST(X509CertExtensionsUT, basicCertExtType_Equals)
