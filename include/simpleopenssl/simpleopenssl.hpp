@@ -530,10 +530,6 @@ PDY_CUSTOM_DELETER_UPTR(X509_NAME_ENTRY, X509_NAME_ENTRY_free);
 
 namespace internal {
 
-namespace buffer {
-  StringBuffer toString(const char *str, size_t size);
-} // namespace buffer
-
 template<typename UPTRTag, typename ArithTag>
 struct IsUptrOrArithmeticTag : std::false_type {};
 
@@ -590,7 +586,7 @@ struct Result : public internal::AddArrowOperator<T, Result<T>, typename interna
   StringBuffer msg() const
   {
     if(ok())
-      return internal::buffer::toString("ok", 2);
+      return StringBuffer("ok", 2);
 
     return internal::errCodeToString(opensslErrCode);
   }
@@ -615,7 +611,7 @@ struct Result<void>
   StringBuffer msg() const
   {
     if(ok())
-      return internal::buffer::toString("ok", 2);
+      return StringBuffer("ok", 2);
 
     return internal::errCodeToString(opensslErrCode);
   }
@@ -634,7 +630,7 @@ void cleanUp();
 unsigned long getLastErrCode();
 StringBuffer errCodeToString(unsigned long osslErrCode);
 StringBuffer getLastErrString();
-std::string getOpenSSLVersion();
+StringBuffer getOpenSSLVersion();
 
 namespace asn1 {
   enum class Form : int
@@ -2330,18 +2326,6 @@ namespace x509 {
 namespace so {
 namespace internal {
 
-namespace buffer {
-
-  StringBuffer toString(const char *str, size_t size)
-  {
-    StringBuffer ret; ret.reserve(size);
-    std::copy_n(str, size, std::back_inserter(ret));
-    return ret;
-  }
-
-} // namespace buffer
-
-
   bool X509Name::operator ==(const X509Name &other) const
   {
     return commonName == other.commonName
@@ -3020,9 +3004,10 @@ StringBuffer getLastErrString()
   return errCodeToString(getLastErrCode()); 
 }
 
-std::string getOpenSSLVersion()
+StringBuffer getOpenSSLVersion()
 {
-  return OpenSSL_version(OPENSSL_VERSION);
+  const char *v = OpenSSL_version(OPENSSL_VERSION);
+  return StringBuffer(v, strlen(v));
 }
 
 namespace asn1 {
