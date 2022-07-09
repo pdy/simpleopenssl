@@ -46,7 +46,7 @@ struct SignVerifyInput
   const ::so::ByteBuffer &pubKeyDer;
   const ::so::ByteBuffer &signedData;
   const ::so::ByteBuffer &signature;
-  std::function<::so::Result<::so::ByteBuffer>(const ::so::ByteBuffer&, RSA&)> signer;
+  std::function<::so::Result<::so::ByteBuffer>(const uint8_t*, size_t, RSA&)> signer;
   std::function<::so::Result<bool>(const ::so::ByteBuffer&,const ::so::ByteBuffer&, RSA&)> verifier;
   std::function<::so::Result<bool>(const ::so::ByteBuffer&,const ::so::ByteBuffer&, EVP_PKEY&)> evpVerifier;
 
@@ -97,12 +97,12 @@ TEST_P(RsaSignVerifyUT, signVerify_PemDerConversionsAgainstPrecalculatedKey)
   auto derKey = maybeDerKey.moveValue();
 
   // WHEN
-  const auto sigPem = input.signer(input.signedData, *pemKey); 
+  const auto sigPem = input.signer(input.signedData.data(), input.signedData.size(), *pemKey); 
   ASSERT_TRUE(sigPem);
   const auto pemVerified = input.verifier(sigPem.value, input.signedData, *pemKey);
   ASSERT_TRUE(pemVerified);
 
-  const auto sigDer = input.signer(input.signedData, *derKey); 
+  const auto sigDer = input.signer(input.signedData.data(), input.signedData.size(), *derKey); 
   ASSERT_TRUE(sigDer);
   const auto derVerified = input.verifier(sigDer.value, input.signedData, *derKey);
   ASSERT_TRUE(derVerified);
@@ -125,7 +125,7 @@ TEST_P(RsaSignVerifyUT, signVerify_ApiIntegrity)
   auto keyUptr = key.moveValue();
   
   // WHEN
-  const auto sig = input.signer(data, *keyUptr);
+  const auto sig = input.signer(data.data(), data.size(), *keyUptr);
   const auto verResult = input.verifier(sig.value, data, *keyUptr);
 
   // THEN
@@ -144,7 +144,7 @@ TEST_P(RsaSignVerifyUT, signVerify_IntegrityWithEvp)
 
   auto keyUptr = key.moveValue();
   
-  const auto sig = input.signer(data, *keyUptr);
+  const auto sig = input.signer(data.data(), data.size(), *keyUptr);
   const auto verResult = input.verifier(sig.value, data, *keyUptr);
 
   // WHEN

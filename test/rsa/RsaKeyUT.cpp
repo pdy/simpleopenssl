@@ -64,7 +64,7 @@ TEST(RsaKeyUT, extractPublicKeyOK)
   std::iota(data.begin(), data.end(), 0);
 
   // WHEN
-  const auto signResult = rsa::signSha256(data, *priv);
+  const auto signResult = rsa::signSha256(data.data(), data.size(), *priv);
   ASSERT_TRUE(signResult);
   const auto verResult = rsa::verifySha256Signature(signResult.value, data, *pub);
   // THEN
@@ -98,7 +98,7 @@ TEST(RsaKeyUT, extractedPublicKeyCantBeUsedForSign)
   std::iota(data.begin(), data.end(), 0);
 
   // WHEN
-  const auto signResult = rsa::signSha256(data, *pub);
+  const auto signResult = rsa::signSha256(data.data(), data.size(), *pub);
 
   // THEN
   EXPECT_FALSE(signResult);

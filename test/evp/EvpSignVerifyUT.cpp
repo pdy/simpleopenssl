@@ -42,7 +42,7 @@ struct EvpSignVerifyInput
   std::string pubKeyPem;
   const ::so::ByteBuffer &signedData;
   const ::so::ByteBuffer &signature;
-  std::function<::so::Result<::so::ByteBuffer>(const ::so::ByteBuffer&, EVP_PKEY&)> signer;
+  std::function<::so::Result<::so::ByteBuffer>(const uint8_t*, size_t, EVP_PKEY&)> signer;
   std::function<::so::Result<bool>(const ::so::ByteBuffer&,const ::so::ByteBuffer&, EVP_PKEY&)> verifier;
 };
 
@@ -80,7 +80,7 @@ TEST_P(EvpSignVerifyUT, signVerify_WithPrecalculatedKey)
   auto key = maybeKey.moveValue();
 
   // WHEN
-  const auto sig = input.signer(input.signedData, *key); 
+  const auto sig = input.signer(input.signedData.data(), input.signedData.size(), *key); 
   ASSERT_TRUE(sig);
   const auto verified = input.verifier(sig.value, input.signedData, *key);
   ASSERT_TRUE(verified);
@@ -104,7 +104,7 @@ TEST_P(EvpSignVerifyUT, signVerify_ShouldSignAndVerifyWithEcdsaGeneratedKeys)
   auto evpKey = maybeEvp.moveValue();
   
   // WHEN
-  const auto sig = input.signer(data, *evpKey);
+  const auto sig = input.signer(data.data(), data.size(), *evpKey);
   ASSERT_TRUE(sig);
   const auto verResult = input.verifier(sig.value, data, *evpKey);
 

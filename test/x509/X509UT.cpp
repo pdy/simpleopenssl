@@ -332,9 +332,9 @@ TEST(X509UT, getSetPubKeyWithGeneratedKey)
   // 4.
   ::so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
-  const auto signResult = ::so::evp::signSha1(data, *evpPrivKey);
+  const auto signResult = ::so::evp::signSha1(data.data(), data.size(), *evpPrivKey);
   ASSERT_TRUE(signResult);
-  const auto pubSignResult = ::so::evp::signSha1(data, *extractedPub);
+  const auto pubSignResult = ::so::evp::signSha1(data.data(), data.size(), *extractedPub);
   ASSERT_FALSE(pubSignResult);
   
   // 5.
@@ -364,9 +364,9 @@ TEST(X509UT, setGetPubWithPrecalculatedKeys)
   // 2.
   ::so::ByteBuffer data(256);
   std::iota(data.begin(), data.end(), 0);
-  const auto signResult = ::so::evp::signSha1(data, *priv);
+  const auto signResult = ::so::evp::signSha1(data.data(), data.size(), *priv);
   ASSERT_TRUE(signResult);
-  const auto pubSignResult = ::so::evp::signSha1(data, *pub);
+  const auto pubSignResult = ::so::evp::signSha1(data.data(), data.size(), *pub);
   ASSERT_FALSE(pubSignResult); 
   const auto verResult = ::so::evp::verifySha1Signature(signResult.value, data, *pub);
   ASSERT_TRUE(verResult); 
