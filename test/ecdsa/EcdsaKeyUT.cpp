@@ -36,7 +36,7 @@ namespace ecdsa = ::so::ecdsa;
 TEST(EcdsaKeyUT, copyKey_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = ecdsa::convertPemToPubKey(data::secp256PubKeyPem);
+  auto maybeKey = ecdsa::convertPemToPubKey(data::secp256PubKeyPem.c_str(), data::secp256PubKeyPem.size());
   ASSERT_TRUE(maybeKey);
 
   auto key = maybeKey.moveValue();
@@ -47,7 +47,7 @@ TEST(EcdsaKeyUT, copyKey_shouldSuccess)
 TEST(EcdsaKeyUT, curveOf_AgainstPrecalculatedData)
 {
   // GIVEN
-  auto maybePriv = ecdsa::convertPemToPrivKey(data::secp256k1PrivKeyPem);
+  auto maybePriv = ecdsa::convertPemToPrivKey(data::secp256k1PrivKeyPem.c_str(), data::secp256k1PrivKeyPem.size());
   ASSERT_TRUE(maybePriv);
   auto priv = maybePriv.moveValue();
 

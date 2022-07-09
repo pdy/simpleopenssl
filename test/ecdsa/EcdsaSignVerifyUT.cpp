@@ -60,7 +60,7 @@ TEST_P(EcdsaSignVerifyUT, verify_AgainstPrecalculatedSignature)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  auto maybeKeyDer = ecdsa::convertPemToPubKey(input.pubKeyPem);
+  auto maybeKeyDer = ecdsa::convertPemToPubKey(input.pubKeyPem.c_str(), input.pubKeyPem.size());
   ASSERT_TRUE(maybeKeyDer);
   auto keyPem = maybeKeyDer.moveValue();
 
@@ -83,7 +83,7 @@ TEST_P(EcdsaSignVerifyUT, signVerify_AgainstPrecalculatedKey)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  auto maybeKeyPem = ecdsa::convertPemToPrivKey(input.privKeyPem);
+  auto maybeKeyPem = ecdsa::convertPemToPrivKey(input.privKeyPem.c_str(), input.privKeyPem.size());
   ASSERT_TRUE(maybeKeyPem);
   auto keyPem = maybeKeyPem.moveValue();
 

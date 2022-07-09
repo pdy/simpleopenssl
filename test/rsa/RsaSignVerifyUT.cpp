@@ -65,7 +65,7 @@ TEST_P(RsaSignVerifyUT, verify_AgainstPrecalculatedSignature)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  auto maybePemKey = rsa::convertPemToPubKey(input.pubKeyPem);
+  auto maybePemKey = rsa::convertPemToPubKey(input.pubKeyPem.c_str(), input.pubKeyPem.size());
   ASSERT_TRUE(maybePemKey);
   auto keyPem = maybePemKey.moveValue();
 
@@ -88,7 +88,7 @@ TEST_P(RsaSignVerifyUT, signVerify_PemDerConversionsAgainstPrecalculatedKey)
 {
   // GIVEN
   const SignVerifyInput input { GetParam() };
-  auto maybePemKey = rsa::convertPemToPrivKey(input.privKeyPem);
+  auto maybePemKey = rsa::convertPemToPrivKey(input.privKeyPem.c_str(), input.privKeyPem.size());
   ASSERT_TRUE(maybePemKey);
   auto pemKey = maybePemKey.moveValue();
   

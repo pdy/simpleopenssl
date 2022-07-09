@@ -59,7 +59,7 @@ TEST_P(EvpSignVerifyUT, verify_PrecalculatedSignature)
 {
   // GIVEN
   const EvpSignVerifyInput input{ GetParam() };
-  auto maybeKey = evp::convertPemToPubKey(input.pubKeyPem);
+  auto maybeKey = evp::convertPemToPubKey(input.pubKeyPem.c_str(), input.pubKeyPem.size());
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
 
@@ -75,7 +75,7 @@ TEST_P(EvpSignVerifyUT, signVerify_WithPrecalculatedKey)
 {
   // GIVEN
   const EvpSignVerifyInput input{ GetParam() };
-  auto maybeKey = evp::convertPemToPrivKey(input.privKeyPem);
+  auto maybeKey = evp::convertPemToPrivKey(input.privKeyPem.c_str(), input.privKeyPem.size());
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
 

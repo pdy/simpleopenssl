@@ -120,8 +120,8 @@ TEST(RsaKeyUT, checkKeyOK)
 
 TEST(RsaKeyUT, checkKeyOnPrecalculatedPrivKeyOK)
 {
-  // GIVEN
-  auto maybeKey = rsa::convertPemToPrivKey(data::rsa3072PrivKeyPem);
+  // GIVEN 
+  auto maybeKey = rsa::convertPemToPrivKey(data::rsa3072PrivKeyPem.c_str(), data::rsa3072PrivKeyPem.size());
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
   
@@ -135,7 +135,7 @@ TEST(RsaKeyUT, checkKeyOnPrecalculatedPrivKeyOK)
 TEST(RsaKeyUT, checkKeyOnPrecalculatedPubKeyShouldFail)
 {
   // GIVEN
-  auto maybeKey = rsa::convertPemToPubKey(data::rsa3072PubKeyPem);
+  auto maybeKey = rsa::convertPemToPubKey(data::rsa3072PubKeyPem.c_str(), data::rsa3072PubKeyPem.size());
   ASSERT_TRUE(maybeKey);
   auto key = maybeKey.moveValue();
   

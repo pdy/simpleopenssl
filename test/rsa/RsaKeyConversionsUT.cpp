@@ -37,7 +37,7 @@ namespace rsa = ::so::rsa;
 TEST(RsaKeyConversionsUT, pem2PubKeyConversion_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = rsa::convertPemToPubKey(data::rsa3072PubKeyPem);
+  auto maybeKey = rsa::convertPemToPubKey(data::rsa3072PubKeyPem.c_str(), data::rsa3072PubKeyPem.size());
 
   // THEN
   EXPECT_TRUE(maybeKey);
@@ -49,7 +49,7 @@ TEST(RsaKeyConversionsUT, pem2PubKeyConversion_shouldFailWithInvalidPemFormat)
   const std::string incorrectPem = data::rsa3072PubKeyPem.substr(1);
 
   // WHEN
-  auto maybeKey = rsa::convertPemToPubKey(incorrectPem);
+  auto maybeKey = rsa::convertPemToPubKey(incorrectPem.c_str(), incorrectPem.size());
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -58,7 +58,7 @@ TEST(RsaKeyConversionsUT, pem2PubKeyConversion_shouldFailWithInvalidPemFormat)
 TEST(RsaKeyConversionsUT, pem2PubKeyConversion_shouldFailWithPrivKey)
 {
   // WHEN
-  auto maybeKey = rsa::convertPemToPubKey(data::rsa3072PrivKeyPem);
+  auto maybeKey = rsa::convertPemToPubKey(data::rsa3072PrivKeyPem.c_str(), data::rsa3072PrivKeyPem.size());
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -67,7 +67,7 @@ TEST(RsaKeyConversionsUT, pem2PubKeyConversion_shouldFailWithPrivKey)
 TEST(RsaKeyConversionsUT, pem2PrivKeyConversion_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = rsa::convertPemToPrivKey(data::rsa3072PrivKeyPem);
+  auto maybeKey = rsa::convertPemToPrivKey(data::rsa3072PrivKeyPem.c_str(), data::rsa3072PrivKeyPem.size());
 
   // THEN
   EXPECT_TRUE(maybeKey);
@@ -79,7 +79,7 @@ TEST(RsaKeyConversionsUT, pem2PrivKeyConversion_shouldFailWithInvalidPemFormat)
   const std::string incorrectPem = data::rsa3072PrivKeyPem.substr(1);
 
   // WHEN
-  auto maybeKey = rsa::convertPemToPrivKey(incorrectPem);
+  auto maybeKey = rsa::convertPemToPrivKey(incorrectPem.c_str(), incorrectPem.size());
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -88,7 +88,7 @@ TEST(RsaKeyConversionsUT, pem2PrivKeyConversion_shouldFailWithInvalidPemFormat)
 TEST(RsaKeyConversionsUT, pem2PrivKeyConversion_shouldFailWithPubKey)
 {
   // WHEN
-  auto maybeKey = rsa::convertPemToPrivKey(data::rsa3072PubKeyPem);
+  auto maybeKey = rsa::convertPemToPrivKey(data::rsa3072PubKeyPem.c_str(), data::rsa3072PubKeyPem.size());
 
   // THEN
   EXPECT_FALSE(maybeKey);

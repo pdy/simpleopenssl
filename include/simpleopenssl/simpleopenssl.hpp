@@ -697,8 +697,8 @@ namespace ecdsa {
   Result<EC_KEY_uptr> create();
   Result<EC_KEY_uptr> create(Curve curve);
 
-  Result<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
-  Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub);
+  Result<EC_KEY_uptr> convertPemToPrivKey(const char *pemPriv, size_t pemLen);
+  Result<EC_KEY_uptr> convertPemToPubKey(const char *pemPub, size_t pemLen);
   Result<std::string> convertPrivKeyToPem(EC_KEY &ec);
   Result<std::string> convertPubKeyToPem(EC_KEY &ec);
 
@@ -749,8 +749,8 @@ namespace evp {
   Result<void> assign(EVP_PKEY &evp, RSA &rsa);
   Result<void> assign(EVP_PKEY &evp, EC_KEY &ec);
 
-  Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv);
-  Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub);
+  Result<EVP_PKEY_uptr> convertPemToPrivKey(const char *pemPriv, size_t pemLen);
+  Result<EVP_PKEY_uptr> convertPemToPubKey(const char *pemPub, size_t pemLen);
 
   Result<EVP_PKEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size);
   Result<EVP_PKEY_uptr> convertDerToPubKey(const uint8_t *der, size_t size);
@@ -2036,8 +2036,8 @@ namespace rsa {
 
   Result<RSA_uptr> create(KeyBits keySize, Exponent exponent = Exponent::_65537_);
 
-  Result<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv);
-  Result<RSA_uptr> convertPemToPubKey(const std::string &pemPub);
+  Result<RSA_uptr> convertPemToPrivKey(const char *pemPriv, size_t pemLen);
+  Result<RSA_uptr> convertPemToPubKey(const char *pemPub, size_t pemLen);
   Result<std::string> convertPrivKeyToPem(RSA &rsa);
   Result<std::string> convertPubKeyToPem(RSA &rsa);
 
@@ -2880,9 +2880,9 @@ namespace internal {
   }
   
   template<typename Key, typename FUNC, typename ... Types>
-  Result<Key> convertPemToKey(const std::string &pem, FUNC readBio, Types&& ...args)
+  Result<Key> convertPemToKey(const char *pem, size_t pemLen, FUNC readBio, Types&& ...args)
   {
-    auto bio = make_unique(BIO_new_mem_buf(pem.c_str(), static_cast<int>(pem.size())));
+    auto bio = make_unique(BIO_new_mem_buf(pem, static_cast<int>(pemLen)));
     if(!bio)
       return internal::err<Key>();
 
@@ -3161,14 +3161,14 @@ namespace ecdsa {
     return !(*this == other);
   }
 
-  Result<EC_KEY_uptr> convertPemToPubKey(const std::string &pemPub)
+  Result<EC_KEY_uptr> convertPemToPubKey(const char *pemPub, size_t pemLen)
   {
-    return internal::convertPemToKey<EC_KEY_uptr>(pemPub, PEM_read_bio_EC_PUBKEY, nullptr, nullptr, nullptr); 
+    return internal::convertPemToKey<EC_KEY_uptr>(pemPub, pemLen, PEM_read_bio_EC_PUBKEY, nullptr, nullptr, nullptr); 
   }
 
-  Result<EC_KEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
+  Result<EC_KEY_uptr> convertPemToPrivKey(const char *pemPriv, size_t pemLen)
   {
-    return internal::convertPemToKey<EC_KEY_uptr>(pemPriv, PEM_read_bio_ECPrivateKey, nullptr, nullptr, nullptr); 
+    return internal::convertPemToKey<EC_KEY_uptr>(pemPriv, pemLen, PEM_read_bio_ECPrivateKey, nullptr, nullptr, nullptr); 
   }
  
   Result<std::string> convertPrivKeyToPem(EC_KEY &ec)
@@ -3476,14 +3476,14 @@ namespace evp {
         if(!pemCopy)
           return internal::err<RSA_uptr>(pemCopy.opensslErrCode);
 
-        return ::so::rsa::convertPemToPrivKey(pemCopy.value);
+        return ::so::rsa::convertPemToPrivKey(pemCopy.value.c_str(), pemCopy.value.size());
       }
 
       const auto pemCopy = ::so::rsa::convertPubKeyToPem(rsa);
       if(!pemCopy)
         return internal::err<RSA_uptr>(pemCopy.opensslErrCode);
 
-      return ::so::rsa::convertPemToPubKey(pemCopy.value);
+      return ::so::rsa::convertPemToPubKey(pemCopy.value.c_str(), pemCopy.value.size());
     }();
 
     if(!keyCopy)
@@ -3507,14 +3507,14 @@ namespace evp {
     return internal::okVoid();
   }
 
-  Result<EVP_PKEY_uptr> convertPemToPubKey(const std::string &pemPub)
+  Result<EVP_PKEY_uptr> convertPemToPubKey(const char *pemPub, size_t pemLen)
   {
-    return internal::convertPemToKey<EVP_PKEY_uptr>(pemPub, PEM_read_bio_PUBKEY, nullptr, nullptr, nullptr); 
+    return internal::convertPemToKey<EVP_PKEY_uptr>(pemPub, pemLen, PEM_read_bio_PUBKEY, nullptr, nullptr, nullptr); 
   }
 
-  Result<EVP_PKEY_uptr> convertPemToPrivKey(const std::string &pemPriv)
+  Result<EVP_PKEY_uptr> convertPemToPrivKey(const char *pemPriv, size_t pemLen)
   {
-    return internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
+    return internal::convertPemToKey<EVP_PKEY_uptr>(pemPriv, pemLen, PEM_read_bio_PrivateKey, nullptr, nullptr, nullptr); 
   }
 
   Result<EVP_PKEY_uptr> convertDerToPrivKey(const uint8_t *der, size_t size)
@@ -3802,14 +3802,14 @@ namespace rand {
 } // namespace rand
 
 namespace rsa {
-  Result<RSA_uptr> convertPemToPubKey(const std::string &pemPub)
+  Result<RSA_uptr> convertPemToPubKey(const char *pemPub, size_t pemLen)
   {
-    return internal::convertPemToKey<RSA_uptr>(pemPub, PEM_read_bio_RSA_PUBKEY, nullptr, nullptr, nullptr); 
+    return internal::convertPemToKey<RSA_uptr>(pemPub, pemLen, PEM_read_bio_RSA_PUBKEY, nullptr, nullptr, nullptr); 
   }
 
-  Result<RSA_uptr> convertPemToPrivKey(const std::string &pemPriv)
+  Result<RSA_uptr> convertPemToPrivKey(const char *pemPriv, size_t pemLen)
   {
-    return internal::convertPemToKey<RSA_uptr>(pemPriv, PEM_read_bio_RSAPrivateKey, nullptr, nullptr, nullptr); 
+    return internal::convertPemToKey<RSA_uptr>(pemPriv, pemLen, PEM_read_bio_RSAPrivateKey, nullptr, nullptr, nullptr); 
   }
  
   Result<std::string> convertPrivKeyToPem(RSA &rsa)

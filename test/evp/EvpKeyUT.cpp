@@ -46,7 +46,7 @@ TEST(EvpKeyUT, create)
 TEST(EvpKeyUT, pem2PubKeyConversion_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = evp::convertPemToPubKey(data::secp256PubKeyPem);
+  auto maybeKey = evp::convertPemToPubKey(data::secp256PubKeyPem.c_str(), data::secp256PubKeyPem.size());
 
   // THEN
   EXPECT_TRUE(maybeKey);
@@ -58,7 +58,7 @@ TEST(EvpKeyUT, pem2PubKeyConversion_shouldFailWithInvalidPemFormat)
   const std::string incorrectPem = data::secp256PubKeyPem.substr(1);
 
   // WHEN
-  auto maybeKey = evp::convertPemToPubKey(incorrectPem);
+  auto maybeKey = evp::convertPemToPubKey(incorrectPem.c_str(), incorrectPem.size());
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -67,7 +67,7 @@ TEST(EvpKeyUT, pem2PubKeyConversion_shouldFailWithInvalidPemFormat)
 TEST(EvpKeyUT, pem2PubKeyConversion_shouldFailWithPrivKey)
 {
   // WHEN
-  auto maybeKey = evp::convertPemToPubKey(data::secp256k1PrivKeyPem);
+  auto maybeKey = evp::convertPemToPubKey(data::secp256k1PrivKeyPem.c_str(), data::secp256k1PrivKeyPem.size());
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -76,7 +76,7 @@ TEST(EvpKeyUT, pem2PubKeyConversion_shouldFailWithPrivKey)
 TEST(EvpKeyUT, pem2PrivKeyConversion_shouldSuccess)
 {
   // WHEN
-  auto maybeKey = evp::convertPemToPrivKey(data::secp256k1PrivKeyPem);
+  auto maybeKey = evp::convertPemToPrivKey(data::secp256k1PrivKeyPem.c_str(), data::secp256k1PrivKeyPem.size());
 
   // THEN
   EXPECT_TRUE(maybeKey);
@@ -88,7 +88,7 @@ TEST(EvpKeyUT, pem2PrivKeyConversion_shouldFailWithInvalidPemFormat)
   const std::string incorrectPem = data::secp256k1PrivKeyPem.substr(1);
 
   // WHEN
-  auto maybeKey = evp::convertPemToPrivKey(incorrectPem);
+  auto maybeKey = evp::convertPemToPrivKey(incorrectPem.c_str(), incorrectPem.size());
 
   // THEN
   EXPECT_FALSE(maybeKey);
@@ -97,7 +97,7 @@ TEST(EvpKeyUT, pem2PrivKeyConversion_shouldFailWithInvalidPemFormat)
 TEST(EvpKeyUT, pem2PrivKeyConversion_shouldFailWithPubKey)
 {
   // WHEN
-  auto maybeKey = evp::convertPemToPrivKey(data::secp256PubKeyPem);
+  auto maybeKey = evp::convertPemToPrivKey(data::secp256PubKeyPem.c_str(), data::secp256PubKeyPem.size());
 
   // THEN
   EXPECT_FALSE(maybeKey);
