@@ -133,9 +133,10 @@ TEST(EvpKeyUT, derToPrivKeyConversion_ok)
   ASSERT_TRUE(maybePrivKey);
   auto privKey = maybePrivKey.moveValue();
   EXPECT_EQ(1, RSA_check_key(EVP_PKEY_get0_RSA(privKey.get())));
-  // TODO:
-  // EVP_PKEY_check available in 1.1.1
-  //EXPECT_EQ(1, EVP_PKEY_check(privKey.get()));
+  
+  auto ctx = ::so::make_unique(EVP_PKEY_CTX_new(privKey.get(), nullptr));
+  ASSERT_TRUE(ctx);
+  EXPECT_EQ(1, EVP_PKEY_check(ctx.get()));
 }
 
 TEST(EvpKeyUT, derToPrivKeyConversion_shouldFailWhenPubKeyGiven)
