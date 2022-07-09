@@ -636,7 +636,7 @@ namespace asn1 {
   Result<ASN1_INTEGER_uptr> encodeInteger(const uint8_t *bt, size_t size);
   Result<ASN1_OBJECT_uptr> encodeObject(const char *nameOrNumerical, size_t len);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size);
-  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str); 
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const char *str, size_t strLen); 
 } // namepsace asn1
 
 namespace bignum {
@@ -3104,9 +3104,9 @@ namespace asn1 {
     return internal::ok(std::move(ret));
   }
   
-  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const std::string &str)
+  Result<ASN1_OCTET_STRING_uptr> encodeOctet(const char *str, size_t strLen)
   {
-    return encodeOctet(reinterpret_cast<const uint8_t*>(str.data()), str.size());
+    return encodeOctet(reinterpret_cast<const uint8_t*>(str), strLen);
   } 
 } // namespace asn1
 

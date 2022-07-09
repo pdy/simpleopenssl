@@ -339,7 +339,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtension)
   const auto basicConstraintsName = "X509v3 Basic Constraints";
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-  auto maybeData = so::asn1::encodeOctet("CA:TRUE");
+  auto maybeData = so::asn1::encodeOctet("CA:TRUE", 7);
   ASSERT_TRUE(maybeData);
   auto data = maybeData.moveValue();
 
@@ -368,7 +368,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionUsingNid)
   const auto basicConstraintsName = "X509v3 Basic Constraints";
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-  auto maybeData = so::asn1::encodeOctet("CA:TRUE");
+  auto maybeData = so::asn1::encodeOctet("CA:TRUE", 7);
   ASSERT_TRUE(maybeData);
   auto data = maybeData.moveValue();
 
@@ -397,7 +397,7 @@ TEST(X509CertExtensionsUT, addBasicConstraintsExtensionSingleExtraction)
   const auto basicConstraintsName = "X509v3 Basic Constraints";
   auto cert = so::make_unique(X509_new());
   ASSERT_TRUE(cert);
-  auto maybeData = so::asn1::encodeOctet("CA:TRUE");
+  auto maybeData = so::asn1::encodeOctet("CA:TRUE", 7);
   ASSERT_TRUE(maybeData);
   auto data = maybeData.moveValue();
 
