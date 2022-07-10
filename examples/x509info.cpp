@@ -251,9 +251,9 @@ void handleCert(const std::string &fileName, Format format)
 {
   auto x509 = [&] { 
     if(format == Format::PEM)
-      return so::x509::convertPemFileToX509(fileName);
+      return so::x509::convertPemFileToX509(fileName.c_str(), fileName.size());
       
-    return so::x509::convertDerFileToX509(fileName); 
+    return so::x509::convertDerFileToX509(fileName.c_str(), fileName.size()); 
   }();
 
   if(!x509)
