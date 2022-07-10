@@ -2227,10 +2227,10 @@ namespace x509 {
   Result<std::string> convertX509ToPem(X509 &cert);
 
   Result<void> convertX509ToDerFile(X509 &cert, const char *filePath, size_t filePathLen);
-  Result<X509_uptr> convertDerFileToX509(const std::string &filePath);
+  Result<X509_uptr> convertDerFileToX509(const char *filePath, size_t filePathLen);
     
-  Result<void> convertX509ToPemFile(X509 &cert, const std::string &filePath);
-  Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath);
+  Result<void> convertX509ToPemFile(X509 &cert, const char *filePath, size_t filePathLen);
+  Result<X509_uptr> convertPemFileToX509(const char *pemFilePath, size_t filePathLen);
 
   Result<X509_uptr> copy(X509 &cert);
   
@@ -2811,6 +2811,23 @@ namespace internal {
     }); 
   }
 
+  int bioReadFileName(BIO &bio, const char *filePath, size_t filePathLen)
+  {
+    static constexpr size_t FILENAME_SIZE = 512;
+    if(filePath[filePathLen] == '\0')
+      return BIO_read_filename(&bio, filePath);
+    else if(filePathLen < FILENAME_SIZE)
+    {
+      char pathBuff[FILENAME_SIZE] = {0};
+      memcpy(pathBuff, filePath, filePathLen);
+
+      return BIO_read_filename(&bio, pathBuff);
+    }
+
+    const auto strPathBuff = StringBuffer::createNullTermFrom(filePath, filePathLen);
+    return BIO_read_filename(&bio, strPathBuff.get());
+  }
+
   template<typename ...Args>
   BIO_uptr bioNewFile(const char *filePath, size_t filePathLen, Args&&... args)
   {
@@ -2822,8 +2839,7 @@ namespace internal {
     else if(filePathLen < FILENAME_SIZE)
     {
       char pathBuff[FILENAME_SIZE] = {0};
-      for(size_t i = 0; i < filePathLen; ++i)
-        pathBuff[i] = filePath[i];
+      memcpy(pathBuff, filePath, filePathLen);
 
       return make_unique(BIO_new_file(pathBuff, std::forward<Args>(args)...));
     }
@@ -4118,9 +4134,9 @@ namespace x509 {
     return internal::okVoid();
   }
 
-  Result<X509_uptr> convertDerFileToX509(const std::string &filePath)
+  Result<X509_uptr> convertDerFileToX509(const char *filePath, size_t filePathLen)
   {
-    BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "r"));
+    BIO_uptr bio = internal::bioNewFile(filePath, filePathLen, "r");
     if(!bio)
       return internal::err<X509_uptr>();
 
@@ -4131,9 +4147,9 @@ namespace x509 {
     return internal::ok(std::move(cert));
   }
   
-  Result<void> convertX509ToPemFile(X509 &cert, const std::string &filePath)
+  Result<void> convertX509ToPemFile(X509 &cert, const char *filePath, size_t filePathLen)
   {
-    BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "w"));
+    BIO_uptr bio = internal::bioNewFile(filePath, filePathLen, "w");
     if(!bio)
       return internal::errVoid();
 
@@ -4148,15 +4164,11 @@ namespace x509 {
     return internal::convertToPem(PEM_write_bio_X509, &cert); 
   }
 
-  Result<X509_uptr> convertPemFileToX509(const std::string &pemFilePath)
+  Result<X509_uptr> convertPemFileToX509(const char *pemFilePath, size_t filePathLen)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
 
-    // I'd rather do copy here than drop const in argument or use
-    // const_cast in BIO_read_filename
-    auto fn = pemFilePath; 
-
-    if(0 >= BIO_read_filename(bio.get(), fn.c_str()))
+    if(0 >= internal::bioReadFileName(*bio, pemFilePath, filePathLen))
       return internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));

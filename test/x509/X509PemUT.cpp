@@ -72,7 +72,8 @@ TEST(X509PEMUT, x509ToPem)
 TEST(X509PEMUT, pemFileToX509)
 {
   // WHEN
-  auto cert = x509::convertPemFileToX509("data/validpemcert.pem");
+  const std::string validPemCertFile = "data/validpemcert.pem";
+  auto cert = x509::convertPemFileToX509(validPemCertFile.c_str(), validPemCertFile.size());
   ASSERT_TRUE(cert);
 
   auto pemCert = x509::convertX509ToPem(*cert.value);
@@ -87,11 +88,11 @@ TEST(X509PEMUT, x509ToPemFile)
   // GIVEN
   const std::string tmpFilePath = "data/tmp_test_cert.pem";
   const std::string validPemCertFile = "data/validpemcert.pem";
-  auto cert = x509::convertPemFileToX509(validPemCertFile);
+  auto cert = x509::convertPemFileToX509(validPemCertFile.c_str(), validPemCertFile.size());
   ASSERT_TRUE(cert);
 
   // WHEN
-  const auto result = x509::convertX509ToPemFile(*cert.value, tmpFilePath);
+  const auto result = x509::convertX509ToPemFile(*cert.value, tmpFilePath.c_str(), tmpFilePath.size());
   ASSERT_TRUE(result);
 
   const auto fileGuard = makeScopeGuard([&]{ removeFile(tmpFilePath); });

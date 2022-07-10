@@ -73,7 +73,8 @@ TEST(X509DERUT, certToDerFile_TooLongFileName)
 TEST(X509DERUT, derFileToCert)
 {
   // WHEN
-  auto cert = x509::convertDerFileToX509("data/validdercert.der");
+  const std::string filePath = "data/validdercert.der";
+  auto cert = x509::convertDerFileToX509(filePath.c_str(), filePath.size());
 
   // THEN
   ASSERT_TRUE(cert);
