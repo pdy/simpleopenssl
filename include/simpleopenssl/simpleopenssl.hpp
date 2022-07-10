@@ -440,12 +440,16 @@ public:
     return StringBuffer(len, const_cast<char*>(c_str)); 
   }
 
-  /*
-  static StringBuffer take(char *c_str, size_t len)
+  static StringBuffer createNullTerminated(const char *c_str, size_t strlen)
   {
-    return StringBuffer(len, c_str); 
+    StringBuffer ret(strlen + 1);
+    for(size_t i = 0; i < strlen; ++i)
+      ret[i] = c_str[i];
+
+    ret[strlen] = '\0';
+    return ret;
   }
-  */
+
 };
 
 inline std::ostream& operator<<(std::ostream &oss, const StringBuffer &buff)
@@ -2830,11 +2834,7 @@ namespace internal {
       if(path[pathLen] == '\0')
         return make_unique(BIO_new_file(path, "rb"));
       
-      StringBuffer pathStr(pathLen + 1);
-      for(size_t i = 0; i < pathLen; ++i)
-        pathStr[i] = path[i];
-
-      pathStr[pathLen] = '\0';
+      const auto pathStr = StringBuffer::createNullTerminated(path, pathLen);
       return make_unique(BIO_new_file(pathStr.get(), "rb"));
     }();
 
@@ -3088,13 +3088,8 @@ namespace asn1 {
 
       return internal::ok(std::move(ret));
     }
-
-    StringBuffer str(len + 1);
-    for(size_t i = 0; i < len; ++i)
-      str[i] = nameOrNumerical[i];
-
-    str[len] = '\0';
-
+   
+    const auto str = StringBuffer::createNullTerminated(nameOrNumerical, len); 
     auto ret = make_unique(OBJ_txt2obj(str.get(), 0));
     if(!ret)
     return internal::err<ASN1_OBJECT_uptr>();
@@ -4574,11 +4569,7 @@ namespace x509 {
 
     // I'd rather do copy here than drop const in argument or use
     // const_cast in BIO_read_filename
-    std::vector<char> fn;
-    fn.reserve(pemCrl.size() + 1);
-    std::copy_n(pemCrl.begin(), pemCrl.size(), std::back_inserter(fn));
-    fn.push_back('\0');
-
+    std::string fn = pemCrl;
     if(0 >= BIO_read_filename(bio.get(), fn.data()))
       return internal::err<X509_CRL_uptr>(); 
 
