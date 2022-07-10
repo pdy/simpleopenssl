@@ -440,7 +440,7 @@ public:
     return StringBuffer(len, const_cast<char*>(c_str)); 
   }
 
-  static StringBuffer createNullTerminated(const char *c_str, size_t strlen)
+  static StringBuffer createNullTermFrom(const char *c_str, size_t strlen)
   {
     StringBuffer ret(strlen + 1);
     for(size_t i = 0; i < strlen; ++i)
@@ -2834,7 +2834,7 @@ namespace internal {
       if(path[pathLen] == '\0')
         return make_unique(BIO_new_file(path, "rb"));
       
-      const auto pathStr = StringBuffer::createNullTerminated(path, pathLen);
+      const auto pathStr = StringBuffer::createNullTermFrom(path, pathLen);
       return make_unique(BIO_new_file(pathStr.get(), "rb"));
     }();
 
@@ -3089,7 +3089,7 @@ namespace asn1 {
       return internal::ok(std::move(ret));
     }
    
-    const auto str = StringBuffer::createNullTerminated(nameOrNumerical, len); 
+    const auto str = StringBuffer::createNullTermFrom(nameOrNumerical, len); 
     auto ret = make_unique(OBJ_txt2obj(str.get(), 0));
     if(!ret)
     return internal::err<ASN1_OBJECT_uptr>();
