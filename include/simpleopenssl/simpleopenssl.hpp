@@ -2223,7 +2223,7 @@ namespace x509 {
   //----------------------------------------------------------------------------------------------
   Result<X509_uptr> create();
 
-  Result<X509_uptr> convertPemToX509(const std::string &pemCert);
+  Result<X509_uptr> convertPemToX509(const char *pemCert, size_t pemCertLen);
   Result<std::string> convertX509ToPem(X509 &cert);
 
   Result<void> convertX509ToDerFile(X509 &cert, const std::string &filePath);
@@ -4066,11 +4066,11 @@ namespace x509 {
     return internal::ok(std::move(ret));
   }
 
-  Result<X509_uptr> convertPemToX509(const std::string &pemCert)
+  Result<X509_uptr> convertPemToX509(const char *pemCert, size_t pemCertLen)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 
-    if(0 >= BIO_write(bio.get(), pemCert.c_str(), static_cast<int>(pemCert.length())))
+    if(0 >= BIO_write(bio.get(), pemCert, static_cast<int>(pemCertLen)))
       return internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));

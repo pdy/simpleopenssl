@@ -254,7 +254,7 @@ TEST(EvpKeyUT, pubKeyToPemConversion_shouldSuccessWithPrivKey)
 TEST(EvpKeyUT, getKeyType)
 {
   // GIVEN
-  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert);
+  auto maybeCert = x509::convertPemToX509(data::selfSignedCAPemCert.c_str(), data::selfSignedCAPemCert.size());
   ASSERT_TRUE(maybeCert);
   auto cert = maybeCert.moveValue();
   auto maybePubKey = x509::getPubKey(*cert);

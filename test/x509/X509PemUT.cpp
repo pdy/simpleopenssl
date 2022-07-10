@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -35,7 +35,7 @@ namespace x509 = ::so::x509;
 TEST(X509PEMUT, pemStringToX509ShouldFail)
 {
   // WHEN
-  auto cert = x509::convertPemToX509(data::meaninglessInvalidPemCert);
+  auto cert = x509::convertPemToX509(data::meaninglessInvalidPemCert.c_str(), data::meaninglessInvalidPemCert.size());
   
   // THEN
   EXPECT_FALSE(cert);
@@ -44,7 +44,7 @@ TEST(X509PEMUT, pemStringToX509ShouldFail)
 TEST(X509PEMUT, pemStringToX509ShouldSuccess)
 {
   // WHEN
-  auto cert = x509::convertPemToX509(data::selfSignedCAPemCert);
+  auto cert = x509::convertPemToX509(data::selfSignedCAPemCert.c_str(), data::selfSignedCAPemCert.size());
   
   // THEN
   EXPECT_TRUE(cert);
