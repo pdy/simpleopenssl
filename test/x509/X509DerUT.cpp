@@ -35,7 +35,7 @@ namespace x509 = ::so::x509;
 
 TEST(X509DERUT, certToDerFile)
 {
-  static constexpr auto TMP_OUT_FILENAME = "data/tmp_der_cert.der";
+  const std::string TMP_OUT_FILENAME = "data/tmp_der_cert.der";
 
   const unsigned char *it = data::validDerCert.get();
   auto cert = ::so::make_unique(d2i_X509(nullptr, &it, static_cast<long>(data::validDerCert.size())));
@@ -44,7 +44,26 @@ TEST(X509DERUT, certToDerFile)
   auto scope = ::makeScopeGuard([&] { ::removeFile(TMP_OUT_FILENAME); });
 
   // WHEN
-  const auto result = x509::convertX509ToDerFile(*cert, TMP_OUT_FILENAME);
+  const auto result = x509::convertX509ToDerFile(*cert, TMP_OUT_FILENAME.c_str(), TMP_OUT_FILENAME.size());
+
+  // THEN
+  ASSERT_TRUE(result);
+  EXPECT_TRUE(utils::filesEqual("data/validdercert.der", TMP_OUT_FILENAME));
+}
+
+TEST(X509DERUT, certToDerFile_TooLongFileName)
+{
+  const std::string TMP_OUT_FILENAME = "data/tmp_der_cert.der";
+  const std::string LONG_FILENAME = TMP_OUT_FILENAME + std::string(1024, '-');
+
+  const unsigned char *it = data::validDerCert.get();
+  auto cert = ::so::make_unique(d2i_X509(nullptr, &it, static_cast<long>(data::validDerCert.size())));
+  ASSERT_TRUE(cert);
+
+  auto scope = ::makeScopeGuard([&] { ::removeFile(TMP_OUT_FILENAME); });
+
+  // WHEN
+  const auto result = x509::convertX509ToDerFile(*cert, LONG_FILENAME.c_str(), TMP_OUT_FILENAME.size());
 
   // THEN
   ASSERT_TRUE(result);

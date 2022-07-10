@@ -2226,7 +2226,7 @@ namespace x509 {
   Result<X509_uptr> convertPemToX509(const char *pemCert, size_t pemCertLen);
   Result<std::string> convertX509ToPem(X509 &cert);
 
-  Result<void> convertX509ToDerFile(X509 &cert, const std::string &filePath);
+  Result<void> convertX509ToDerFile(X509 &cert, const char *filePath, size_t filePathLen);
   Result<X509_uptr> convertDerFileToX509(const std::string &filePath);
     
   Result<void> convertX509ToPemFile(X509 &cert, const std::string &filePath);
@@ -2318,7 +2318,7 @@ namespace x509 {
 
 namespace so {
 namespace internal {
-
+  
   bool X509Name::operator ==(const X509Name &other) const
   {
     return commonName == other.commonName
@@ -2811,6 +2811,27 @@ namespace internal {
     }); 
   }
 
+  template<typename ...Args>
+  BIO_uptr bioNewFile(const char *filePath, size_t filePathLen, Args&&... args)
+  {
+    static constexpr size_t FILENAME_SIZE = 512;
+    
+    if(filePath[filePathLen] == '\0')
+      return make_unique(BIO_new_file(filePath, std::forward<Args>(args)...));
+
+    else if(filePathLen < FILENAME_SIZE)
+    {
+      char pathBuff[FILENAME_SIZE] = {0};
+      for(size_t i = 0; i < filePathLen; ++i)
+        pathBuff[i] = filePath[i];
+
+      return make_unique(BIO_new_file(pathBuff, std::forward<Args>(args)...));
+    }
+
+    const auto tmpPath = StringBuffer::createNullTermFrom(filePath, filePathLen);
+    return make_unique(BIO_new_file(tmpPath.get(), std::forward<Args>(args)...));
+  }
+
   template<typename CTX, typename DATA, typename INIT, typename UPDATE, typename FINAL>
   Result<ByteBuffer> doHash(const DATA *data, size_t dataSize, unsigned long digestLen, INIT init, UPDATE update, FINAL finalFunc)
   {
@@ -2830,14 +2851,7 @@ namespace internal {
   
   Result<ByteBuffer> doHashFile(const char *path, size_t pathLen, const EVP_MD *evpMd)
   {    
-    auto bioRaw = [&] {
-      if(path[pathLen] == '\0')
-        return make_unique(BIO_new_file(path, "rb"));
-      
-      const auto pathStr = StringBuffer::createNullTermFrom(path, pathLen);
-      return make_unique(BIO_new_file(pathStr.get(), "rb"));
-    }();
-
+    auto bioRaw = bioNewFile(path, pathLen, "rb"); 
     if(!bioRaw)
       return internal::err<ByteBuffer>();
 
@@ -3080,6 +3094,7 @@ namespace asn1 {
   
   Result<ASN1_OBJECT_uptr> encodeObject(const char *nameOrNumerical, size_t len)
   {
+    static constexpr size_t TMP_BUFF_SIZE = 128;
     if(nameOrNumerical[len] == '\0')
     {
       auto ret = make_unique(OBJ_txt2obj(nameOrNumerical, 0));
@@ -3088,14 +3103,25 @@ namespace asn1 {
 
       return internal::ok(std::move(ret));
     }
-   
+    else if(len < TMP_BUFF_SIZE)
+    {
+      char tmpBuff[TMP_BUFF_SIZE] = {0};
+      for(size_t i = 0; i < len; ++i)
+        tmpBuff[i] = nameOrNumerical[i];
+
+      auto ret = make_unique(OBJ_txt2obj(tmpBuff, 0));
+      if(!ret)
+        return internal::err<ASN1_OBJECT_uptr>();
+
+      return internal::ok(std::move(ret));
+    }
+
     const auto str = StringBuffer::createNullTermFrom(nameOrNumerical, len); 
     auto ret = make_unique(OBJ_txt2obj(str.get(), 0));
     if(!ret)
-    return internal::err<ASN1_OBJECT_uptr>();
+      return internal::err<ASN1_OBJECT_uptr>();
 
     return internal::ok(std::move(ret));
-
   }
 
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size)
@@ -4080,9 +4106,9 @@ namespace x509 {
     return internal::ok(std::move(ret));
   }
 
-  Result<void> convertX509ToDerFile(X509 &cert, const std::string &filePath)
+  Result<void> convertX509ToDerFile(X509 &cert, const char *filePath, size_t filePathLen)
   {
-    BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "w"));
+    BIO_uptr bio = internal::bioNewFile(filePath, filePathLen, "w"); 
     if(!bio)
       return internal::errVoid();
 
