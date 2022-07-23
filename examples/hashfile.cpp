@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,8 @@
 
 using namespace so;
 
-Result<Bytes> makeHash(const std::string& filePath, const std::string &type);
-std::string bin2Hex(const so::Bytes &buff);
+Result<ByteBuffer> makeHash(const std::string& filePath, const std::string &type);
+std::string bin2Hex(const so::ByteBuffer &buff);
 
 int main(int argc, char *argv[])
 {
@@ -74,19 +74,19 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-Result<Bytes> makeHash(const std::string& filePath, const std::string &type)
+Result<ByteBuffer> makeHash(const std::string& filePath, const std::string &type)
 {
   if(type == "sha1")
-    return hash::fileSHA1(filePath);
+    return hash::fileSHA1(filePath.c_str());
   else if(type == "sha256")
-    return hash::fileSHA256(filePath);
+    return hash::fileSHA256(filePath.c_str());
   else if(type == "sha512")
-    return hash::fileSHA512(filePath);
+    return hash::fileSHA512(filePath.c_str());
 
-  return hash::fileSHA256(filePath);
+  return hash::fileSHA256(filePath.c_str());
 }
 
-std::string bin2Hex(const so::Bytes &buff)
+std::string bin2Hex(const so::ByteBuffer &buff)
 {
   std::ostringstream oss;
   for(const auto bt : buff){
