@@ -802,12 +802,19 @@ namespace hash {
   Result<ByteBuffer> sha512(const char *str, size_t size);
 
   Result<ByteBuffer> fileMD4(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileMD4(const char *path);
   Result<ByteBuffer> fileMD5(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileMD5(const char *path);
   Result<ByteBuffer> fileSHA1(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA1(const char *path);
   Result<ByteBuffer> fileSHA224(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA224(const char *path);
   Result<ByteBuffer> fileSHA256(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA256(const char *path);
   Result<ByteBuffer> fileSHA384(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA384(const char *path);
   Result<ByteBuffer> fileSHA512(const char *path, size_t pathLen);
+  Result<ByteBuffer> fileSHA512(const char *path);
 } // namespace hash
 
 namespace nid {
@@ -2828,6 +2835,23 @@ namespace internal {
     return BIO_read_filename(&bio, strPathBuff.get());
   }
 
+  template<typename CTX, typename DATA, typename INIT, typename UPDATE, typename FINAL>
+  Result<ByteBuffer> doHash(const DATA *data, size_t dataSize, unsigned long digestLen, INIT init, UPDATE update, FINAL finalFunc)
+  {
+    ByteBuffer hash(static_cast<size_t>(digestLen));
+    CTX ctx;
+    if(1 != init(&ctx))
+      return internal::err<ByteBuffer>();
+
+    if(1 != update(&ctx, data, dataSize))
+      return internal::err<ByteBuffer>();
+
+    if(1 != finalFunc(hash.get(), &ctx))
+      return internal::err<ByteBuffer>(); 
+
+    return internal::ok(std::move(hash));
+  }
+
   template<typename ...Args>
   BIO_uptr bioNewFile(const char *filePath, size_t filePathLen, Args&&... args)
   {
@@ -2848,26 +2872,10 @@ namespace internal {
     return make_unique(BIO_new_file(tmpPath.get(), std::forward<Args>(args)...));
   }
 
-  template<typename CTX, typename DATA, typename INIT, typename UPDATE, typename FINAL>
-  Result<ByteBuffer> doHash(const DATA *data, size_t dataSize, unsigned long digestLen, INIT init, UPDATE update, FINAL finalFunc)
+  template<typename BioNewFileFunc, typename ...Args>
+  Result<ByteBuffer> doHashFileTempl(const EVP_MD *evpMd, BioNewFileFunc bioNewFileFunc, Args&& ...bioNewFileFuncArgs)
   {
-    ByteBuffer hash(static_cast<size_t>(digestLen));
-    CTX ctx;
-    if(1 != init(&ctx))
-      return internal::err<ByteBuffer>();
-
-    if(1 != update(&ctx, data, dataSize))
-      return internal::err<ByteBuffer>();
-
-    if(1 != finalFunc(hash.get(), &ctx))
-      return internal::err<ByteBuffer>(); 
-
-    return internal::ok(std::move(hash));
-  }
-  
-  Result<ByteBuffer> doHashFile(const char *path, size_t pathLen, const EVP_MD *evpMd)
-  {    
-    auto bioRaw = bioNewFile(path, pathLen, "rb"); 
+    auto bioRaw = bioNewFileFunc(std::forward<Args>(bioNewFileFuncArgs)...); 
     if(!bioRaw)
       return internal::err<ByteBuffer>();
 
@@ -2899,6 +2907,16 @@ namespace internal {
     /*const int mdlen = */BIO_gets(mdtmp, reinterpret_cast<char*>(ret.get()), mdSize);
 
     return internal::ok(std::move(ret));
+  }
+  
+  Result<ByteBuffer> doHashFile(const char *path, const EVP_MD *evpMd)
+  {    
+    return doHashFileTempl(evpMd, [](const char *p, const char *par) { return make_unique(BIO_new_file(p, par)); }, path, "rb"); 
+  }
+
+  Result<ByteBuffer> doHashFile(const char *path, size_t pathLen, const EVP_MD *evpMd)
+  { 
+    return doHashFileTempl(evpMd, [](const char *p, size_t s, const char *par) { return bioNewFile(p, s, par); }, path, pathLen, "rb"); 
   }
 
   template<typename FUNC, typename ... Types>
@@ -3750,34 +3768,69 @@ namespace hash {
     return internal::doHashFile(path, pathLen, EVP_md4());
   }
   
+  Result<ByteBuffer> fileMD4(const char *path)
+  {
+    return internal::doHashFile(path, EVP_md4());
+  }
+  
   Result<ByteBuffer> fileMD5(const char *path, size_t pathLen)
   {
     return internal::doHashFile(path, pathLen, EVP_md5());
+  }
+  
+  Result<ByteBuffer> fileMD5(const char *path)
+  {
+    return internal::doHashFile(path, EVP_md5());
   }
   
   Result<ByteBuffer> fileSHA1(const char *path, size_t pathLen)
   {
     return internal::doHashFile(path, pathLen, EVP_sha1());
   }
+  
+  Result<ByteBuffer> fileSHA1(const char *path)
+  {
+    return internal::doHashFile(path, EVP_sha1());
+  }
 
   Result<ByteBuffer> fileSHA224(const char *path, size_t pathLen)
   {
     return internal::doHashFile(path, pathLen, EVP_sha224());
+  }
+  
+  Result<ByteBuffer> fileSHA224(const char *path)
+  {
+    return internal::doHashFile(path, EVP_sha224());
   }
 
   Result<ByteBuffer> fileSHA256(const char *path, size_t pathLen)
   {
     return internal::doHashFile(path, pathLen, EVP_sha256());
   }
+  
+  Result<ByteBuffer> fileSHA256(const char *path)
+  {
+    return internal::doHashFile(path, EVP_sha256());
+  }
 
   Result<ByteBuffer> fileSHA384(const char *path, size_t pathLen)
   {
     return internal::doHashFile(path, pathLen, EVP_sha384());
   }
+  
+  Result<ByteBuffer> fileSHA384(const char *path)
+  {
+    return internal::doHashFile(path, EVP_sha384());
+  }
 
   Result<ByteBuffer> fileSHA512(const char *path, size_t pathLen)
   {
     return internal::doHashFile(path, pathLen, EVP_sha512());
+  }
+
+  Result<ByteBuffer> fileSHA512(const char *path)
+  {
+    return internal::doHashFile(path, EVP_sha512());
   }
 }// namespace hash
 
