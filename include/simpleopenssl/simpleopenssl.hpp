@@ -2234,10 +2234,14 @@ namespace x509 {
   Result<std::string> convertX509ToPem(X509 &cert);
 
   Result<void> convertX509ToDerFile(X509 &cert, const char *filePath, size_t filePathLen);
+  Result<void> convertX509ToDerFile(X509 &cert, const char *filePath);
   Result<X509_uptr> convertDerFileToX509(const char *filePath, size_t filePathLen);
+  Result<X509_uptr> convertDerFileToX509(const char *filePath);
     
   Result<void> convertX509ToPemFile(X509 &cert, const char *filePath, size_t filePathLen);
+  Result<void> convertX509ToPemFile(X509 &cert, const char *filePath);
   Result<X509_uptr> convertPemFileToX509(const char *pemFilePath, size_t filePathLen);
+  Result<X509_uptr> convertPemFileToX509(const char *pemFilePath);
 
   Result<X509_uptr> copy(X509 &cert);
   
@@ -4187,6 +4191,18 @@ namespace x509 {
     return internal::okVoid();
   }
 
+  Result<void> convertX509ToDerFile(X509 &cert, const char *filePath)
+  {
+    BIO_uptr bio = make_unique(BIO_new_file(filePath, "w")); 
+    if(!bio)
+      return internal::errVoid();
+
+    if(0 == i2d_X509_bio(bio.get(), &cert))
+      return internal::errVoid();
+
+    return internal::okVoid();
+  }
+
   Result<X509_uptr> convertDerFileToX509(const char *filePath, size_t filePathLen)
   {
     BIO_uptr bio = internal::bioNewFile(filePath, filePathLen, "r");
@@ -4199,7 +4215,20 @@ namespace x509 {
 
     return internal::ok(std::move(cert));
   }
-  
+ 
+  Result<X509_uptr> convertDerFileToX509(const char *filePath)
+  {
+    BIO_uptr bio = make_unique(BIO_new_file(filePath, "r"));
+    if(!bio)
+      return internal::err<X509_uptr>();
+
+    auto cert = make_unique(d2i_X509_bio(bio.get(), nullptr));
+    if(!cert)
+      return internal::err<X509_uptr>();
+
+    return internal::ok(std::move(cert));
+  }
+
   Result<void> convertX509ToPemFile(X509 &cert, const char *filePath, size_t filePathLen)
   {
     BIO_uptr bio = internal::bioNewFile(filePath, filePathLen, "w");
@@ -4212,9 +4241,16 @@ namespace x509 {
     return internal::okVoid();
   }
 
-  Result<std::string> convertX509ToPem(X509 &cert)
+  Result<void> convertX509ToPemFile(X509 &cert, const char *filePath)
   {
-    return internal::convertToPem(PEM_write_bio_X509, &cert); 
+    BIO_uptr bio = make_unique(BIO_new_file(filePath, "w"));
+    if(!bio)
+      return internal::errVoid();
+
+    if(!PEM_write_bio_X509(bio.get(), &cert))
+      return internal::errVoid();
+
+    return internal::okVoid();
   }
 
   Result<X509_uptr> convertPemFileToX509(const char *pemFilePath, size_t filePathLen)
@@ -4229,6 +4265,25 @@ namespace x509 {
       return internal::err<X509_uptr>();
 
     return internal::ok(std::move(ret));
+  }
+
+  Result<X509_uptr> convertPemFileToX509(const char *pemFilePath)
+  {
+    BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
+
+    if(0 >= BIO_read_filename(bio.get(), pemFilePath))
+      return internal::err<X509_uptr>(); 
+
+    auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
+    if(!ret)
+      return internal::err<X509_uptr>();
+
+    return internal::ok(std::move(ret));
+  }
+
+  Result<std::string> convertX509ToPem(X509 &cert)
+  {
+    return internal::convertToPem(PEM_write_bio_X509, &cert); 
   }
 
   Result<X509_uptr> copy(X509 &cert)
