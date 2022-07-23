@@ -29,4 +29,5 @@ fi
 symbolic_link=./3rd/$1
 path=$2
 
+mkdir -p 3rd
 ln -sf $path $symbolic_link
