@@ -44,8 +44,8 @@ TEST(CRLUT, version)
   const auto version = x509::getVersion(*crl);
 
   // THEN
-  EXPECT_EQ(x509::Version::v2, std::get<0>(version));
-  EXPECT_EQ(1, std::get<1>(version));
+  EXPECT_EQ(x509::VersionNumber::v2, version.version);
+  EXPECT_EQ(1, version.versionRaw);
 }
 
 TEST(CRLUT, getIssuer)

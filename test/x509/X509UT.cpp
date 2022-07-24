@@ -169,7 +169,7 @@ TEST(X509UT, setGetSubjectAPIIntegrityOK)
 TEST(X509UT, getVersionOK)
 {
   // GIVEN
-  const x509::Version expected = x509::Version::v3;
+  const auto expected = x509::VersionNumber::v3;
   auto cert = ::so::make_unique(X509_new());
   ASSERT_TRUE(cert);
   ASSERT_TRUE(X509_set_version(cert.get(), static_cast<long>(expected)));
@@ -178,14 +178,14 @@ TEST(X509UT, getVersionOK)
   const auto actual = x509::getVersion(*cert);
 
   // THEN
-  EXPECT_EQ(expected, std::get<0>(actual));
-  EXPECT_EQ(static_cast<long>(expected), std::get<1>(actual));
+  EXPECT_EQ(expected, actual.version);
+  EXPECT_EQ(static_cast<long>(expected), actual.versionRaw);
 }
 
 TEST(X509UT, getVersionShoulNotBeEqual)
 {
   // GIVEN
-  const x509::Version expected = x509::Version::v3;
+  const auto expected = x509::VersionNumber::v3;
   auto cert = ::so::make_unique(X509_new());
   ASSERT_TRUE(cert);
   ASSERT_TRUE(X509_set_version(cert.get(), static_cast<long>(expected) - 1));
@@ -194,13 +194,13 @@ TEST(X509UT, getVersionShoulNotBeEqual)
   const auto actual = x509::getVersion(*cert);
 
   // THEN
-  EXPECT_NE(expected, std::get<0>(actual));
+  EXPECT_NE(expected, actual.version);
 }
 
 TEST(X509UT, getSetVersionApiIntegrityOK)
 {
   // GIVEN
-  const x509::Version expected = x509::Version::v3;
+  const auto expected = x509::VersionNumber::v3;
   auto cert = ::so::make_unique(X509_new());
   ASSERT_TRUE(cert);
 
@@ -210,7 +210,7 @@ TEST(X509UT, getSetVersionApiIntegrityOK)
 
   // THEN
   ASSERT_TRUE(setResult);
-  EXPECT_EQ(expected, std::get<0>(actual));
+  EXPECT_EQ(expected, actual.version);
 }
 
 TEST(X509UT, getNonStandardX509Version)
@@ -225,8 +225,8 @@ TEST(X509UT, getNonStandardX509Version)
   const auto actual = x509::getVersion(*cert);
 
   // THEN
-  EXPECT_EQ(x509::Version::NON_STANDARD, std::get<0>(actual));
-  EXPECT_EQ(expectedNonStandardVersion, std::get<1>(actual));
+  EXPECT_EQ(x509::VersionNumber::NON_STANDARD, actual.version);
+  EXPECT_EQ(expectedNonStandardVersion, actual.versionRaw);
 }
 
 TEST(X509UT, getNonStandardX509VersionApiIntegrity)
@@ -242,8 +242,8 @@ TEST(X509UT, getNonStandardX509VersionApiIntegrity)
 
   // THEN
   ASSERT_TRUE(setResult);
-  EXPECT_EQ(x509::Version::NON_STANDARD, std::get<0>(actual));
-  EXPECT_EQ(expectedNonStandardVersion, std::get<1>(actual));
+  EXPECT_EQ(x509::VersionNumber::NON_STANDARD, actual.version);
+  EXPECT_EQ(expectedNonStandardVersion, actual.versionRaw);
 }
 
 TEST(X509UT, getValidityOK)
