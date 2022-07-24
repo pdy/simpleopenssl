@@ -2233,18 +2233,17 @@ namespace x509 {
   Result<X509_uptr> convertPemToX509(const char *pemCert, size_t pemCertLen);
   Result<std::string> convertX509ToPem(X509 &cert);
 
-  Result<void> convertX509ToDerFile(X509 &cert, const char *filePath, size_t filePathLen);
   Result<void> convertX509ToDerFile(X509 &cert, const char *filePath);
-  Result<X509_uptr> convertDerFileToX509(const char *filePath, size_t filePathLen);
-  Result<X509_uptr> convertDerFileToX509(const char *filePath);
-    
-  Result<void> convertX509ToPemFile(X509 &cert, const char *filePath, size_t filePathLen);
   Result<void> convertX509ToPemFile(X509 &cert, const char *filePath);
-  Result<X509_uptr> convertPemFileToX509(const char *pemFilePath, size_t filePathLen);
+  Result<X509_uptr> convertDerFileToX509(const char *filePath);
   Result<X509_uptr> convertPemFileToX509(const char *pemFilePath);
+  
+  Result<void> convertX509ToDerFile(X509 &cert, const char *filePath, size_t filePathLen);
+  Result<void> convertX509ToPemFile(X509 &cert, const char *filePath, size_t filePathLen);
+  Result<X509_uptr> convertDerFileToX509(const char *filePath, size_t filePathLen);
+  Result<X509_uptr> convertPemFileToX509(const char *pemFilePath, size_t filePathLen);
 
   Result<X509_uptr> copy(X509 &cert);
-  
   bool equal(const X509 &lhs, const X509 &rhs);
 
   Result<ecdsa::Signature> getEcdsaSignature(const X509 &cert);
@@ -2295,10 +2294,13 @@ namespace x509 {
   Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
   Result<std::string> convertCrlToPem(X509_CRL &crl);
 
-  Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrlFile);
+  Result<X509_CRL_uptr> convertPemFileToCRL(const char *pemCrlFile);
+  Result<X509_CRL_uptr> convertDerFileToCrl(const char *filePath);
+  Result<void> convertCrlToDerFile(X509_CRL &crl, const char *filePath);
 
-  Result<void> convertCrlToDerFile(X509_CRL &crl, const std::string &filePath);
-  Result<X509_CRL_uptr> convertDerFileToCrl(const std::string &filePath);
+  Result<X509_CRL_uptr> convertPemFileToCRL(const char *pemCrlFile, size_t filePathLen);
+  Result<X509_CRL_uptr> convertDerFileToCrl(const char *filePath, size_t filePathLen);
+  Result<void> convertCrlToDerFile(X509_CRL &crl, const char *filePath, size_t filePathLen);
 
   Result<ecdsa::Signature> getEcdsaSignature(X509_CRL &crl);
   Result<std::vector<CrlExtension>> getExtensions(X509_CRL &crl);
@@ -4708,15 +4710,25 @@ namespace x509 {
 
     return internal::ok(std::move(ret));
   }
- 
-  Result<X509_CRL_uptr> convertPemFileToCRL(const std::string &pemCrl)
+  
+  Result<X509_CRL_uptr> convertDerFileToCrl(const char *filePath)
+  {
+    BIO_uptr bio = make_unique(BIO_new_file(filePath, "r"));
+    if(!bio)
+      return internal::err<X509_CRL_uptr>();
+
+    auto crl = make_unique(d2i_X509_CRL_bio(bio.get(), nullptr));
+    if(!crl)
+      return internal::err<X509_CRL_uptr>();
+
+    return internal::ok(std::move(crl));
+  }
+
+  Result<X509_CRL_uptr> convertPemFileToCRL(const char *pemCrl)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
 
-    // I'd rather do copy here than drop const in argument or use
-    // const_cast in BIO_read_filename
-    std::string fn = pemCrl;
-    if(0 >= BIO_read_filename(bio.get(), fn.data()))
+    if(0 >= BIO_read_filename(bio.get(), pemCrl))
       return internal::err<X509_CRL_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));
@@ -4726,9 +4738,9 @@ namespace x509 {
     return internal::ok(std::move(ret));
   }
 
-  Result<void> convertCrlToDerFile(X509_CRL &crl, const std::string &filePath)
+  Result<void> convertCrlToDerFile(X509_CRL &crl, const char *filePath)
   {
-    BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "w"));
+    BIO_uptr bio = make_unique(BIO_new_file(filePath, "w"));
     if(!bio)
       return internal::errVoid();
 
@@ -4738,9 +4750,9 @@ namespace x509 {
     return internal::okVoid();
   }
 
-  Result<X509_CRL_uptr> convertDerFileToCrl(const std::string &filePath)
+  Result<X509_CRL_uptr> convertDerFileToCrl(const char *filePath, size_t filePathLen)
   {
-    BIO_uptr bio = make_unique(BIO_new_file(filePath.c_str(), "r"));
+    BIO_uptr bio = internal::bioNewFile(filePath, filePathLen, "r");
     if(!bio)
       return internal::err<X509_CRL_uptr>();
 
@@ -4749,6 +4761,32 @@ namespace x509 {
       return internal::err<X509_CRL_uptr>();
 
     return internal::ok(std::move(crl));
+  }
+
+  Result<X509_CRL_uptr> convertPemFileToCRL(const char *pemCrl, size_t filePathLen)
+  {
+    BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
+
+    if(0 >= internal::bioReadFileName(*bio, pemCrl, filePathLen))
+      return internal::err<X509_CRL_uptr>(); 
+
+    auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));
+    if(!ret)
+      return internal::err<X509_CRL_uptr>();
+
+    return internal::ok(std::move(ret));
+  }
+
+  Result<void> convertCrlToDerFile(X509_CRL &crl, const char *filePath, size_t filePathLen)
+  {
+    BIO_uptr bio = internal::bioNewFile(filePath, filePathLen, "w");
+    if(!bio)
+      return internal::errVoid();
+
+    if(0 == i2d_X509_CRL_bio(bio.get(), &crl))
+      return internal::errVoid();
+
+    return internal::okVoid();
   }
 
   Result<std::string> convertCrlToPem(X509_CRL &crl)

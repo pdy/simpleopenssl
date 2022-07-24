@@ -67,13 +67,25 @@ TEST(CRLPemUT, crlToPem)
   EXPECT_EQ(pemCrl, actual.value);
 }
 
-TEST(CRLPemUT, crlFromPemFile)
+TEST(CRLPemUT, crlFromPemFileNullTermApi)
 {
   // GIVEN
   const std::string PEM_FILENAME = "data/validpemcrl.pem";
 
   // WHEN
-  auto crl = x509::convertPemFileToCRL(PEM_FILENAME);
+  auto crl = x509::convertPemFileToCRL(PEM_FILENAME.c_str());
+
+  // THEN
+  ASSERT_TRUE(crl);
+}
+
+TEST(CRLPemUT, crlFromPemFileSizedFileNameApi)
+{
+  // GIVEN
+  const std::string PEM_FILENAME = "data/validpemcrl.pem";
+
+  // WHEN
+  auto crl = x509::convertPemFileToCRL(PEM_FILENAME.c_str(), PEM_FILENAME.size());
 
   // THEN
   ASSERT_TRUE(crl);
