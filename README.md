@@ -1,3 +1,7 @@
+# Branches
+**master**  - last version recomended for usage
+**develop** - development branch with latest, often experimental, changes with API that might change any time 
+
 # Features
 * Simple API - **no fancy abstractions**, no templates in interface, just simple set of functions.
 * No custom crypto processing added over OpenSSL - **if you got error, it came from OpenSSL**. Even IO is done by OpenSSL itself.
