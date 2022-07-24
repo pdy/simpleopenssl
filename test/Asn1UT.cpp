@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2022 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -60,6 +60,21 @@ TEST(Asn1UT, asn1ApiTimeConvertersIntegrityOK)
   EXPECT_EQ(now, stdTime.value);
 }
 
+TEST(Asn1UT, encodeObjectStringWithNullTerm)
+{
+  const char *inputOid = "1.3.6.1.4.1.343";
+  const char *expectedOid = "1.3.6.1.4.1.343";
+
+  auto maybeEncoded = asn1::encodeObject(inputOid);
+  ASSERT_TRUE(maybeEncoded);
+  auto encoded = maybeEncoded.moveValue();
+  auto actual = asn1::convertObjToStr(*encoded);
+  
+  // THEN
+  ASSERT_TRUE(actual);
+  EXPECT_EQ(expectedOid, actual.value);
+}
+
 TEST(Asn1UT, encodeObjectStringWithoutZeroTermination)
 {
   const char *inputOid = "1.3.6.1.4.1.343_3";
@@ -86,13 +101,22 @@ TEST_P(Asn1ObjectEncodeUT, encodeDecodeApiIntegrity)
 
   // WHEN
   auto maybeEncoded = asn1::encodeObject(input.c_str(), input.size());
+  auto maybeEncoded_2 = asn1::encodeObject(input.c_str());
+  
   ASSERT_TRUE(maybeEncoded);
+  ASSERT_TRUE(maybeEncoded_2);
+  
   auto encoded = maybeEncoded.moveValue();
   auto actual = asn1::convertObjToStr(*encoded);
-  
+  auto encoded_2 = maybeEncoded_2.moveValue();
+  auto actual_2 = asn1::convertObjToStr(*encoded_2);
+ 
+
   // THEN
   ASSERT_TRUE(actual);
+  ASSERT_TRUE(actual_2);
   EXPECT_EQ(input, actual.value);
+  EXPECT_EQ(input, actual_2.value);
 }
 
 INSTANTIATE_TEST_SUITE_P(

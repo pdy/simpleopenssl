@@ -638,6 +638,7 @@ namespace asn1 {
 
   Result<ASN1_INTEGER_uptr> encodeInteger(const uint8_t *bt, size_t size);
   Result<ASN1_OBJECT_uptr> encodeObject(const char *nameOrNumerical, size_t len);
+  Result<ASN1_OBJECT_uptr> encodeObject(const char *nameOrNumericalNullTerm);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const uint8_t *bt, size_t size);
   Result<ASN1_OCTET_STRING_uptr> encodeOctet(const char *str, size_t strLen); 
 } // namepsace asn1
@@ -3164,8 +3165,17 @@ namespace asn1 {
       return internal::ok(std::move(ret));
     }
 
-    const auto str = StringBuffer::createNullTermFrom(nameOrNumerical, len); 
+    const auto str = StringBuffer::createNullTermFrom(nameOrNumerical, len);
     auto ret = make_unique(OBJ_txt2obj(str.get(), 0));
+    if(!ret)
+      return internal::err<ASN1_OBJECT_uptr>();
+
+    return internal::ok(std::move(ret));
+  }
+   
+  Result<ASN1_OBJECT_uptr> encodeObject(const char *nameOrNumerical)
+  {
+    auto ret = make_unique(OBJ_txt2obj(nameOrNumerical, 0));
     if(!ret)
       return internal::err<ASN1_OBJECT_uptr>();
 
