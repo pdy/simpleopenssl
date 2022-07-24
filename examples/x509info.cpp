@@ -154,16 +154,16 @@ void handleCrl(const std::string &fileName, Format format)
   
   switch(version)
   {
-    case x509::Version::v1:
+    case x509::VersionNumber::v1:
       log << "Version: 1 (" << versionRaw << ")";
       break;
-    case x509::Version::v2:
+    case x509::VersionNumber::v2:
       log << "Version: 2 (" << versionRaw << ")";
       break;
-    case x509::Version::v3:
+    case x509::VersionNumber::v3:
       log << "Version: 3 (" << versionRaw << ")";
       break;
-    case x509::Version::NON_STANDARD:
+    case x509::VersionNumber::NON_STANDARD:
       log << "Version: " << versionRaw;
       break;
   }
@@ -328,16 +328,16 @@ void handleCert(const std::string &fileName, Format format)
 
   switch(version)
   {
-    case x509::Version::v1:
+    case x509::VersionNumber::v1:
       log << "Version: 1 (" << versionRaw << ")";
       break;
-    case x509::Version::v2:
+    case x509::VersionNumber::v2:
       log << "Version: 2 (" << versionRaw << ")";
       break;
-    case x509::Version::v3:
+    case x509::VersionNumber::v3:
       log << "Version: 3 (" << versionRaw << ")";
       break;
-    case x509::Version::NON_STANDARD:
+    case x509::VersionNumber::NON_STANDARD:
       log << "Version: " << versionRaw;
       break;
   }

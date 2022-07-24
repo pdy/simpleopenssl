@@ -49,7 +49,6 @@
 #include <cstring>
 #include <chrono>
 #include <iterator>
-#include <sstream>
 
 namespace so {
 
@@ -1809,7 +1808,7 @@ namespace x509 {
     bool operator !=(const Validity &other) const; 
   };
 
-  enum class Version : long
+  enum class VersionNumber : long
   {
     // Version is zero indexed, thus this enum
     // to not bring confusion.
@@ -1818,6 +1817,15 @@ namespace x509 {
     v3 = 2,
     
     NON_STANDARD = -1 
+  };
+
+  struct Version
+  {
+    VersionNumber version;
+    long versionRaw;
+
+    bool operator==(const Version &other) const;
+    bool operator!=(const Version &other) const;
   };
 
   struct Revoked
@@ -1860,7 +1868,7 @@ namespace x509 {
   Result<Subject> getSubject(const X509 &cert);
   Result<std::string> getSubjectString(const X509 &cert);
   Result<Validity> getValidity(const X509 &cert);
-  std::tuple<Version,long> getVersion(const X509 &cert);
+  Version getVersion(const X509 &cert);
   
   bool isCa(X509 &cert);
   bool isSelfSigned(X509 &cert);
@@ -1875,7 +1883,7 @@ namespace x509 {
   Result<void> setSerial(X509 &cert, const Bytes &bytes);
   Result<void> setSubject(X509 &cert, const Subject &subject);
   Result<void> setValidity(X509 &cert, const Validity &validity);
-  Result<void> setVersion(X509 &cert, Version version);
+  Result<void> setVersion(X509 &cert, VersionNumber version);
   Result<void> setVersion(X509 &cert, long version);
   
   Result<size_t> signSha1(X509 &cert, EVP_PKEY &pkey);
@@ -1907,7 +1915,7 @@ namespace x509 {
   Result<std::vector<Revoked>> getRevoked(X509_CRL &crl);
   Result<Bytes> getSignature(const X509_CRL &crl);
   nid::Nid getSignatureAlgorithm(const X509_CRL &crl);
-  std::tuple<Version, long> getVersion(X509_CRL &crl);
+  Version getVersion(X509_CRL &crl);
  
 } // namespace x509
 
@@ -3658,6 +3666,16 @@ namespace x509 {
     return !(*this == other);
   }
 
+  bool Version::operator==(const Version &other) const
+  {
+    return version == other.version && versionRaw == other.versionRaw;
+  }
+
+  bool Version::operator!=(const Version &other) const
+  {
+    return !(*this == other);
+  }
+
   Result<Issuer> getIssuer(const X509 &cert)
   {
     // this is internal ptr and must not be freed
@@ -4020,13 +4038,13 @@ namespace x509 {
     return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err(false);
   }
 
-  std::tuple<Version,long> getVersion(const X509 &cert)
+  Version getVersion(const X509 &cert)
   {
     const long version = X509_get_version(&cert);
     if(3 <= version || -1 >= version)
-      return std::make_tuple(Version::NON_STANDARD, version);
+      return Version{ VersionNumber::NON_STANDARD, version };
 
-    return std::make_tuple(static_cast<Version>(version), version);
+    return Version{ static_cast<VersionNumber>(version), version };
   }
 
   Result<void> setCustomExtension(X509 &cert, const std::string &oidNumerical, ASN1_OCTET_STRING &octet, bool critical)
@@ -4172,7 +4190,7 @@ namespace x509 {
     return internal::okVoid();
   }
 
-  Result<void> setVersion(X509 &cert, Version version)
+  Result<void> setVersion(X509 &cert, VersionNumber version)
   {
     if(1 != X509_set_version(&cert, static_cast<long>(version)))
       return internal::errVoid();
@@ -4382,13 +4400,13 @@ namespace x509 {
     return static_cast<nid::Nid>(X509_CRL_get_signature_nid(&crl)); 
   }
 
-  std::tuple<Version, long> getVersion(X509_CRL &crl)
+  Version getVersion(X509_CRL &crl)
   {
     const long version = X509_CRL_get_version(&crl);
     if(3 <= version || -1 >= version)
-      return std::make_tuple(Version::NON_STANDARD, version);
+      return Version{ VersionNumber::NON_STANDARD, version };
 
-    return std::make_tuple(static_cast<Version>(version), version);
+    return Version{ static_cast<VersionNumber>(version), version };
   }
 } // namespace x509
 
