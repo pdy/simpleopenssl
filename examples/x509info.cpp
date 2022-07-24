@@ -126,7 +126,7 @@ int main(int argc, char *argv[])
 
 void handleCrl(const std::string &fileName, Format format)
 {
-  auto maybeX509 = format == Format::PEM ? x509::convertPemFileToCRL(fileName) : x509::convertDerFileToCrl(fileName);
+  auto maybeX509 = format == Format::PEM ? x509::convertPemFileToCRL(fileName.c_str(), fileName.size()) : x509::convertDerFileToCrl(fileName.c_str(), fileName.size());
   if(!maybeX509)
   {
     log << maybeX509.msg();
