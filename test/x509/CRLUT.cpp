@@ -36,7 +36,7 @@ namespace x509 = ::so::x509;
 TEST(CRLUT, version)
 {
   // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue();
 
@@ -51,7 +51,7 @@ TEST(CRLUT, version)
 TEST(CRLUT, getIssuer)
 {
   // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue(); 
 
@@ -70,7 +70,7 @@ TEST(CRLUT, getIssuer)
 TEST(CRLUT, getIssuerString)
 {
   // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue(); 
   const std::string expected = "CN=Sample Signer Cert,OU=Sample Signer Unit,O=Sample Signer Organization";
@@ -87,7 +87,7 @@ TEST(CRLUT, getIssuerString)
 TEST(CRLUT, getCrlExtensionsCount)
 {
   // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue(); 
 
@@ -103,7 +103,7 @@ TEST(CRLUT, getCrlExtensionsCount)
 TEST(CRLUT, getCrlExtensions)
 {
   // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue(); 
 
@@ -128,7 +128,7 @@ TEST(CRLUT, getCrlExtensions)
 TEST(CRLUT, getCrlSignature)
 {
   // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue(); 
   const so::ByteBuffer expected{
@@ -146,7 +146,7 @@ TEST(CRLUT, getCrlSignature)
 TEST(CRLUT, getCrlSignarueAlgo)
 {
   // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue(); 
 
@@ -161,7 +161,7 @@ TEST(CRLUT, getCrlSignarueAlgo)
 TEST(CRLUT, revCount)
 {
   // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue();
 
@@ -175,7 +175,7 @@ TEST(CRLUT, revCount)
 TEST(CRLUT, getRevokedFromPrecalculated)
 {
   // GIVEN 
-  auto mcrl = x509::convertPemToCRL(data::validPemCRL);
+  auto mcrl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   ASSERT_TRUE(mcrl);
   auto crl = mcrl.moveValue(); 
 

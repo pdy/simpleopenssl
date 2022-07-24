@@ -2291,7 +2291,7 @@ namespace x509 {
   //---------------------------------------------------------------------------------------------- 
   Result<X509_CRL_uptr> createCrl();
 
-  Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl);
+  Result<X509_CRL_uptr> convertPemToCRL(const char *crlPemData, size_t pemDataLen);
   Result<std::string> convertCrlToPem(X509_CRL &crl);
 
   Result<X509_CRL_uptr> convertPemFileToCRL(const char *pemCrlFile);
@@ -4697,11 +4697,11 @@ namespace x509 {
     return internal::ok(std::move(ret));
   }
 
-  Result<X509_CRL_uptr> convertPemToCRL(const std::string &pemCrl)
+  Result<X509_CRL_uptr> convertPemToCRL(const char *crlPemData, size_t pemDataLen)
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_mem()));
 
-    if(0 >= BIO_write(bio.get(), pemCrl.c_str(), static_cast<int>(pemCrl.length())))
+    if(0 >= BIO_write(bio.get(), crlPemData, static_cast<int>(pemDataLen)))
       return internal::err<X509_CRL_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));

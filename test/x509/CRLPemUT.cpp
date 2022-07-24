@@ -33,7 +33,7 @@ namespace x509 = ::so::x509;
 TEST(CRLPemUT, pemStringToCRLShouldFail)
 {
   // WHEN
-  auto crl = x509::convertPemToCRL(data::invalidPemCRL);
+  auto crl = x509::convertPemToCRL(data::invalidPemCRL.data(), data::invalidPemCRL.size());
   
   // THEN
   EXPECT_FALSE(crl);
@@ -42,7 +42,7 @@ TEST(CRLPemUT, pemStringToCRLShouldFail)
 TEST(CRLPemUT, pemStringToCRLShouldSuccess)
 {
   // WHEN
-  auto crl = x509::convertPemToCRL(data::validPemCRL);
+  auto crl = x509::convertPemToCRL(data::validPemCRL.data(), data::validPemCRL.size());
   
   // THEN
   EXPECT_TRUE(crl);
