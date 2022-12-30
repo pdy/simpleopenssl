@@ -30,10 +30,10 @@ namespace so { namespace ut { namespace version {
 TEST(Version, get)
 {
   // GIVEN
-  const std::string expected = "OpenSSL 1.1.1l  24 Aug 2021";
+  //const std::string expected = "OpenSSL 1.1.1l  24 Aug 2021";
 
   // WHEN/THEN
-  EXPECT_EQ(expected, ::so::getOpenSSLVersion());
+  EXPECT_TRUE(::so::getOpenSSLVersion().find("1.1.1") != std::string::npos);
 }
 
 }}}
