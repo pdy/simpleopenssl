@@ -1,5 +1,5 @@
-#ifndef PDY_SIMPLEOPENSSL_H_
-#define PDY_SIMPLEOPENSSL_H_
+#ifndef PDY_SIMPLEOPENSSL_HPP_
+#define PDY_SIMPLEOPENSSL_HPP_
 
 /*
 *  MIT License
