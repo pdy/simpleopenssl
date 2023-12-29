@@ -1933,6 +1933,9 @@ namespace x509 {
 #ifdef SO_IMPLEMENTATION
 #undef SO_IMPLEMENTATION
 
+#include <chrono>
+#include <iterator>
+
 namespace so {
 
 namespace internal {

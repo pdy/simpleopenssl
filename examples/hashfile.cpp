@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     std::cout << arg.usage() << '\n';
     return 0;
   }
-  
+
   if(arg.exist("help"))
   {
     std::cout << arg.usage();
