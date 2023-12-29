@@ -27,11 +27,6 @@
 */
 
 
-#include <ostream>
-#if __cpp_initializer_lists >= 200806
-# define PDY_SO_HAS_INIT_LIST
-#endif
-
 // openssl
 #include <openssl/asn1.h>
 #include <openssl/ec.h>
@@ -48,12 +43,17 @@
 #include <openssl/md4.h>
 
 // std
+#include <ctime>
+#include <ostream>
+#if __cpp_initializer_lists >= 200806
+# define PDY_SO_HAS_INIT_LIST
+#endif
+
 #include <vector>
 #include <memory>
 #include <type_traits>
 #include <algorithm>
 #include <cstring>
-#include <chrono>
 #include <iterator>
 
 #ifdef PDY_SO_HAS_INIT_LIST

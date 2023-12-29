@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 #include <numeric>
+#include <chrono>
 #include <simpleopenssl/simpleopenssl.hpp>
 
 #include "../precalculated.h"
