@@ -24,6 +24,7 @@
 
 #include <gtest/gtest.h>
 
+#include <chrono>
 #include <numeric>
 #include <simpleopenssl/simpleopenssl.hpp>
 
