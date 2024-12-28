@@ -2131,7 +2131,7 @@ namespace bytes {
 
     std::string ret;
     ret.reserve(static_cast<size_t>(len));
-    std::transform(strBuff.get(), strBuff.get() + len, std::back_inserter(ret), [](unsigned char chr){ return static_cast<char>(chr); });
+    std::transform_n(strBuff.get(), static_cast<size_t>(len), std::back_inserter(ret), [](unsigned char chr){ return static_cast<char>(chr); });
 
     return internal::ok(std::move(ret)); 
   }
