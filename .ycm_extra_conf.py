@@ -19,6 +19,7 @@ flags = [
     '-Wno-missing-braces',
     '-Wno-missing-field-initializers',
     '-Wno-deprecated-copy-dtor',
+    '-Wno-unsafe-buffer-usage',
     '-std=c++11',
     '-stdlib=libstdc++',
     '-x','c++',

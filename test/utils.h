@@ -1,7 +1,7 @@
 /*
 *  MIT License
 *  
-*  Copyright (c) 2020 - 2022 Pawel Drzycimski
+*  Copyright (c) 2020 - 2024 Pawel Drzycimski
 *  
 *  Permission is hereby granted, free of charge, to any person obtaining a copy
 *  of this software and associated documentation files (the "Software"), to deal
@@ -34,8 +34,6 @@
 #include <iterator>
 #include <fstream>
 
-#include "simplelog.h"
-#include "platform.h"
 #include "simpleopenssl/simpleopenssl.hpp"
 
 
@@ -82,16 +80,14 @@ inline ::so::Bytes doHashFile(const std::string &path, const EVP_MD *evpMd)
 
 inline bool equal(const ::so::Bytes &lhs, unsigned char *rhs, int rhsLen)
 {
-  if(static_cast<int>(lhs.size()) != rhsLen)
+  if(!rhs || static_cast<int>(lhs.size()) != rhsLen)
     return false;
 
-  size_t idx = 0;
-  for(const auto &bt : lhs)
+  for(size_t idx = 0; idx < lhs.size(); ++idx)
   {
-    if(bt != rhs[idx])
+    if(lhs[idx] != rhs[idx])
       return false;
 
-    ++idx;
   }
 
   return true;
