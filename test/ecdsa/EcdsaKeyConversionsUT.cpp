@@ -22,12 +22,11 @@
 */
 
 #include <vector>
-#include <numeric>
 #include <gtest/gtest.h>
 #include <simpleopenssl/simpleopenssl.hpp>
 
 #include "../precalculated.h"
-#include "../utils.h"
+#include "../simplelog.hpp"
 
 namespace so { namespace ut { namespace ecdsa {
 
@@ -157,8 +156,10 @@ TEST(EcdsaKeyConversionsUT, privKey2DerConversion_ok)
   auto key = make_unique(PEM_read_bio_ECPrivateKey(bio.get(), nullptr, nullptr, nullptr));
   ASSERT_TRUE(key);
 
+  const auto start = NOW();
   // WHEN
   const auto maybeDerPriv = ecdsa::convertPrivKeyToDer(*key);
+  LOG << "duration us [" << DURATION_US(start).count() << "]";
 
   // THEN
   ASSERT_TRUE(maybeDerPriv);

@@ -1,7 +1,7 @@
 /*
 *  MIT License
 *  
-*  Copyright (c) 2020 Pawel Drzycimski
+*  Copyright (c) 2025 Pawel Drzycimski
 *  
 *  Permission is hereby granted, free of charge, to any person obtaining a copy
 *  of this software and associated documentation files (the "Software"), to deal
@@ -23,13 +23,13 @@
 *
 */
 
-
 #ifndef SO_SIMPLELOG_H_
 #define SO_SIMPLELOG_H_
 
 #include <type_traits>
 #include <sstream>
 #include <iostream>
+#include <chrono>
 
 class SimpleLog
 {
@@ -42,7 +42,7 @@ public:
   template
   <
     typename T,
-    typename = typename std::enable_if<std::is_integral<T>::value>::type
+    typename = typename std::enable_if<std::is_integral<T>::value || std::is_floating_point<T>::value>::type
   > 
   SimpleLog& operator<<(T val)
   {
@@ -77,6 +77,10 @@ private:
   std::stringstream m_ss;
 };
 
-#define log (SimpleLog{})
+#define LOG (SimpleLog{})
+
+#define NOW() std::chrono::high_resolution_clock::now()
+#define DURATION_MS(start) std::chrono::duration_cast<std::chrono::milliseconds>(NOW() - start)
+#define DURATION_US(start) std::chrono::duration_cast<std::chrono::microseconds>(NOW() - start)
 
 #endif
