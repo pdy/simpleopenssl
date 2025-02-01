@@ -2154,72 +2154,72 @@ namespace bytes {
   Result<internal::X509Name> commonInfo(X509_NAME &name)
   {
     const auto error = [](unsigned long errCode){ return internal::err<internal::X509Name>(errCode); }; 
-    const auto commonName = nameEntry2String(name, NID_commonName);
+    auto commonName = nameEntry2String(name, NID_commonName);
     if(!commonName)
       return error(commonName.opensslErrCode);
 
-    const auto surname = nameEntry2String(name, NID_surname);
+    auto surname = nameEntry2String(name, NID_surname);
     if(!surname)
       return error(surname.opensslErrCode);
       
-    const auto countryName = nameEntry2String(name, NID_countryName);
+    auto countryName = nameEntry2String(name, NID_countryName);
     if(!countryName)
       return error(countryName.opensslErrCode);
 
-    const auto localityName = nameEntry2String(name, NID_localityName);
+    auto localityName = nameEntry2String(name, NID_localityName);
     if(!localityName)
       return error(localityName.opensslErrCode);
 
-    const auto stateOrProvinceName = nameEntry2String(name, NID_stateOrProvinceName);
+    auto stateOrProvinceName = nameEntry2String(name, NID_stateOrProvinceName);
     if(!stateOrProvinceName)
       return error(stateOrProvinceName.opensslErrCode);
 
-    const auto organizationName = nameEntry2String(name, NID_organizationName);
+    auto organizationName = nameEntry2String(name, NID_organizationName);
     if(!organizationName)
       return error(organizationName.opensslErrCode);
 
-    const auto organizationalUnitName = nameEntry2String(name, NID_organizationalUnitName);
+    auto organizationalUnitName = nameEntry2String(name, NID_organizationalUnitName);
     if(!organizationalUnitName)
       return error(organizationalUnitName.opensslErrCode);
  
-    const auto title = nameEntry2String(name, NID_title);
+    auto title = nameEntry2String(name, NID_title);
     if(!title)
       return error(title.opensslErrCode);
 
-    const auto nameE = nameEntry2String(name, NID_name);
+    auto nameE = nameEntry2String(name, NID_name);
     if(!nameE)
       return error(nameE.opensslErrCode);
 
-    const auto givenName = nameEntry2String(name, NID_givenName);
+    auto givenName = nameEntry2String(name, NID_givenName);
     if(!givenName)
       return error(givenName.opensslErrCode);
 
-    const auto initials = nameEntry2String(name, NID_initials);
+    auto initials = nameEntry2String(name, NID_initials);
     if(!initials)
       return error(initials.opensslErrCode);
 
-    const auto generationQualifier = nameEntry2String(name, NID_generationQualifier);
+    auto generationQualifier = nameEntry2String(name, NID_generationQualifier);
     if(!generationQualifier)
       return error(generationQualifier.opensslErrCode);
 
-    const auto dnQualifier = nameEntry2String(name, NID_dnQualifier);
+    auto dnQualifier = nameEntry2String(name, NID_dnQualifier);
     if(!dnQualifier)
       return error(dnQualifier.opensslErrCode);
 
     return internal::ok<internal::X509Name>({ 
-        commonName.value,
-        surname.value,
-        countryName.value,
-        localityName.value,
-        stateOrProvinceName.value,
-        organizationName.value,
-        organizationalUnitName.value,
-        title.value,
-        nameE.value,
-        givenName.value,
-        initials.value,
-        generationQualifier.value,
-        dnQualifier.value
+        commonName.moveValue(),
+        surname.moveValue(),
+        countryName.moveValue(),
+        localityName.moveValue(),
+        stateOrProvinceName.moveValue(),
+        organizationName.moveValue(),
+        organizationalUnitName.moveValue(),
+        title.moveValue(),
+        nameE.moveValue(),
+        givenName.moveValue(),
+        initials.moveValue(),
+        generationQualifier.moveValue(),
+        dnQualifier.moveValue()
     });
   }
 
