@@ -23,7 +23,6 @@
 
 #include <gtest/gtest.h>
 #include <simpleopenssl/simpleopenssl.hpp>
-#include "utils.h"
 #include <sstream>
 #include <algorithm>
 
@@ -37,7 +36,8 @@ std::tuple<unsigned long, std::string> makeFaultyOperation()
 
   ::so::make_unique(X509_dup(cert.value.get()));
   
-  return std::make_tuple(0x0D078079, "error:0D078079:asn1 encoding routines:asn1_item_embed_d2i:field missing");
+  // return std::make_tuple(0x0D078079, "error:0D078079:asn1 encoding routines:asn1_item_embed_d2i:field missing");
+  return std::make_tuple(0x0D08303A, "error:0D08303A:asn1 encoding routines:asn1_template_noexp_d2i:nested asn1 error");
 }
 
 std::string toHexStr(unsigned long val)

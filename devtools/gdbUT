@@ -22,5 +22,5 @@
 #
 
 pushd build/debug/bin &&
-gdb ./UnitTests
+gdb -tui ./UnitTests
 popd
