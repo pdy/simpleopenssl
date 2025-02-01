@@ -71,14 +71,14 @@ INSTANTIATE_TEST_SUITE_P(
 
       KeyGenTestInput{ rsa::KeyBits::_3072_, rsa::Exponent::_3_ },
       KeyGenTestInput{ rsa::KeyBits::_3072_, rsa::Exponent::_17_ },
-      KeyGenTestInput{ rsa::KeyBits::_3072_, rsa::Exponent::_65537_ }/*,
+      KeyGenTestInput{ rsa::KeyBits::_3072_, rsa::Exponent::_65537_ },
       
-      // anything below takes too much time to have it run every time
-
       KeyGenTestInput{ rsa::KeyBits::_4096_, rsa::Exponent::_3_ },
       KeyGenTestInput{ rsa::KeyBits::_4096_, rsa::Exponent::_17_ },
-      KeyGenTestInput{ rsa::KeyBits::_4096_, rsa::Exponent::_65537_ },
+      KeyGenTestInput{ rsa::KeyBits::_4096_, rsa::Exponent::_65537_ }/*,
 
+      // anything below takes too much time to have it run every time
+      
       KeyGenTestInput{ rsa::KeyBits::_5120_, rsa::Exponent::_3_ },
       KeyGenTestInput{ rsa::KeyBits::_5120_, rsa::Exponent::_17_ },
       KeyGenTestInput{ rsa::KeyBits::_5120_, rsa::Exponent::_65537_ },
@@ -91,7 +91,6 @@ INSTANTIATE_TEST_SUITE_P(
       KeyGenTestInput{ rsa::KeyBits::_7168_, rsa::Exponent::_17_ },
       KeyGenTestInput{ rsa::KeyBits::_7168_, rsa::Exponent::_65537_ }
       */
-      
     )
 );
 
