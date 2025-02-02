@@ -22,7 +22,6 @@
 */
 
 #include <vector>
-#include <algorithm>
 #include <numeric>
 #include <functional>
 #include <gtest/gtest.h>
@@ -30,12 +29,9 @@
 
 #include "../precalculated.h"
 
-
 namespace so { namespace ut { namespace rsa {
 
-
 namespace rsa = ::so::rsa;
-//namespace evp = ::so::evp;
 
 struct SignVerifyInput
 {

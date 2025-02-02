@@ -22,13 +22,11 @@
 */
 
 #include <vector>
-#include <algorithm>
 #include <numeric>
 #include <gtest/gtest.h>
 #include <simpleopenssl/simpleopenssl.hpp>
 
 #include "../precalculated.h"
-#include "../utils.h"
 
 namespace so { namespace ut { namespace rsa {
 
