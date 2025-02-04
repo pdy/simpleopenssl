@@ -17,6 +17,7 @@ flags = [
     '-Wno-missing-braces',
     '-Wno-missing-field-initializers',
     '-Wno-deprecated-copy-dtor',
+    '-Wno-switch-default',
     '-std=c++20',
     '-stdlib=libstdc++',
     '-x','c++',

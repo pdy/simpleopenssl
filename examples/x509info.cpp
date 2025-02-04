@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2025 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@ enum class Format { PEM, DER };
 std::string bin2Hex(const so::Bytes &buff);
 std::string bin2Text(const so::Bytes &buff);
 void logHex(const std::string &hexStr, size_t newLine);
+std::string addSep(const std::string &str, char sep = ':');
 void handleCert(const std::string &fileName, Format format);
 void handleCrl(const std::string &fileName, Format format);
 std::string prettyString(std::time_t time);
@@ -202,7 +203,7 @@ void handleCrl(const std::string &fileName, Format format)
   {
     for(const auto &revokedEl : revokedList)
     {
-      log << "\tSerial: " << bin2Hex(revokedEl.serialNumAsn1); 
+      log << "\tSerial: " << addSep(bin2Hex(revokedEl.serialNumAsn1)); 
       log << "\t  Revocation date: " << revokedEl.dateISO860;
       if(!revokedEl.extensions.empty())
         log << "\t  CRL entry extensions:";
@@ -342,7 +343,7 @@ void handleCert(const std::string &fileName, Format format)
       break;
   }
     
-  log << "Serial: " << bin2Hex(serial.value);
+  log << "Serial: " << addSep(bin2Hex(serial.value));
 
   log << "Subject:";
   log << "\tCommonName: " << subject->commonName;
@@ -416,6 +417,19 @@ void logHex(const std::string &hexStr, size_t newLine)
     std::cout << hexStr[i-1] << (i%2==0 ? " ":"") << (i%newLine == 0 && i!=hexStr.size() ? "\n\t" : "");
 
   std::cout << "\n";
+}
+
+std::string addSep(const std::string &str, char sep)
+{
+  std::string ret; ret.reserve(str.size());
+  for(size_t i = 0; i < str.size(); ++i)
+  {
+    ret.push_back(str[i]);
+    if((i + 1) % 2 == 0 && i < str.size() - 1)
+      ret.push_back(sep);
+  }
+
+  return ret;
 }
 
 std::string prettyString(std::time_t time)
