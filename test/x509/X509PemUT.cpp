@@ -27,6 +27,7 @@
 #include <simpleopenssl/simpleopenssl.hpp>
 #include "../precalculated.h"
 #include "../utils.h"
+#include "../platform.h"
 
 namespace so { namespace ut { namespace x509 {
 
