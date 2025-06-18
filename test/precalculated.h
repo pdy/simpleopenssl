@@ -27,6 +27,7 @@
 #ifndef PDY_SO_PRECALCULATED_H_
 #define PDY_SO_PRECALCULATED_H_
 
+#include <cstdint>
 #include <string>
 #include <vector>
 #include <algorithm>

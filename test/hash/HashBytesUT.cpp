@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2018 Pawel Drzycimski
+* Copyright (c) 2018 - 2025 Pawel Drzycimski
 *
 * Permission is hereby granted, free of charge, to any person obtaining a copy
 * of this software and associated documentation files (the "Software"), to deal
@@ -26,14 +26,11 @@
 
 #include <gtest/gtest.h>
 
-#include <sstream>
 #include <functional>
 
 #include "../utils.h"
 
 namespace so { namespace ut { namespace hash {
-
-namespace hash = ::so::hash;
 
 struct HashBytesTestInput
 {
@@ -115,7 +112,15 @@ const auto hashBytesUTTestCases = ::testing::Values(
       "./data/random_20kB.data",
       "db866b9b1c7b8c2f3419a0a1f3b1f44413480d9ee2b9472fdcf1e6a78ac0a0a71a3a7d742711bfffc30bf015e10f5b551f8d3c22277405d464ab5d50295554d5",
       [](const ::so::Bytes &bytes) -> ::so::Result<::so::Bytes> {return ::so::hash::sha512(bytes);},
+    },
+
+  HashBytesTestInput{
+      "EVP BLAKE_2S_256",
+      "./data/random_20kB.data",
+      "82b52b6c1a18ca988656c0e82f2311b744dcb8263de1d99c6107203f621a4d71da5cd7521f5047f8e9f57a80448794dc03797158c8d2fe39a871b1cb6ae2f295",
+      [](const ::so::Bytes &bytes) -> ::so::Result<::so::Bytes> {return ::so::evp::hashBlake2b512(bytes);},
     }
+
 );
 
 INSTANTIATE_TEST_SUITE_P(

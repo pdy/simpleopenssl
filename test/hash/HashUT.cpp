@@ -25,14 +25,11 @@
 
 #include <gtest/gtest.h>
 
-#include <sstream>
 #include <functional>
 
 #include "../utils.h"
 
 namespace so { namespace ut { namespace hash {
-
-namespace hash = ::so::hash;
 
 struct HashTestInput
 {

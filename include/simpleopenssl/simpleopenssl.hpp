@@ -4,7 +4,7 @@
 /*
 *  MIT License
 *  
-*  Copyright (c) 2018-2024 Pawel Drzycimski
+*  Copyright (c) 2018-2025 Pawel Drzycimski
 *  
 *  Permission is hereby granted, free of charge, to any person obtaining a copy
 *  of this software and associated documentation files (the "Software"), to deal
@@ -388,6 +388,8 @@ namespace evp {
   Result<RSA_uptr> convertToRsa(EVP_PKEY &key);
 
   KeyType getKeyType(const EVP_PKEY &pubkey);
+
+  Result<Bytes> hashBlake2b512(const Bytes &bt);
 
   Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey);
   Result<Bytes> signSha224(const Bytes &msg, EVP_PKEY &privKey);
@@ -2331,25 +2333,25 @@ namespace bytes {
     auto mdCtx = make_unique(EVP_MD_CTX_new());
     if(!mdCtx)
       return internal::err<Bytes>();
-    
+
     const int initStatus = EVP_DigestSignInit(mdCtx.get(), nullptr, evpMd, nullptr, &privateKey);
     if(1 != initStatus)
       return internal::err<Bytes>();
- 
+
     const int updateStatus = EVP_DigestSignUpdate(mdCtx.get(), message.data(), message.size());
     if(1 != updateStatus)
       return internal::err<Bytes>();
-    
+
     size_t sigLen = 0;
     int signStatus = EVP_DigestSignFinal(mdCtx.get(), nullptr, &sigLen);
     if(1 != signStatus)
       return internal::err<Bytes>();
- 
+
     Bytes tmp(sigLen);
     signStatus = EVP_DigestSignFinal(mdCtx.get(), tmp.data(), &sigLen);
     if(1 != signStatus)
       return internal::err<Bytes>();
-        
+
     Bytes signature(tmp.begin(), std::next(tmp.begin(), static_cast<long>(sigLen))); 
     return internal::ok(std::move(signature));
   }
@@ -2362,10 +2364,10 @@ namespace bytes {
 
     if (1 != EVP_DigestVerifyInit(ctx.get(), nullptr, evpMd, nullptr, &pubKey))
       return internal::err(false);
-    
+
     if(1 != EVP_DigestVerifyUpdate(ctx.get(), msg.data(), msg.size()))
       return internal::err(false); 
-   
+
     const int result = EVP_DigestVerifyFinal(ctx.get(), sig.data(), sig.size());
     return result == 1 ? internal::ok(true) : result == 0 ? internal::ok(false) : internal::err<bool>();
   }
@@ -3128,7 +3130,7 @@ namespace evp {
     const int checkKeyResult = RSA_check_key_ex(&rsa, nullptr);
     if(-1 == checkKeyResult)
       return internal::errVoid();
-    
+
     auto keyCopy = [&] {
       if(1 == checkKeyResult)
       {
@@ -3235,6 +3237,24 @@ namespace evp {
     return static_cast<KeyType>(EVP_PKEY_base_id(&pubkey));
   }
   
+  Result<Bytes> hashBlake2b512(const Bytes &bt)
+  {
+    auto ctx = make_unique(EVP_MD_CTX_new());
+    if(1 != EVP_DigestInit_ex(ctx.get(), EVP_blake2b512(), nullptr))
+      return internal::err<Bytes>();
+
+    if(1 != EVP_DigestUpdate(ctx.get(), bt.data(), bt.size()))
+      return internal::err<Bytes>();
+
+    uint8_t hash[EVP_MAX_MD_SIZE];
+    unsigned int mdLen = 0;
+    if(1 != EVP_DigestFinal_ex(ctx.get(), hash, &mdLen))
+      return internal::err<Bytes>();
+
+    auto beg = std::begin(hash);
+    return internal::ok(Bytes(beg, std::next(beg, mdLen)));
+  }
+
   Result<Bytes> signSha1(const Bytes &message, EVP_PKEY &privateKey)
   { 
     return internal::evpSign(message, EVP_sha1(), privateKey);
