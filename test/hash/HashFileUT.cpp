@@ -25,14 +25,11 @@
 
 #include <gtest/gtest.h>
 
-#include <sstream>
 #include <functional>
 
 #include "../utils.h"
 
 namespace so { namespace ut { namespace hash {
-
-namespace hash = ::so::hash;
 
 struct HashFileTestInput
 {
@@ -161,7 +158,22 @@ const auto testCases = ::testing::Values(
       "./data/random_200kB.data",
       "25cd6cd66a06e082be9ab2836605877b5d2f93177b8076dd13c6ad7f5a75ccf79835f41bde54386de862a385146fb4bc58c2d339e260fd3089c23d1de1fd4dc9",
       [](const std::string &path) -> ::so::Result<::so::Bytes> {return ::so::hash::fileSHA512(path);},
+    },
+
+    HashFileTestInput{
+      "blake2b512 20kB",
+      "./data/random_20kB.data",
+      "82b52b6c1a18ca988656c0e82f2311b744dcb8263de1d99c6107203f621a4d71da5cd7521f5047f8e9f57a80448794dc03797158c8d2fe39a871b1cb6ae2f295",
+      [](const std::string &path) -> ::so::Result<::so::Bytes> {return ::so::hash::fileBlake2b512(path);},
+    },
+
+    HashFileTestInput{
+      "blake2b512 200kB",
+      "./data/random_200kB.data",
+      "e29f9cca5933e85fdd9bd73049ac47499b31f383c6fd2a039a64c1d432ba2927c364fab3b8a2bc56614b03ebfc045fb596bec56dad82e0ca5940189fbf7e81a2",
+      [](const std::string &path) -> ::so::Result<::so::Bytes> {return ::so::hash::fileBlake2b512(path);},
     }
+
 );
 
 

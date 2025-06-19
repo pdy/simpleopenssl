@@ -38,14 +38,14 @@ int main(int argc, char *argv[])
   cmdline::parser arg;
   arg.add("help", 'h', "Print help.");
   arg.add<std::string>("file", 'f', "File to be hashed.", true);
-  arg.add<std::string>("type", 't', "Type of hash [sha1, sha256, sha512].", false, "sha256");
-    
+  arg.add<std::string>("type", 't', "Type of hash [sha1, sha256, sha512, blake2s256, blake2b512]", false, "sha256");
+
   if(!arg.parse(argc, const_cast<const char* const*>(argv)))
   {
     const auto fullErr = arg.error_full();
     if(!fullErr.empty())
       std::cout << fullErr << '\n';
-     
+
     std::cout << arg.usage() << '\n';
     return 0;
   }
@@ -82,6 +82,10 @@ Result<Bytes> makeHash(const std::string& filePath, const std::string &type)
     return hash::fileSHA256(filePath);
   else if(type == "sha512")
     return hash::fileSHA512(filePath);
+  else if(type == "blake2s256")
+    return hash::fileBlake2s256(filePath);
+  else if(type == "blake2b512")
+    return hash::fileBlake2b512(filePath);
 
   return hash::fileSHA256(filePath);
 }

@@ -422,6 +422,8 @@ namespace hash {
 
   Result<Bytes> fileMD4(const std::string &path);
   Result<Bytes> fileMD5(const std::string &path);
+  Result<Bytes> fileBlake2s256(const std::string &path);
+  Result<Bytes> fileBlake2b512(const std::string &path);
   Result<Bytes> fileSHA1(const std::string &path);
   Result<Bytes> fileSHA224(const std::string &path);
   Result<Bytes> fileSHA256(const std::string &path);
@@ -3387,6 +3389,16 @@ namespace hash {
     return internal::doHashFile(path, EVP_md5());
   }
   
+  Result<Bytes> fileBlake2s256(const std::string &path)
+  {
+    return internal::doHashFile(path, EVP_blake2s256());
+  }
+
+  Result<Bytes> fileBlake2b512(const std::string &path)
+  {
+    return internal::doHashFile(path, EVP_blake2b512());
+  }
+
   Result<Bytes> fileSHA1(const std::string &path)
   {
     return internal::doHashFile(path, EVP_sha1());
