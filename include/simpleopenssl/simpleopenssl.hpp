@@ -3426,7 +3426,7 @@ namespace hash {
 }// namespace hash
 
 namespace nid {
-   Result<ASN1_OBJECT_uptr> convertToObject(Nid nid)
+  Result<ASN1_OBJECT_uptr> convertToObject(Nid nid)
   {
     auto ret = make_unique(OBJ_nid2obj(static_cast<int>(nid)));
     if(!ret)
@@ -3822,14 +3822,7 @@ namespace x509 {
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
 
-    // I'd rather do copy here than drop const in argument or use
-    // const_cast in BIO_read_filename
-    std::vector<char> fn;
-    fn.reserve(pemFilePath.size() + 1);
-    std::copy_n(pemFilePath.begin(), pemFilePath.size(), std::back_inserter(fn));
-    fn.push_back('\0');
-
-    if(0 >= BIO_read_filename(bio.get(), fn.data()))
+    if(0 >= BIO_read_filename(bio.get(), const_cast<char*>(pemFilePath.c_str())))
       return internal::err<X509_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509(bio.get(), nullptr, nullptr, nullptr));
@@ -4269,14 +4262,7 @@ namespace x509 {
   {
     BIO_uptr bio = make_unique(BIO_new(BIO_s_file()));
 
-    // I'd rather do copy here than drop const in argument or use
-    // const_cast in BIO_read_filename
-    std::vector<char> fn;
-    fn.reserve(pemCrl.size() + 1);
-    std::copy_n(pemCrl.begin(), pemCrl.size(), std::back_inserter(fn));
-    fn.push_back('\0');
-
-    if(0 >= BIO_read_filename(bio.get(), fn.data()))
+    if(0 >= BIO_read_filename(bio.get(), const_cast<char*>(pemCrl.c_str())))
       return internal::err<X509_CRL_uptr>(); 
 
     auto ret = make_unique(PEM_read_bio_X509_CRL(bio.get(), nullptr, nullptr, nullptr));
